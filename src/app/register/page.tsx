@@ -1,7 +1,12 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
+import { getSession } from "@/lib/auth-session";
 import { RegisterForm } from "@/components/auth/register-form";
 
-export default function RegisterPage() {
+export default async function RegisterPage() {
+  const session = await getSession();
+  if (session?.user) redirect("/app");
+
   return (
     <div className="flex min-h-screen flex-col items-center justify-center gap-6 bg-[radial-gradient(ellipse_at_top,_#e8eef5_0%,_#f7f5f1_45%,_#f3efe8_100%)] px-4">
       <div className="text-center">

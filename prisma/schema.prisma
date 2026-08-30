@@ -50,20 +50,20 @@ enum InviteStatus {
 }
 
 model User {
-  id            String       @id @default(cuid())
+  id            String         @id @default(cuid())
   name          String
-  email         String       @unique
-  emailVerified Boolean      @default(false)
+  email         String         @unique
+  emailVerified Boolean        @default(false)
   image         String?
-  createdAt     DateTime     @default(now())
-  updatedAt     DateTime     @updatedAt
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
   sessions      Session[]
   accounts      Account[]
   memberships   Membership[]
-  assignedTasks Task[]       @relation("TaskAssignee")
-  createdTasks  Task[]       @relation("TaskCreator")
+  assignedTasks Task[]         @relation("TaskAssignee")
+  createdTasks  Task[]         @relation("TaskCreator")
   decisions     DecisionLog[]
-  invitesSent   Invite[]     @relation("InviteSender")
+  invitesSent   Invite[]       @relation("InviteSender")
   notifications Notification[]
 }
 
@@ -113,11 +113,11 @@ model Verification {
 }
 
 model Team {
-  id            String                   @id @default(cuid())
+  id            String                  @id @default(cuid())
   name          String
-  slug          String                   @unique
-  createdAt     DateTime                 @default(now())
-  updatedAt     DateTime                 @updatedAt
+  slug          String                  @unique
+  createdAt     DateTime                @default(now())
+  updatedAt     DateTime                @updatedAt
   memberships   Membership[]
   invites       Invite[]
   tasks         Task[]
@@ -196,14 +196,15 @@ model Task {
   createdAt          DateTime     @default(now())
   updatedAt          DateTime     @updatedAt
 
-  team        Team             @relation(fields: [teamId], references: [id], onDelete: Cascade)
-  assignee    User?            @relation("TaskAssignee", fields: [assigneeId], references: [id])
-  createdBy   User             @relation("TaskCreator", fields: [createdById], references: [id])
-  dependsOn   TaskDependency[] @relation("DependentTask")
-  dependedBy  TaskDependency[] @relation("DependencyTask")
+  team          Team             @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  assignee      User?            @relation("TaskAssignee", fields: [assigneeId], references: [id])
+  createdBy     User             @relation("TaskCreator", fields: [createdById], references: [id])
+  dependsOn     TaskDependency[] @relation("DependentTask")
+  dependedBy    TaskDependency[] @relation("DependencyTask")
   contextRuns   ContextRun[]
   decisions     DecisionLog[]
   notifications Notification[]
+  handoffDocs   TaskHandoff[]
 
   @@index([teamId, status])
   @@index([assigneeId])
@@ -238,7 +239,9 @@ model TaskDependency {
 model Notification {
   id        String           @id @default(cuid())
   teamId    String
-  /** Recipient. */
+  /**
+   * Recipient.
+   */
   userId    String
   taskId    String?
   type      NotificationType
@@ -255,18 +258,20 @@ model Notification {
 }
 
 model TeamDoc {
-  id         String    @id @default(cuid())
-  teamId     String
-  /** Stable identifier used as DocChunk.sourcePath, e.g. "coupon.md". */
-  path       String
-  title      String?
-  content    String
-  source     DocSource @default(upload)
-  sizeBytes  Int
-  indexedAt  DateTime?
-  createdAt  DateTime  @default(now())
-  updatedAt  DateTime  @updatedAt
-  team       Team      @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  id        String    @id @default(cuid())
+  teamId    String
+  /**
+   * Stable identifier used as DocChunk.sourcePath, e.g. "coupon.md".
+   */
+  path      String
+  title     String?
+  content   String
+  source    DocSource @default(upload)
+  sizeBytes Int
+  indexedAt DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  team      Team      @relation(fields: [teamId], references: [id], onDelete: Cascade)
 
   @@unique([teamId, path])
   @@index([teamId])
@@ -293,21 +298,43 @@ model DocChunk {
 }
 
 model ContextRun {
-  id            String   @id @default(cuid())
-  teamId        String
-  taskId        String?
-  query         String
-  contextPack   Json
-  /** Parsed Claude analysis — replayed by the cascade so re-evaluation needs no API call. */
-  analysis      Json?
-  claudeRaw     Json?
-  engineOutput  Json?
-  error         String?
-  createdAt     DateTime @default(now())
-  team          Team     @relation(fields: [teamId], references: [id], onDelete: Cascade)
-  task          Task?    @relation(fields: [taskId], references: [id], onDelete: SetNull)
+  id           String   @id @default(cuid())
+  teamId       String
+  taskId       String?
+  query        String
+  contextPack  Json
+  /**
+   * Parsed Claude analysis — replayed by the cascade so re-evaluation needs no API call.
+   */
+  analysis     Json?
+  claudeRaw    Json?
+  engineOutput Json?
+  error        String?
+  createdAt    DateTime @default(now())
+  team         Team     @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  task         Task?    @relation(fields: [taskId], references: [id], onDelete: SetNull)
 
   @@index([teamId, taskId])
+}
+
+model TaskHandoff {
+  id        String   @id @default(cuid())
+  taskId    String
+  /**
+   * e.g. "dev", "design", "qa"
+   */
+  role      String
+  title     String
+  /**
+   * Markdown body
+   */
+  content   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  task      Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+
+  @@unique([taskId, role])
+  @@index([taskId])
 }
 
 model IntegrationCredential {

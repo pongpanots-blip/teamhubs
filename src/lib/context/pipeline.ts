@@ -5,9 +5,11 @@ import { RAG_MAX_DISTANCE, retrieveRelevantChunks } from "@/lib/context/ingest";
 import { fetchGitHubContext } from "@/lib/integrations/github";
 import { fetchFigmaContext } from "@/lib/integrations/figma";
 import { analyzeTaskWithClaude } from "@/lib/ai/claude";
-import { runDeterministicEngine } from "@/lib/engine";
+import { generateHandoffDocs, type HandoffDoc } from "@/lib/ai/handoff";
+import { runDeterministicEngine, type EngineOutput } from "@/lib/engine";
 import { cascadeFromTask } from "@/lib/engine/cascade";
 import type { Task } from "@prisma/client";
+import type { ClaudeTaskAnalysis } from "@/lib/ai/schemas";
 
 /**
  * Context Engine + RAG + Claude + Validation + Deterministic Engine
@@ -191,6 +193,11 @@ export async function runContextPipeline(task: Task) {
   // depending on it must be re-evaluated too.
   const cascade = updated.status !== task.status ? await cascadeFromTask(task.id) : [];
 
+  const handoffDocs =
+    engineOutput.status === "ready" || engineOutput.status === "assigned"
+      ? await syncHandoffDocs(updated, analysis, engineOutput)
+      : [];
+
   return {
     run,
     task: updated,
@@ -199,7 +206,63 @@ export async function runContextPipeline(task: Task) {
     engineOutput,
     contextPack,
     validationWarnings,
+    handoffDocs,
   };
+}
+
+/** Generate role-scoped markdown handoff docs and persist them (upsert + prune stale roles). */
+export async function syncHandoffDocs(
+  task: Task,
+  analysis: ClaudeTaskAnalysis,
+  engineOutput: Pick<EngineOutput, "status" | "readinessScore" | "readinessNotes" | "waitingFor">,
+): Promise<HandoffDoc[]> {
+  const deps = await prisma.taskDependency.findMany({
+    where: { dependentId: task.id },
+    include: { dependency: { include: { assignee: { select: { name: true } } } } },
+  });
+
+  const { docs } = await generateHandoffDocs({
+    taskTitle: task.title,
+    description: task.description,
+    requirement: task.requirement,
+    businessRules: task.businessRules,
+    acceptanceCriteria: task.acceptanceCriteria,
+    figmaUrl: task.figmaUrl,
+    figmaReady: task.figmaReady,
+    githubIssueUrl: task.githubIssueUrl,
+    githubPrUrl: task.githubPrUrl,
+    internalDocPaths: task.internalDocPaths,
+    dependencies: deps.map((d) => ({
+      title: d.dependency.title,
+      status: d.dependency.status,
+      assigneeName: d.dependency.assignee?.name ?? null,
+    })),
+    analysis,
+    engineOutput: {
+      status: engineOutput.status,
+      readinessScore: engineOutput.readinessScore,
+      readinessNotes: engineOutput.readinessNotes,
+      waitingFor: engineOutput.waitingFor,
+    },
+  });
+
+  const roles = docs.map((d) => d.role);
+  await Promise.all(
+    docs.map((d) =>
+      prisma.taskHandoff.upsert({
+        where: { taskId_role: { taskId: task.id, role: d.role } },
+        create: { taskId: task.id, role: d.role, title: d.title, content: d.content },
+        update: { title: d.title, content: d.content },
+      }),
+    ),
+  );
+  if (roles.length > 0) {
+    await prisma.taskHandoff.deleteMany({
+      where: { taskId: task.id, role: { notIn: roles } },
+    });
+  }
+
+  return docs;
 }
 
 function parseBusinessRulesEmpty(raw: unknown): boolean {

@@ -32,8 +32,8 @@ export type ContextPack = {
 
 const RAG_TOP_K = 6;
 
-async function loadTeamCredentials(teamId: string) {
-  const rows = await prisma.integrationCredential.findMany({ where: { teamId } });
+async function loadProjectCredentials(projectId: string) {
+  const rows = await prisma.integrationCredential.findMany({ where: { projectId } });
   const map: Record<string, Record<string, string>> = {};
   for (const row of rows) {
     map[row.provider] = decryptJson(row.payload);
@@ -52,10 +52,10 @@ async function loadTeamCredentials(teamId: string) {
 }
 
 /** Context Engine: retrieve ONLY relevant slices — never dump all docs. */
-export async function buildContextPack(teamId: string, query: string): Promise<ContextPack> {
-  const creds = await loadTeamCredentials(teamId);
+export async function buildContextPack(projectId: string, query: string): Promise<ContextPack> {
+  const creds = await loadProjectCredentials(projectId);
   const [docs, github, figma] = await Promise.all([
-    retrieveRelevantChunks(teamId, query, RAG_TOP_K),
+    retrieveRelevantChunks(projectId, query, RAG_TOP_K),
     fetchGitHubContext({ ...creds.github, query }),
     fetchFigmaContext(creds.figma),
   ]);
@@ -82,8 +82,8 @@ export async function runContextPipeline(task: Task) {
     ...(task.internalDocPaths ?? []),
   ].join("\n");
 
-  // 2) RAG — relevant context only
-  const contextPack = await buildContextPack(task.teamId, query);
+  // 2) RAG — relevant context only, scoped to this task's project
+  const contextPack = await buildContextPack(task.projectId, query);
 
   // 3) Claude — structured analysis (no status/readiness/DB)
   const { analysis, raw, validationWarnings } = await analyzeTaskWithClaude({
@@ -105,7 +105,7 @@ export async function runContextPipeline(task: Task) {
     },
   });
   const siblings = await prisma.task.findMany({
-    where: { teamId: task.teamId, id: { not: task.id } },
+    where: { projectId: task.projectId, id: { not: task.id } },
     select: { id: true, title: true, status: true },
   });
 

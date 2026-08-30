@@ -4,6 +4,7 @@ import Link from "next/link";
 import { authClient } from "@/lib/auth-client";
 import { Button } from "@/components/ui/button";
 import { NotificationBell } from "@/components/notifications/notification-bell";
+import { ProjectSwitcher } from "@/components/layout/project-switcher";
 
 const links = [
   { href: "/app", label: "Overview" },
@@ -16,10 +17,14 @@ export function AppShell({
   children,
   teamName,
   role,
+  projects,
+  currentProjectSlug,
 }: {
   children: React.ReactNode;
   teamName?: string;
   role?: string;
+  projects?: { slug: string; name: string }[];
+  currentProjectSlug?: string;
 }) {
   return (
     <div className="min-h-screen bg-[radial-gradient(ellipse_at_top,_#e8eef5_0%,_#f7f5f1_45%,_#f3efe8_100%)]">
@@ -42,6 +47,9 @@ export function AppShell({
             </nav>
           </div>
           <div className="flex items-center gap-3">
+            {projects && currentProjectSlug ? (
+              <ProjectSwitcher projects={projects} currentSlug={currentProjectSlug} />
+            ) : null}
             <NotificationBell />
             {teamName ? (
               <span className="hidden text-xs text-slate-500 sm:inline">

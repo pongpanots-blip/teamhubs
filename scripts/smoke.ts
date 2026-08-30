@@ -32,15 +32,25 @@ async function main() {
       memberships: {
         create: { userId: signUp.user.id, role: "pm" },
       },
+      projects: {
+        create: {
+          name: "Smoke Team",
+          slug: "general",
+          memberships: { create: { userId: signUp.user.id, role: "pm" } },
+        },
+      },
     },
+    include: { projects: true },
   });
+  const project = team.projects[0]!;
 
-  const ingest = await importRepoDocsForTeam(team.id);
+  const ingest = await importRepoDocsForTeam(team.id, project.id);
   console.log("ingest", ingest);
 
   const task = await prisma.task.create({
     data: {
       teamId: team.id,
+      projectId: project.id,
       title: extracted.titleHint,
       requirement: extracted.requirement,
       businessRules: extracted.businessRules as object[],
@@ -86,10 +96,14 @@ async function main() {
   await prisma.membership.create({
     data: { teamId: team.id, userId: devA.id, role: "backend" },
   });
+  await prisma.projectMembership.create({
+    data: { projectId: project.id, userId: devA.id, role: "backend" },
+  });
 
   const couponApi = await prisma.task.create({
     data: {
       teamId: team.id,
+      projectId: project.id,
       title: "Coupon API",
       requirement: "Expose coupon validation endpoint.",
       acceptanceCriteria: "POST /coupons/validate returns discount.",

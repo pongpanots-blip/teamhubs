@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/db";
-import { requireMembership } from "@/lib/auth-session";
+import { requireMembership, requireProjectMembership } from "@/lib/auth-session";
 import { BusinessRuleSchema, rulesPresent } from "@/lib/business-rules";
 import { TASK_COMPONENTS, TASK_COMPONENT_LABEL } from "@/lib/task-constants";
 
@@ -35,13 +35,16 @@ const schema = z.object({
  */
 export async function POST(req: Request) {
   try {
-    const { user, membership } = await requireMembership();
+    const cx = await requireMembership();
+    const { user, membership } = cx;
+    const { project } = await requireProjectMembership(cx);
     const body = schema.parse(await req.json());
 
     const result = await prisma.$transaction(async (tx) => {
       const parent = await tx.task.create({
         data: {
           teamId: membership.teamId,
+          projectId: project.id,
           title: body.titleHint,
           requirement: body.requirement,
           businessRules: body.businessRules as Prisma.InputJsonValue,
@@ -60,6 +63,7 @@ export async function POST(req: Request) {
         const sub = await tx.task.create({
           data: {
             teamId: membership.teamId,
+            projectId: project.id,
             title: c.title,
             requirement: c.description,
             component: c.component,

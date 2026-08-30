@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/db";
-import { requireMembership, assertRole } from "@/lib/auth-session";
+import { requireMembership, requireProjectMembership, assertRole } from "@/lib/auth-session";
 import { encryptJson } from "@/lib/crypto";
 
 const schema = z.object({
@@ -11,9 +11,10 @@ const schema = z.object({
 
 export async function GET() {
   try {
-    const { membership } = await requireMembership();
+    const cx = await requireMembership();
+    const { project } = await requireProjectMembership(cx);
     const rows = await prisma.integrationCredential.findMany({
-      where: { teamId: membership.teamId },
+      where: { projectId: project.id },
       select: { provider: true, updatedAt: true },
     });
     return NextResponse.json({ providers: rows });
@@ -25,18 +26,21 @@ export async function GET() {
 
 export async function PUT(req: Request) {
   try {
-    const { membership } = await requireMembership();
-    assertRole(membership.role, ["pm", "backend", "mobile", "ai"]);
+    const cx = await requireMembership();
+    const { membership } = cx;
+    const { project, projectMembership } = await requireProjectMembership(cx);
+    assertRole(projectMembership.role, ["pm", "backend", "mobile", "ai"]);
     const body = schema.parse(await req.json());
     const row = await prisma.integrationCredential.upsert({
       where: {
-        teamId_provider: {
-          teamId: membership.teamId,
+        projectId_provider: {
+          projectId: project.id,
           provider: body.provider,
         },
       },
       create: {
         teamId: membership.teamId,
+        projectId: project.id,
         provider: body.provider,
         payload: encryptJson(body.payload),
       },

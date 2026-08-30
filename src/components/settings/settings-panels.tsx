@@ -19,15 +19,30 @@ export function SettingsPanels({
   invites,
   providers,
   hasPluginToken,
+  projects,
+  currentProjectId,
+  currentProjectSlug,
+  teamMembers,
 }: {
   role: string;
   invites: { id: string; email: string; role: string; token: string; status: string }[];
   providers: { provider: string; updatedAt: string }[];
   hasPluginToken: boolean;
+  projects: { slug: string; name: string }[];
+  currentProjectId: string;
+  currentProjectSlug: string;
+  teamMembers: { id: string; name: string; email: string; projectRole: string | null }[];
 }) {
   const [email, setEmail] = useState("");
   const [inviteRole, setInviteRole] = useState("backend");
   const [inviteMsg, setInviteMsg] = useState<string | null>(null);
+  const [newProjectName, setNewProjectName] = useState("");
+  const [newProjectSlug, setNewProjectSlug] = useState("");
+  const [projectMsg, setProjectMsg] = useState<string | null>(null);
+  const [memberRoles, setMemberRoles] = useState<Record<string, string>>(
+    Object.fromEntries(teamMembers.map((m) => [m.id, m.projectRole ?? ""])),
+  );
+  const [memberMsg, setMemberMsg] = useState<string | null>(null);
   const [ghToken, setGhToken] = useState("");
   const [ghOwner, setGhOwner] = useState("");
   const [ghRepo, setGhRepo] = useState("");
@@ -80,6 +95,38 @@ export function SettingsPanels({
     });
     const data = await res.json();
     setIntMsg(res.ok ? "Figma credentials saved" : data.error);
+  }
+
+  async function createProject(e: React.FormEvent) {
+    e.preventDefault();
+    const res = await fetch("/api/projects", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name: newProjectName, slug: newProjectSlug }),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      setProjectMsg(data.error ?? "Failed");
+      return;
+    }
+    setProjectMsg(`Created "${data.project.name}" — switch to it from the header dropdown.`);
+    setNewProjectName("");
+    setNewProjectSlug("");
+  }
+
+  async function assignProjectRole(userId: string, memberRole: string) {
+    setMemberMsg(null);
+    const res = await fetch(`/api/projects/${currentProjectId}/members`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ userId, role: memberRole }),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      setMemberMsg(data.error ?? "Failed");
+      return;
+    }
+    setMemberMsg("Saved");
   }
 
   async function generatePluginToken() {
@@ -148,6 +195,72 @@ export function SettingsPanels({
                   <span className="truncate text-xs">/invite/{i.token}</span>
                 </div>
               ))}
+            </div>
+          </CardContent>
+        </Card>
+      ) : null}
+
+      {role === "pm" ? (
+        <Card className="border-black/5 bg-white/80">
+          <CardHeader>
+            <CardTitle className="text-base">Projects</CardTitle>
+            <CardDescription>
+              Task/docs/RAG/integration credentials are scoped per project — one team can run
+              several unrelated projects side by side. Current: {currentProjectSlug}
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <form onSubmit={createProject} className="grid gap-3 sm:grid-cols-3">
+              <div className="space-y-2">
+                <Label>Name</Label>
+                <Input value={newProjectName} onChange={(e) => setNewProjectName(e.target.value)} required />
+              </div>
+              <div className="space-y-2">
+                <Label>Slug</Label>
+                <Input value={newProjectSlug} onChange={(e) => setNewProjectSlug(e.target.value)} required />
+              </div>
+              <div className="flex items-end">
+                <Button type="submit" className="w-full">
+                  Create project
+                </Button>
+              </div>
+            </form>
+            {projectMsg ? <p className="text-sm text-slate-700">{projectMsg}</p> : null}
+            <ul className="text-sm text-slate-600">
+              {projects.map((p) => (
+                <li key={p.slug}>{p.name}</li>
+              ))}
+            </ul>
+
+            <div className="space-y-2 border-t border-black/5 pt-4">
+              <Label>Assign team members into &quot;{currentProjectSlug}&quot;</Label>
+              {teamMembers.map((m) => (
+                <div key={m.id} className="flex items-center justify-between gap-2 text-sm">
+                  <span className="min-w-0 flex-1 truncate">
+                    {m.name} · {m.email}
+                  </span>
+                  <Select
+                    value={memberRoles[m.id] || undefined}
+                    onValueChange={(value) => {
+                      if (!value) return;
+                      setMemberRoles((prev) => ({ ...prev, [m.id]: value }));
+                      assignProjectRole(m.id, value);
+                    }}
+                  >
+                    <SelectTrigger className="w-36">
+                      <SelectValue placeholder="Not in project" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {TEAM_ROLES.map((r) => (
+                        <SelectItem key={r} value={r}>
+                          {TEAM_ROLE_LABEL[r]}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              ))}
+              {memberMsg ? <p className="text-sm text-slate-700">{memberMsg}</p> : null}
             </div>
           </CardContent>
         </Card>

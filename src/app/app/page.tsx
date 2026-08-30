@@ -40,7 +40,7 @@ export default async function AppHomePage() {
     }),
   ]);
 
-  const homeTasks = tasks as HomeTask[];
+  const homeTasks: HomeTask[] = tasks;
 
   const myWorkTasks =
     membership.role === "pm"
@@ -50,7 +50,7 @@ export default async function AppHomePage() {
   const teamMembers: TeamMemberRow[] = memberships.map((m) => ({
     id: m.userId,
     name: m.user.name,
-    role: m.role as TeamMemberRow["role"],
+    role: m.role,
     tasks: homeTasks.filter((t) => t.assigneeId === m.userId),
   }));
 

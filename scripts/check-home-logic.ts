@@ -92,6 +92,24 @@ assertEqual(
   assertEqual(result.extraCount, 2, "pickCurrentTask extraCount with 3 open tasks");
 }
 
+// pickCurrentTask: priority outranks deadline
+{
+  const p0NoDeadline = baseTask({
+    id: "p0nodeadline",
+    priority: "p0",
+    status: "ready",
+    deadline: null,
+  });
+  const p2NearDeadline = baseTask({
+    id: "p2neardeadline",
+    priority: "p2",
+    status: "ready",
+    deadline: new Date("2026-09-01"),
+  });
+  const result = pickCurrentTask([p2NearDeadline, p0NoDeadline]);
+  assertEqual(result.task?.id, "p0nodeadline", "pickCurrentTask priority outranks deadline");
+}
+
 // isMissingContext
 assertEqual(
   isMissingContext(baseTask({ readinessScore: 49 })),

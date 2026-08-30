@@ -12,7 +12,8 @@
     "db:deploy": "prisma migrate deploy",
     "db:generate": "prisma generate",
     "docs:ingest": "tsx scripts/ingest-docs.ts",
-    "smoke": "tsx scripts/smoke.ts"
+    "smoke": "tsx scripts/smoke.ts",
+    "check:home": "tsx scripts/check-home-logic.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.122.0",

@@ -65,7 +65,7 @@ export async function reevaluateTask(taskId: string): Promise<Reevaluation | nul
     lastAnalysisFor(taskId),
   ]);
   const siblings = await prisma.task.findMany({
-    where: { teamId: task.teamId, id: { not: task.id } },
+    where: { projectId: task.projectId, id: { not: task.id } },
     select: { id: true, title: true, status: true },
   });
 

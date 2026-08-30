@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { getSession } from "@/lib/auth-session";
+import { resolveCurrentProject } from "@/lib/current-project";
 import { prisma } from "@/lib/db";
 import { AppShell } from "@/components/layout/app-shell";
 import { MyWorkSection } from "@/components/home/my-work-section";
@@ -17,9 +18,12 @@ export default async function AppHomePage() {
   });
   if (!membership) redirect("/onboarding");
 
+  const { project, projects } = await resolveCurrentProject(membership);
+  if (!project) redirect("/onboarding");
+
   const [tasks, memberships] = await Promise.all([
     prisma.task.findMany({
-      where: { teamId: membership.teamId },
+      where: { projectId: project.id },
       select: {
         id: true,
         title: true,
@@ -34,8 +38,8 @@ export default async function AppHomePage() {
         figmaReady: true,
       },
     }),
-    prisma.membership.findMany({
-      where: { teamId: membership.teamId },
+    prisma.projectMembership.findMany({
+      where: { projectId: project.id },
       include: { user: true },
     }),
   ]);
@@ -57,7 +61,12 @@ export default async function AppHomePage() {
   const attentionCounts = computeAttentionCounts(homeTasks);
 
   return (
-    <AppShell teamName={membership.team.name} role={membership.role}>
+    <AppShell
+      teamName={membership.team.name}
+      role={membership.role}
+      projects={projects}
+      currentProjectSlug={project.slug}
+    >
       <div className="space-y-6">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight text-slate-900">IntrovertHubs</h1>

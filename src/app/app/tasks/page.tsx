@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { getSession } from "@/lib/auth-session";
+import { resolveCurrentProject } from "@/lib/current-project";
 import { prisma } from "@/lib/db";
 import { AppShell } from "@/components/layout/app-shell";
 import { TasksBoard } from "@/components/tasks/tasks-board";
@@ -13,9 +14,12 @@ export default async function TasksPage() {
   });
   if (!membership) redirect("/onboarding");
 
+  const { project, projects } = await resolveCurrentProject(membership);
+  if (!project) redirect("/onboarding");
+
   const [tasks, members] = await Promise.all([
     prisma.task.findMany({
-      where: { teamId: membership.teamId },
+      where: { projectId: project.id },
       include: {
         assignee: { select: { id: true, name: true, email: true } },
         dependsOn: {
@@ -24,14 +28,19 @@ export default async function TasksPage() {
       },
       orderBy: { updatedAt: "desc" },
     }),
-    prisma.membership.findMany({
-      where: { teamId: membership.teamId },
+    prisma.projectMembership.findMany({
+      where: { projectId: project.id },
       include: { user: { select: { id: true, name: true } } },
     }),
   ]);
 
   return (
-    <AppShell teamName={membership.team.name} role={membership.role}>
+    <AppShell
+      teamName={membership.team.name}
+      role={membership.role}
+      projects={projects}
+      currentProjectSlug={project.slug}
+    >
       <TasksBoard
         initialTasks={tasks}
         members={members.map((m) => ({ id: m.user.id, name: m.user.name, role: m.role }))}

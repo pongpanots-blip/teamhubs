@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { getSession } from "@/lib/auth-session";
+import { resolveCurrentProject } from "@/lib/current-project";
 import { prisma } from "@/lib/db";
 import { AppShell } from "@/components/layout/app-shell";
 import { DocsIngestPanel, type TeamDocSummary } from "@/components/docs/docs-ingest-panel";
@@ -13,15 +14,18 @@ export default async function DocsPage() {
   });
   if (!membership) redirect("/onboarding");
 
+  const { project, projects } = await resolveCurrentProject(membership);
+  if (!project) redirect("/onboarding");
+
   const [docs, counts] = await Promise.all([
     prisma.teamDoc.findMany({
-      where: { teamId: membership.teamId },
+      where: { projectId: project.id },
       orderBy: { path: "asc" },
       select: { path: true, title: true, source: true, sizeBytes: true, indexedAt: true },
     }),
     prisma.docChunk.groupBy({
       by: ["sourcePath"],
-      where: { teamId: membership.teamId },
+      where: { projectId: project.id },
       _count: { id: true },
     }),
   ]);
@@ -37,7 +41,12 @@ export default async function DocsPage() {
   }));
 
   return (
-    <AppShell teamName={membership.team.name} role={membership.role}>
+    <AppShell
+      teamName={membership.team.name}
+      role={membership.role}
+      projects={projects}
+      currentProjectSlug={project.slug}
+    >
       <DocsIngestPanel initialDocs={initialDocs} />
     </AppShell>
   );

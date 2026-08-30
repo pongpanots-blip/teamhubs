@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/db";
-import { requireMembership } from "@/lib/auth-session";
+import { requireMembership, requireProjectMembership } from "@/lib/auth-session";
 import { TASK_PRIORITIES, TASK_STATUSES } from "@/lib/task-constants";
 import { BusinessRuleSchema, rulesPresent } from "@/lib/business-rules";
 import { extractDynamicRequirement } from "@/lib/ai/extract-rules";
@@ -30,9 +30,10 @@ const createSchema = z.object({
 
 export async function GET() {
   try {
-    const { membership } = await requireMembership();
+    const cx = await requireMembership();
+    const { project } = await requireProjectMembership(cx);
     const tasks = await prisma.task.findMany({
-      where: { teamId: membership.teamId },
+      where: { projectId: project.id },
       include: {
         assignee: { select: { id: true, name: true, email: true } },
         dependsOn: {
@@ -51,7 +52,9 @@ export async function GET() {
 
 export async function POST(req: Request) {
   try {
-    const { user, membership } = await requireMembership();
+    const cx = await requireMembership();
+    const { user, membership } = cx;
+    const { project } = await requireProjectMembership(cx);
     const body = createSchema.parse(await req.json());
 
     let requirement = body.requirement ?? "";
@@ -76,6 +79,7 @@ export async function POST(req: Request) {
     const task = await prisma.task.create({
       data: {
         teamId: membership.teamId,
+        projectId: project.id,
         title,
         description: body.description ?? "",
         requirement,

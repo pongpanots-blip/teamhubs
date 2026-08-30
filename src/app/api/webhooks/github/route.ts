@@ -70,7 +70,7 @@ export async function POST(req: Request) {
 
   const prUrl = payload.pull_request.html_url;
   const task = await prisma.task.findFirst({
-    where: { teamId: match.row.teamId, githubPrUrl: prUrl },
+    where: { projectId: match.row.projectId, githubPrUrl: prUrl },
   });
   if (!task) return NextResponse.json({ ok: true, skipped: "no task linked to this PR" });
 

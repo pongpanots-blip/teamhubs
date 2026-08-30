@@ -17,7 +17,9 @@ enum TeamRole {
   ai
 }
 
-/** Which part of the system a sub-task covers. Null on a parent/container task. */
+/**
+ * Which part of the system a sub-task covers. Null on a parent/container task.
+ */
 enum TaskComponent {
   ui
   backend
@@ -62,21 +64,22 @@ enum InviteStatus {
 }
 
 model User {
-  id            String         @id @default(cuid())
-  name          String
-  email         String         @unique
-  emailVerified Boolean        @default(false)
-  image         String?
-  createdAt     DateTime       @default(now())
-  updatedAt     DateTime       @updatedAt
-  sessions      Session[]
-  accounts      Account[]
-  memberships   Membership[]
-  assignedTasks Task[]         @relation("TaskAssignee")
-  createdTasks  Task[]         @relation("TaskCreator")
-  decisions     DecisionLog[]
-  invitesSent   Invite[]       @relation("InviteSender")
-  notifications Notification[]
+  id                 String              @id @default(cuid())
+  name               String
+  email              String              @unique
+  emailVerified      Boolean             @default(false)
+  image              String?
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+  sessions           Session[]
+  accounts           Account[]
+  memberships        Membership[]
+  projectMemberships ProjectMembership[]
+  assignedTasks      Task[]              @relation("TaskAssignee")
+  createdTasks       Task[]              @relation("TaskCreator")
+  decisions          DecisionLog[]
+  invitesSent        Invite[]            @relation("InviteSender")
+  notifications      Notification[]
 }
 
 model Session {
@@ -134,12 +137,49 @@ model Team {
   updatedAt     DateTime                @updatedAt
   memberships   Membership[]
   invites       Invite[]
+  projects      Project[]
   tasks         Task[]
   docChunks     DocChunk[]
   docs          TeamDoc[]
   notifications Notification[]
   contextRuns   ContextRun[]
   credentials   IntegrationCredential[]
+}
+
+/// A distinct project/product a team works on. Task/docs/RAG/integration
+/// credentials are scoped here so unrelated projects don't leak context
+/// into each other's grilling sessions.
+model Project {
+  id          String                  @id @default(cuid())
+  teamId      String
+  name        String
+  slug        String
+  createdAt   DateTime                @default(now())
+  updatedAt   DateTime                @updatedAt
+  team        Team                    @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  memberships ProjectMembership[]
+  tasks       Task[]
+  docs        TeamDoc[]
+  docChunks   DocChunk[]
+  credentials IntegrationCredential[]
+
+  @@unique([teamId, slug])
+}
+
+/// Per-project role — separate from the team-wide Membership because a
+/// user's functional role (ui/backend/mobile/ai) can differ per project.
+model ProjectMembership {
+  id        String   @id @default(cuid())
+  projectId String
+  userId    String
+  role      TeamRole @default(backend)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([projectId, userId])
+  @@index([userId])
 }
 
 model Membership {
@@ -174,27 +214,28 @@ model Invite {
 }
 
 model Task {
-  id                 String       @id @default(cuid())
+  id                 String         @id @default(cuid())
   teamId             String
+  projectId          String
   title              String
   /// Short summary / description
-  description        String       @default("")
+  description        String         @default("")
   /// Explicit requirement text (must not live only in PM's head)
-  requirement        String       @default("")
+  requirement        String         @default("")
   /// Dynamic business rules — open-ended JSON array, NOT fixed coupon columns
-  businessRules      Json         @default("[]")
-  status             TaskStatus   @default(not_ready)
-  priority           TaskPriority @default(p2)
+  businessRules      Json           @default("[]")
+  status             TaskStatus     @default(not_ready)
+  priority           TaskPriority   @default(p2)
   deadline           DateTime?
   /// Set only on a component sub-task created from a grilling session; null on the parent task
   component          TaskComponent?
   /// Owner — assigned person; Assigned ≠ Working
   assigneeId         String?
   createdById        String
-  acceptanceCriteria String       @default("")
+  acceptanceCriteria String         @default("")
   figmaUrl           String?
   /// Design is ready for implementation (not just linked)
-  figmaReady         Boolean      @default(false)
+  figmaReady         Boolean        @default(false)
   /// Figma file name, reported by the plugin
   figmaFile          String?
   /// Figma page name, reported by the plugin
@@ -204,21 +245,22 @@ model Task {
   githubIssueUrl     String?
   githubPrUrl        String?
   /// Related internal doc paths (e.g. knowledge/engineering.md)
-  internalDocPaths   String[]     @default([])
+  internalDocPaths   String[]       @default([])
   /// Explicit API / backend readiness for this task
-  apiReady           Boolean      @default(false)
-  designLinked       Boolean      @default(false)
-  acPresent          Boolean      @default(false)
-  rulesPresent       Boolean      @default(false)
-  requirementPresent Boolean      @default(false)
-  readinessScore     Int          @default(0)
-  readinessNotes     String       @default("")
+  apiReady           Boolean        @default(false)
+  designLinked       Boolean        @default(false)
+  acPresent          Boolean        @default(false)
+  rulesPresent       Boolean        @default(false)
+  requirementPresent Boolean        @default(false)
+  readinessScore     Int            @default(0)
+  readinessNotes     String         @default("")
   engineStatus       String?
   lastContextRunId   String?
-  createdAt          DateTime     @default(now())
-  updatedAt          DateTime     @updatedAt
+  createdAt          DateTime       @default(now())
+  updatedAt          DateTime       @updatedAt
 
   team          Team             @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  project       Project          @relation(fields: [projectId], references: [id], onDelete: Cascade)
   assignee      User?            @relation("TaskAssignee", fields: [assigneeId], references: [id])
   createdBy     User             @relation("TaskCreator", fields: [createdById], references: [id])
   dependsOn     TaskDependency[] @relation("DependentTask")
@@ -231,6 +273,7 @@ model Task {
   @@index([teamId, status])
   @@index([assigneeId])
   @@index([teamId, priority])
+  @@index([projectId, status])
 }
 
 model DecisionLog {
@@ -282,6 +325,7 @@ model Notification {
 model TeamDoc {
   id        String    @id @default(cuid())
   teamId    String
+  projectId String
   /**
    * Stable identifier used as DocChunk.sourcePath, e.g. "coupon.md".
    */
@@ -294,14 +338,16 @@ model TeamDoc {
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
   team      Team      @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  project   Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
 
-  @@unique([teamId, path])
+  @@unique([projectId, path])
   @@index([teamId])
 }
 
 model DocChunk {
   id         String                       @id @default(cuid())
   teamId     String
+  projectId  String
   sourcePath String
   content    String
   chunkIndex Int
@@ -311,11 +357,12 @@ model DocChunk {
   createdAt  DateTime                     @default(now())
   updatedAt  DateTime                     @updatedAt
   team       Team                         @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  project    Project                      @relation(fields: [projectId], references: [id], onDelete: Cascade)
 
   // HNSW index on `embedding` (vector_cosine_ops) lives in migration
   // 20260830100000_docchunk_hnsw_index — Prisma cannot express it on an
   // Unsupported() column. Keep it when squashing migrations.
-  @@unique([teamId, sourcePath, chunkIndex])
+  @@unique([projectId, sourcePath, chunkIndex])
   @@index([teamId])
 }
 
@@ -362,11 +409,13 @@ model TaskHandoff {
 model IntegrationCredential {
   id        String   @id @default(cuid())
   teamId    String
+  projectId String
   provider  String // github | figma
   payload   String // encrypted JSON
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   team      Team     @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
 
-  @@unique([teamId, provider])
+  @@unique([projectId, provider])
 }

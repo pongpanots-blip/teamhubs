@@ -78,6 +78,10 @@ export default async function TaskDetailPage({ params }: Props) {
   } | null;
   const missingContextItems = buildMissingContextItems(task, latestRunOutput);
 
+  /** Sub-tasks created from a grilling session carry a component; plain dependencies don't. */
+  const subTaskDeps = task.dependsOn.filter((d) => d.dependency.component != null);
+  const otherDeps = task.dependsOn.filter((d) => d.dependency.component == null);
+
   return (
     <AppShell teamName={membership.team.name} role={membership.role}>
       <div className="space-y-6">
@@ -152,16 +156,48 @@ export default async function TaskDetailPage({ params }: Props) {
           </CardContent>
         </Card>
 
+        {subTaskDeps.length > 0 ? (
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Sub-tasks ({subTaskDeps.length})</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ul className="space-y-2 text-sm">
+                {subTaskDeps.map((d) => (
+                  <li key={d.id}>
+                    <Link
+                      href={`/app/tasks/${d.dependency.id}`}
+                      className="flex flex-wrap items-center gap-2 rounded-lg border border-border p-2 hover:bg-muted/50"
+                    >
+                      <Badge variant="outline">{d.dependency.component}</Badge>
+                      <span className="font-medium">{d.dependency.title}</span>
+                      <span className="text-muted-foreground">
+                        — {d.dependency.assignee?.name ?? "Unassigned"}
+                      </span>
+                      <Badge
+                        className="ml-auto"
+                        variant={STATUS_BADGE_VARIANT[d.dependency.status as TaskStatusValue]}
+                      >
+                        {TASK_STATUS_LABEL[d.dependency.status as TaskStatusValue]}
+                      </Badge>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </CardContent>
+          </Card>
+        ) : null}
+
         <Card>
           <CardHeader>
             <CardTitle className="text-base">Dependencies</CardTitle>
           </CardHeader>
           <CardContent>
-            {task.dependsOn.length === 0 ? (
+            {otherDeps.length === 0 ? (
               <p className="text-sm text-muted-foreground">—</p>
             ) : (
               <ul className="space-y-1 text-sm">
-                {task.dependsOn.map((d) => (
+                {otherDeps.map((d) => (
                   <li key={d.id}>
                     {d.dependency.status === "done" ? "✓" : "⏳"} {d.dependency.title} —{" "}
                     {d.dependency.assignee?.name ?? "Unassigned"}

@@ -38,7 +38,7 @@ export function extractBusinessRulesHeuristic(text: string): ExtractedRequiremen
   const pct = t.match(/ลด\s*(\d+(?:\.\d+)?)\s*%|(\d+(?:\.\d+)?)\s*%\s*(?:off|discount)?/i);
   if (pct) {
     const n = pct[1] ?? pct[2]!;
-    rules.push({ key: "discount", label: "Discount", value: `${n}%`, unit: "%" });
+    rules.push({ key: "discount", label: "Discount", value: n, unit: "%" });
   }
 
   if (/ครั้งเดียว|one\s*time|once\s*per\s*customer|1\s*time/i.test(t)) {

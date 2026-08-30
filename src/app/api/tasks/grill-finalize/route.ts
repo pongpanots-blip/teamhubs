@@ -5,6 +5,7 @@ import { prisma } from "@/lib/db";
 import { requireMembership } from "@/lib/auth-session";
 import { BusinessRuleSchema, rulesPresent } from "@/lib/business-rules";
 import { TASK_COMPONENTS, TASK_COMPONENT_LABEL } from "@/lib/task-constants";
+import { buildGrillHandoffDoc } from "@/lib/ai/grill-handoff";
 
 const schema = z.object({
   titleHint: z.string().min(1),
@@ -69,6 +70,7 @@ export async function POST(req: Request) {
             status: c.assigneeId ? "assigned" : "not_ready",
             createdById: user.id,
           },
+          include: { assignee: { select: { name: true } } },
         });
         subTasks.push(sub);
 
@@ -87,6 +89,27 @@ export async function POST(req: Request) {
       }
 
       if (subTasks.length) {
+        const componentSummaries = subTasks.map((s) => ({
+          component: s.component! as (typeof TASK_COMPONENTS)[number],
+          title: s.title,
+          description: s.requirement,
+          assigneeName: s.assignee?.name ?? null,
+        }));
+        await tx.taskHandoff.createMany({
+          data: subTasks.map((s, i) => {
+            const own = componentSummaries[i];
+            const doc = buildGrillHandoffDoc({
+              parentTitle: parent.title,
+              requirement: body.requirement,
+              businessRules: body.businessRules,
+              acceptanceCriteria: body.acceptanceCriteria,
+              own,
+              siblings: componentSummaries.filter((_, j) => j !== i),
+            });
+            return { taskId: s.id, role: "dev", title: doc.title, content: doc.content };
+          }),
+        });
+
         await tx.taskDependency.createMany({
           data: subTasks.map((s) => ({
             dependentId: parent.id,

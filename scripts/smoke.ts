@@ -84,7 +84,7 @@ async function main() {
     data: { name: "Dev A", email: `dev-a-${Date.now()}@smoke.local` },
   });
   await prisma.membership.create({
-    data: { teamId: team.id, userId: devA.id, role: "dev" },
+    data: { teamId: team.id, userId: devA.id, role: "backend" },
   });
 
   const couponApi = await prisma.task.create({

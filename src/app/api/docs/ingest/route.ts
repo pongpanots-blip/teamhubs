@@ -9,7 +9,7 @@ import { importRepoDocsForTeam, reindexTeamDocs } from "@/lib/context/ingest";
 export async function POST(req: Request) {
   try {
     const { membership } = await requireMembership();
-    assertRole(membership.role, ["pm", "dev", "ui"]);
+    assertRole(membership.role, ["pm", "ui", "backend", "mobile", "ai"]);
     const source = new URL(req.url).searchParams.get("source");
     const result =
       source === "repo"

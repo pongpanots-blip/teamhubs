@@ -13,20 +13,29 @@ export default async function TasksPage() {
   });
   if (!membership) redirect("/onboarding");
 
-  const tasks = await prisma.task.findMany({
-    where: { teamId: membership.teamId },
-    include: {
-      assignee: { select: { id: true, name: true, email: true } },
-      dependsOn: {
-        include: { dependency: { select: { id: true, title: true, status: true } } },
+  const [tasks, members] = await Promise.all([
+    prisma.task.findMany({
+      where: { teamId: membership.teamId },
+      include: {
+        assignee: { select: { id: true, name: true, email: true } },
+        dependsOn: {
+          include: { dependency: { select: { id: true, title: true, status: true } } },
+        },
       },
-    },
-    orderBy: { updatedAt: "desc" },
-  });
+      orderBy: { updatedAt: "desc" },
+    }),
+    prisma.membership.findMany({
+      where: { teamId: membership.teamId },
+      include: { user: { select: { id: true, name: true } } },
+    }),
+  ]);
 
   return (
     <AppShell teamName={membership.team.name} role={membership.role}>
-      <TasksBoard initialTasks={tasks} />
+      <TasksBoard
+        initialTasks={tasks}
+        members={members.map((m) => ({ id: m.user.id, name: m.user.name, role: m.role }))}
+      />
     </AppShell>
   );
 }

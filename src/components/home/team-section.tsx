@@ -2,11 +2,12 @@ import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { pickCurrentTask, type HomeTask } from "@/lib/home";
+import type { TeamRoleValue } from "@/lib/task-constants";
 
 export type TeamMemberRow = {
   id: string;
   name: string;
-  role: "pm" | "ui" | "dev";
+  role: TeamRoleValue;
   tasks: HomeTask[];
 };
 

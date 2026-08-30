@@ -12,6 +12,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { TEAM_ROLES, TEAM_ROLE_LABEL } from "@/lib/task-constants";
 
 export function SettingsPanels({
   role,
@@ -25,7 +26,7 @@ export function SettingsPanels({
   hasPluginToken: boolean;
 }) {
   const [email, setEmail] = useState("");
-  const [inviteRole, setInviteRole] = useState("dev");
+  const [inviteRole, setInviteRole] = useState("backend");
   const [inviteMsg, setInviteMsg] = useState<string | null>(null);
   const [ghToken, setGhToken] = useState("");
   const [ghOwner, setGhOwner] = useState("");
@@ -103,7 +104,7 @@ export function SettingsPanels({
         <Card className="border-black/5 bg-white/80">
           <CardHeader>
             <CardTitle className="text-base">Invite member</CardTitle>
-            <CardDescription>Roles: pm · ui · dev</CardDescription>
+            <CardDescription>Roles: pm · ui · backend · mobile · ai</CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={createInvite} className="grid gap-3 sm:grid-cols-3">
@@ -123,9 +124,11 @@ export function SettingsPanels({
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="pm">PM</SelectItem>
-                    <SelectItem value="ui">UI</SelectItem>
-                    <SelectItem value="dev">Dev</SelectItem>
+                    {TEAM_ROLES.map((r) => (
+                      <SelectItem key={r} value={r}>
+                        {TEAM_ROLE_LABEL[r]}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>

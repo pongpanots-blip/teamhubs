@@ -3,10 +3,11 @@ import { z } from "zod";
 import { addDays } from "date-fns";
 import { prisma } from "@/lib/db";
 import { requireMembership, assertRole } from "@/lib/auth-session";
+import { TEAM_ROLES } from "@/lib/task-constants";
 
 const schema = z.object({
   email: z.string().email(),
-  role: z.enum(["pm", "ui", "dev"]).default("dev"),
+  role: z.enum(TEAM_ROLES).default("backend"),
 });
 
 export async function GET() {

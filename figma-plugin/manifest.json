@@ -1,12 +1,12 @@
 {
-  "name": "TeamHub — Ready for Dev",
-  "id": "teamhub-ready-for-dev",
+  "name": "IntrovertHubs — Ready for Dev",
+  "id": "introverthubs-ready-for-dev",
   "api": "1.0.0",
   "main": "code.js",
   "ui": "ui.html",
   "editorType": ["figma"],
   "networkAccess": {
     "allowedDomains": ["*"],
-    "reasoning": "The TeamHub base URL is configured by each team in the plugin's connection settings, so it cannot be known ahead of time."
+    "reasoning": "The IntrovertHubs base URL is configured by each team in the plugin's connection settings, so it cannot be known ahead of time."
   }
 }

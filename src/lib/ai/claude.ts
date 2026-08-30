@@ -20,7 +20,7 @@ import { parseBusinessRules, type BusinessRule } from "@/lib/business-rules";
  * - เขียน DB โดยตรง
  * - รับ Internal Docs ทั้งก้อนเข้า prompt
  */
-const SYSTEM = `You are an analysis layer inside TeamHub — NOT the decision brain.
+const SYSTEM = `You are an analysis layer inside IntrovertHubs — NOT the decision brain.
 
 You receive: a PM requirement, optional existing BusinessRules[], and a SMALL retrieved context pack (RAG snippets + optional GitHub/Figma metadata).
 You never receive the full documentation corpus.

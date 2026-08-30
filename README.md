@@ -1,4 +1,4 @@
-# TeamHub
+# IntrovertHubs
 
 Web app for a small team (PM + UI + Devs): Context Engine (docs RAG, GitHub, Figma) → Claude structured JSON → Deterministic Engine (readiness / dependency / status).
 

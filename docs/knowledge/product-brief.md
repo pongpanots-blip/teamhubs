@@ -1,6 +1,6 @@
-# TeamHub Product Brief
+# IntrovertHubs Product Brief
 
-TeamHub helps a small team (1 PM, 1 UI, 3 Devs) keep tasks ready with shared context.
+IntrovertHubs helps a small team (1 PM, 1 UI, 3 Devs) keep tasks ready with shared context.
 
 ## Goals
 

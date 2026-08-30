@@ -27,7 +27,7 @@ export function AppShell({
         <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3">
           <div className="flex items-center gap-6">
             <Link href="/app" className="font-semibold tracking-tight text-slate-900">
-              TeamHub
+              IntrovertHubs
             </Link>
             <nav className="hidden items-center gap-1 sm:flex">
               {links.map((l) => (

@@ -5,7 +5,7 @@ export default function HomePage() {
     <div className="relative min-h-screen overflow-hidden bg-[radial-gradient(ellipse_at_top,_#dfe8f2_0%,_#f4f1ea_50%,_#ebe4d8_100%)]">
       <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(120deg,transparent_40%,rgba(255,255,255,0.35)_50%,transparent_60%)]" />
       <main className="relative mx-auto flex min-h-screen max-w-4xl flex-col justify-center px-6 py-16">
-        <p className="text-sm font-medium uppercase tracking-[0.2em] text-slate-500">TeamHub</p>
+        <p className="text-sm font-medium uppercase tracking-[0.2em] text-slate-500">IntrovertHubs</p>
         <h1 className="mt-4 max-w-2xl text-5xl font-semibold tracking-tight text-slate-900 sm:text-6xl">
           Ship with shared context.
         </h1>

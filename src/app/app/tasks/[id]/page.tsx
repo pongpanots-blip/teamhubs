@@ -153,6 +153,7 @@ export default async function TaskDetailPage({ params }: Props) {
               <Button
                 variant="outline"
                 size="sm"
+                nativeButton={false}
                 render={<a href={task.figmaUrl} target="_blank" rel="noopener noreferrer" />}
               >
                 Open Figma

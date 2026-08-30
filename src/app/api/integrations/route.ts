@@ -26,7 +26,7 @@ export async function GET() {
 export async function PUT(req: Request) {
   try {
     const { membership } = await requireMembership();
-    assertRole(membership.role, ["pm", "dev"]);
+    assertRole(membership.role, ["pm", "backend", "mobile", "ai"]);
     const body = schema.parse(await req.json());
     const row = await prisma.integrationCredential.upsert({
       where: {

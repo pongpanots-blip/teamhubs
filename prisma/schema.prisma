@@ -12,7 +12,17 @@ datasource db {
 enum TeamRole {
   pm
   ui
-  dev
+  backend
+  mobile
+  ai
+}
+
+/** Which part of the system a sub-task covers. Null on a parent/container task. */
+enum TaskComponent {
+  ui
+  backend
+  mobile
+  ai
 }
 
 enum TaskStatus {
@@ -136,7 +146,7 @@ model Membership {
   id        String   @id @default(cuid())
   teamId    String
   userId    String
-  role      TeamRole @default(dev)
+  role      TeamRole @default(backend)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   team      Team     @relation(fields: [teamId], references: [id], onDelete: Cascade)
@@ -150,7 +160,7 @@ model Invite {
   id          String       @id @default(cuid())
   teamId      String
   email       String
-  role        TeamRole     @default(dev)
+  role        TeamRole     @default(backend)
   token       String       @unique @default(cuid())
   status      InviteStatus @default(pending)
   invitedById String
@@ -176,6 +186,8 @@ model Task {
   status             TaskStatus   @default(not_ready)
   priority           TaskPriority @default(p2)
   deadline           DateTime?
+  /// Set only on a component sub-task created from a grilling session; null on the parent task
+  component          TaskComponent?
   /// Owner — assigned person; Assigned ≠ Working
   assigneeId         String?
   createdById        String

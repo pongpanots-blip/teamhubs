@@ -20,7 +20,7 @@ export async function GET() {
 export async function POST() {
   try {
     const { membership } = await requireMembership();
-    assertRole(membership.role, ["pm", "dev"]);
+    assertRole(membership.role, ["pm", "backend", "mobile", "ai"]);
     const token = `figpi_${randomBytes(24).toString("hex")}`;
     await prisma.team.update({
       where: { id: membership.teamId },

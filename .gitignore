@@ -40,6 +40,9 @@ yarn-error.log*
 # worktrees
 /.worktrees
 
+# local dev server port config (per-worktree, not shared)
+/.claude/launch.json
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts

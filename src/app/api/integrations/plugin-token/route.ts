@@ -1,16 +1,17 @@
 import { randomBytes } from "crypto";
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
-import { requireMembership, assertRole } from "@/lib/auth-session";
+import { requireMembership, requireProjectMembership, assertRole } from "@/lib/auth-session";
 
 export async function GET() {
   try {
-    const { membership } = await requireMembership();
-    const team = await prisma.team.findUnique({
-      where: { id: membership.teamId },
+    const cx = await requireMembership();
+    const { project } = await requireProjectMembership(cx);
+    const row = await prisma.project.findUnique({
+      where: { id: project.id },
       select: { pluginToken: true },
     });
-    return NextResponse.json({ hasToken: Boolean(team?.pluginToken) });
+    return NextResponse.json({ hasToken: Boolean(row?.pluginToken) });
   } catch (e) {
     const msg = e instanceof Error ? e.message : "ERROR";
     return NextResponse.json({ error: msg }, { status: 400 });
@@ -19,11 +20,12 @@ export async function GET() {
 
 export async function POST() {
   try {
-    const { membership } = await requireMembership();
-    assertRole(membership.role, ["pm", "backend", "mobile", "ai"]);
+    const cx = await requireMembership();
+    const { project, projectMembership } = await requireProjectMembership(cx);
+    assertRole(projectMembership.role, ["pm", "backend", "mobile", "ai"]);
     const token = `figpi_${randomBytes(24).toString("hex")}`;
-    await prisma.team.update({
-      where: { id: membership.teamId },
+    await prisma.project.update({
+      where: { id: project.id },
       data: { pluginToken: token },
     });
     return NextResponse.json({ token });

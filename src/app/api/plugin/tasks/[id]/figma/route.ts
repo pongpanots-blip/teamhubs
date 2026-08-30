@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/db";
-import { requireTeamFromPluginToken } from "@/lib/plugin-auth";
+import { requireProjectFromPluginToken } from "@/lib/plugin-auth";
 import { httpUrlSchema } from "@/lib/url-schema";
 
 const bodySchema = z.object({
@@ -16,11 +16,11 @@ type Params = { params: Promise<{ id: string }> };
 
 export async function POST(req: Request, { params }: Params) {
   try {
-    const team = await requireTeamFromPluginToken(req);
+    const project = await requireProjectFromPluginToken(req);
     const { id } = await params;
     const body = bodySchema.parse(await req.json());
 
-    const existing = await prisma.task.findFirst({ where: { id, teamId: team.id } });
+    const existing = await prisma.task.findFirst({ where: { id, projectId: project.id } });
     if (!existing) return NextResponse.json({ error: "NOT_FOUND" }, { status: 404 });
 
     const figmaReady = body.status === "ready_for_dev";

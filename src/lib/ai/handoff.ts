@@ -1,7 +1,12 @@
 import { z } from "zod";
 import type { ClaudeTaskAnalysis } from "@/lib/ai/schemas";
 import { parseBusinessRules, type BusinessRule } from "@/lib/business-rules";
-import { callModel, hasAiKey } from "@/lib/ai/model-client";
+import {
+  callModel,
+  hasAiKey,
+  extractBalancedJson,
+  ResponseTruncatedError,
+} from "@/lib/ai/model-client";
 
 /**
  * Handoff writer — splits a READY requirement into role-scoped markdown docs.
@@ -130,38 +135,38 @@ export async function generateHandoffDocs(
     return { docs, raw: docs };
   }
 
-  const text = await callModel({
-    system: SYSTEM,
-    maxTokens: 3072,
-    messages: [
-      {
-        role: "user",
-        content: JSON.stringify({
-          task: {
-            title: input.taskTitle,
-            description: input.description,
-            requirement: input.requirement,
-            businessRules: rules,
-            acceptanceCriteria: input.acceptanceCriteria,
-            figmaUrl: input.figmaUrl,
-            figmaReady: input.figmaReady,
-            githubIssueUrl: input.githubIssueUrl,
-            githubPrUrl: input.githubPrUrl,
-            internalDocPaths: input.internalDocPaths,
-            dependencies: input.dependencies,
-          },
-          analysis: input.analysis,
-          engineOutput: input.engineOutput,
-        }),
-      },
-    ],
-  });
+  const messages = [
+    {
+      role: "user" as const,
+      content: JSON.stringify({
+        task: {
+          title: input.taskTitle,
+          description: input.description,
+          requirement: input.requirement,
+          businessRules: rules,
+          acceptanceCriteria: input.acceptanceCriteria,
+          figmaUrl: input.figmaUrl,
+          figmaReady: input.figmaReady,
+          githubIssueUrl: input.githubIssueUrl,
+          githubPrUrl: input.githubPrUrl,
+          internalDocPaths: input.internalDocPaths,
+          dependencies: input.dependencies,
+        },
+        analysis: input.analysis,
+        engineOutput: input.engineOutput,
+      }),
+    },
+  ];
 
-  const jsonMatch = text.match(/\[[\s\S]*\]/);
-  if (!jsonMatch) {
-    throw new Error("Claude did not return a JSON array");
+  let text: string;
+  try {
+    text = await callModel({ system: SYSTEM, messages, maxTokens: 3072 });
+  } catch (e) {
+    if (!(e instanceof ResponseTruncatedError)) throw e;
+    text = await callModel({ system: SYSTEM, messages, maxTokens: 6144 });
   }
-  const raw = JSON.parse(jsonMatch[0]);
+
+  const raw = JSON.parse(extractBalancedJson(text));
   const docs = HandoffDocsSchema.parse(raw);
   return { docs, raw };
 }

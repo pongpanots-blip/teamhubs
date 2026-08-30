@@ -17,7 +17,7 @@ export default async function SettingsPage() {
   const { project, projects } = await resolveCurrentProject(membership);
   if (!project) redirect("/onboarding");
 
-  const [invites, providers, team, teamMembers, projectMembers] = await Promise.all([
+  const [invites, providers, projectRow, teamMembers, projectMembers] = await Promise.all([
     membership.role === "pm"
       ? prisma.invite.findMany({
           where: { teamId: membership.teamId },
@@ -28,8 +28,8 @@ export default async function SettingsPage() {
       where: { projectId: project.id },
       select: { provider: true, updatedAt: true },
     }),
-    prisma.team.findUnique({
-      where: { id: membership.teamId },
+    prisma.project.findUnique({
+      where: { id: project.id },
       select: { pluginToken: true },
     }),
     membership.role === "pm"
@@ -64,7 +64,7 @@ export default async function SettingsPage() {
           provider: p.provider,
           updatedAt: p.updatedAt.toISOString(),
         }))}
-        hasPluginToken={Boolean(team?.pluginToken)}
+        hasPluginToken={Boolean(projectRow?.pluginToken)}
         projects={projects}
         currentProjectId={project.id}
         currentProjectSlug={project.slug}

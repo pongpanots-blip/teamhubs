@@ -1,9 +1,9 @@
-import Anthropic from "@anthropic-ai/sdk";
 import {
   BusinessRulesSchema,
   slugifyRuleKey,
   type BusinessRule,
 } from "@/lib/business-rules";
+import { callModel, hasAiKey } from "@/lib/ai/model-client";
 
 const SYSTEM = `You extract product business rules from a PM's free-form requirement.
 Return ONLY valid JSON:
@@ -169,24 +169,15 @@ export async function extractDynamicRequirement(text: string): Promise<Extracted
     return { titleHint: "", requirement: "", businessRules: [] };
   }
 
-  const apiKey = process.env.ANTHROPIC_API_KEY;
-  if (!apiKey) {
+  if (!hasAiKey()) {
     return extractBusinessRulesHeuristic(trimmed);
   }
 
-  const client = new Anthropic({ apiKey });
-  const model = process.env.ANTHROPIC_MODEL ?? "claude-sonnet-4-20250514";
-  const message = await client.messages.create({
-    model,
-    max_tokens: 1500,
+  const rawText = await callModel({
     system: SYSTEM,
     messages: [{ role: "user", content: trimmed }],
+    maxTokens: 1500,
   });
-
-  const rawText = message.content
-    .filter((b) => b.type === "text")
-    .map((b) => (b.type === "text" ? b.text : ""))
-    .join("\n");
   const jsonMatch = rawText.match(/\{[\s\S]*\}/);
   if (!jsonMatch) {
     return extractBusinessRulesHeuristic(trimmed);

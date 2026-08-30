@@ -1,5 +1,5 @@
-import Anthropic from "@anthropic-ai/sdk";
 import { z } from "zod";
+import { callModel, hasAiKey } from "@/lib/ai/model-client";
 import { BusinessRuleSchema, slugifyRuleKey } from "@/lib/business-rules";
 import { extractBusinessRulesHeuristic } from "@/lib/ai/extract-rules";
 import { TASK_COMPONENTS } from "@/lib/task-constants";
@@ -81,7 +81,7 @@ function parseTurn(rawText: string): GrillTurn {
   return turn;
 }
 
-/** Offline heuristic used only when ANTHROPIC_API_KEY is unset (dev / smoke tests). */
+/** Offline heuristic used only when GEMINI_API_KEY is unset (dev / smoke tests). */
 function heuristicTurn(messages: GrillMessage[], forceFinish: boolean): GrillTurn {
   const userTurns = messages.filter((m) => m.role === "user");
   const firstIntent = userTurns[0]?.content ?? "";
@@ -137,12 +137,8 @@ export async function grillTurn(
   messages: GrillMessage[],
   forceFinish = false,
 ): Promise<GrillTurn> {
-  const apiKey = process.env.ANTHROPIC_API_KEY;
-  if (!apiKey) return heuristicTurn(messages, forceFinish);
+  if (!hasAiKey()) return heuristicTurn(messages, forceFinish);
 
-  const client = new Anthropic({ apiKey });
-  // Grilling makes many small round-trip calls per task — use the cheapest model.
-  const model = process.env.ANTHROPIC_GRILL_MODEL ?? "claude-haiku-4-5-20251001";
   const turnMessages = forceFinish
     ? [
         ...messages,
@@ -153,16 +149,6 @@ export async function grillTurn(
         },
       ]
     : messages;
-  const message = await client.messages.create({
-    model,
-    max_tokens: 1500,
-    system: SYSTEM,
-    messages: turnMessages.map((m) => ({ role: m.role, content: m.content })),
-  });
-
-  const text = message.content
-    .filter((b) => b.type === "text")
-    .map((b) => (b.type === "text" ? b.text : ""))
-    .join("\n");
+  const text = await callModel({ system: SYSTEM, messages: turnMessages, maxTokens: 1500 });
   return parseTurn(text);
 }

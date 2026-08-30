@@ -6,6 +6,7 @@ import { requireMembership } from "@/lib/auth-session";
 import { TASK_PRIORITIES, TASK_STATUSES } from "@/lib/task-constants";
 import { BusinessRuleSchema, rulesPresent } from "@/lib/business-rules";
 import { extractDynamicRequirement } from "@/lib/ai/extract-rules";
+import { httpUrlSchema } from "@/lib/url-schema";
 
 const createSchema = z.object({
   title: z.string().min(1).optional(),
@@ -18,9 +19,9 @@ const createSchema = z.object({
   priority: z.enum(TASK_PRIORITIES).optional(),
   deadline: z.string().datetime().optional().nullable(),
   assigneeId: z.string().optional().nullable(),
-  figmaUrl: z.string().optional().nullable(),
+  figmaUrl: httpUrlSchema.optional().nullable(),
   figmaReady: z.boolean().optional(),
-  githubIssueUrl: z.string().optional().nullable(),
+  githubIssueUrl: httpUrlSchema.optional().nullable(),
   apiReady: z.boolean().optional(),
   internalDocPaths: z.array(z.string()).optional(),
   dependencyIds: z.array(z.string()).optional(),

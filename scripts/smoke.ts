@@ -17,7 +17,7 @@ async function main() {
     if (!keys.includes(need)) throw new Error(`Missing rule ${need}`);
   }
 
-  const email = `smoke-${Date.now()}@teamhub.local`;
+  const email = `smoke-${Date.now()}@introverthubs.local`;
   const password = "smoke-password-123";
 
   const signUp = await auth.api.signUpEmail({

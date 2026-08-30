@@ -69,7 +69,7 @@ type ComponentDraft = GrillResult["components"][number] & {
   assigneeId: string | null;
 };
 
-const DRAFTS_KEY = "teamhub.grillDrafts";
+const DRAFTS_KEY = "introverthubs.grillDrafts";
 
 function loadDrafts(): Draft[] {
   if (typeof window === "undefined") return [];
@@ -560,7 +560,7 @@ export function TasksBoard({
             {sorted.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={6} className="py-10 text-center text-slate-500">
-                  Paste a free-form intent — TeamHub builds BusinessRules[] dynamically.
+                  Paste a free-form intent — IntrovertHubs builds BusinessRules[] dynamically.
                 </TableCell>
               </TableRow>
             ) : null}

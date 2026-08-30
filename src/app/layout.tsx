@@ -13,7 +13,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "TeamHub",
+  title: "IntrovertHubs",
   description: "Context-aware task readiness for small teams",
 };
 

@@ -1,4 +1,4 @@
-# TeamHub Requirements
+# IntrovertHubs Requirements
 
 ## Problems to solve
 
@@ -20,7 +20,7 @@ PM พิมพ์ข้อความอิสระ เช่น:
 
 > อยากให้ลูกค้าใช้ coupon ลด 10% แต่ใช้ได้ครั้งเดียว และไม่ให้ลดเกิน 500
 
-TeamHub แปลงเป็น `BusinessRules[]`:
+IntrovertHubs แปลงเป็น `BusinessRules[]`:
 
 ```json
 [

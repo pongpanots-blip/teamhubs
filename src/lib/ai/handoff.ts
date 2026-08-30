@@ -21,7 +21,7 @@ export const HandoffDocSchema = z.object({
 export const HandoffDocsSchema = z.array(HandoffDocSchema);
 export type HandoffDoc = z.infer<typeof HandoffDocSchema>;
 
-const SYSTEM = `You are the handoff writer inside TeamHub — NOT the decision brain.
+const SYSTEM = `You are the handoff writer inside IntrovertHubs — NOT the decision brain.
 
 You receive a task whose Deterministic Engine has already decided it is READY (or ASSIGNED),
 plus the prior analysis. Split this into separate, concise markdown docs, one per role, so each

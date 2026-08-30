@@ -235,7 +235,7 @@ export function SettingsPanels({
           {pluginToken ? (
             <div className="space-y-1">
               <p className="text-sm text-slate-700">
-                Paste this into the TeamHub Figma plugin. It won&apos;t be shown again.
+                Paste this into the IntrovertHubs Figma plugin. It won&apos;t be shown again.
               </p>
               <Input readOnly value={pluginToken} onFocus={(e) => e.currentTarget.select()} />
             </div>

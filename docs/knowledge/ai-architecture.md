@@ -1,6 +1,6 @@
 # AI Architecture — Claude + RAG + Deterministic Engine
 
-TeamHub ใช้ **Claude API + RAG + Deterministic Context Engine**
+IntrovertHubs ใช้ **Claude API + RAG + Deterministic Context Engine**
 
 Claude **ไม่ใช่** สมองทั้งหมด
 

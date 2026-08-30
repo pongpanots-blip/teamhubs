@@ -25,6 +25,19 @@ import {
   type TaskStatusValue,
 } from "@/lib/task-constants";
 
+const STATUS_BADGE_VARIANT: Record<
+  TaskStatusValue,
+  "default" | "secondary" | "destructive" | "outline"
+> = {
+  not_ready: "secondary",
+  ready: "default",
+  assigned: "outline",
+  working: "default",
+  blocked: "destructive",
+  review: "outline",
+  done: "secondary",
+};
+
 type Props = { params: Promise<{ id: string }> };
 
 export default async function TaskDetailPage({ params }: Props) {
@@ -70,47 +83,47 @@ export default async function TaskDetailPage({ params }: Props) {
       <div className="space-y-6">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
-            <Link href="/app/tasks" className="text-sm text-slate-500 hover:underline">
+            <Link href="/app/tasks" className="text-sm text-muted-foreground hover:underline">
               ← Tasks
             </Link>
-            <h1 className="mt-2 text-2xl font-semibold tracking-tight">{task.title}</h1>
+            <h1 className="mt-2 text-3xl font-semibold tracking-tight">{task.title}</h1>
           </div>
           <RunContextButton taskId={task.id} />
         </div>
 
-        <Card className="border-black/5 bg-white/80">
-          <CardContent className="grid gap-3 pt-6 text-sm sm:grid-cols-2 lg:grid-cols-4">
-            <KeyValue label="Owner" value={task.assignee?.name ?? "Unassigned"} />
-            <KeyValue label="Priority" value={TASK_PRIORITY_SHORT_LABEL[priority]} />
-            <KeyValue
-              label="Deadline"
-              value={task.deadline ? format(task.deadline, "MMM d") : "—"}
-            />
-            <div>
-              <div className="text-slate-500">Status</div>
-              <Badge className="mt-1">{TASK_STATUS_LABEL[status]}</Badge>
-            </div>
-          </CardContent>
-        </Card>
+        <div className="grid gap-4 border-b border-border pb-6 sm:grid-cols-2 lg:grid-cols-4">
+          <KeyValue label="Owner" value={task.assignee?.name ?? "Unassigned"} />
+          <KeyValue label="Priority" value={TASK_PRIORITY_SHORT_LABEL[priority]} />
+          <KeyValue
+            label="Deadline"
+            value={task.deadline ? format(task.deadline, "MMM d") : "—"}
+          />
+          <div>
+            <div className="text-xs text-muted-foreground">Status</div>
+            <Badge className="mt-1" variant={STATUS_BADGE_VARIANT[status]}>
+              {TASK_STATUS_LABEL[status]}
+            </Badge>
+          </div>
+        </div>
 
         <MissingContextPanel taskId={task.id} items={missingContextItems} />
 
-        <Card className="border-black/5 bg-white/80">
+        <Card>
           <CardHeader>
             <CardTitle className="text-base">Readiness</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="h-2 w-full overflow-hidden rounded-full bg-slate-200">
+            <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
               <div
-                className="h-full rounded-full bg-emerald-500"
+                className="h-full rounded-full bg-primary"
                 style={{ width: `${task.readinessScore}%` }}
               />
             </div>
-            <p className="mt-1 text-sm text-slate-600">{task.readinessScore}%</p>
+            <p className="mt-1 text-sm text-muted-foreground">{task.readinessScore}%</p>
           </CardContent>
         </Card>
 
-        <Card className="border-black/5 bg-white/80">
+        <Card>
           <CardHeader>
             <CardTitle className="text-base">Requirement</CardTitle>
           </CardHeader>
@@ -119,13 +132,13 @@ export default async function TaskDetailPage({ params }: Props) {
           </CardContent>
         </Card>
 
-        <Card className="border-black/5 bg-white/80">
+        <Card>
           <CardHeader>
             <CardTitle className="text-base">Business Rules</CardTitle>
           </CardHeader>
           <CardContent>
             {businessRules.length === 0 ? (
-              <p className="text-sm text-slate-500">No rules extracted yet.</p>
+              <p className="text-sm text-muted-foreground">No rules extracted yet.</p>
             ) : (
               <ul className="space-y-1 text-sm">
                 {businessRules.map((r) => (
@@ -139,13 +152,13 @@ export default async function TaskDetailPage({ params }: Props) {
           </CardContent>
         </Card>
 
-        <Card className="border-black/5 bg-white/80">
+        <Card>
           <CardHeader>
             <CardTitle className="text-base">Dependencies</CardTitle>
           </CardHeader>
           <CardContent>
             {task.dependsOn.length === 0 ? (
-              <p className="text-sm text-slate-500">—</p>
+              <p className="text-sm text-muted-foreground">—</p>
             ) : (
               <ul className="space-y-1 text-sm">
                 {task.dependsOn.map((d) => (
@@ -159,7 +172,7 @@ export default async function TaskDetailPage({ params }: Props) {
           </CardContent>
         </Card>
 
-        <Card className="border-black/5 bg-white/80">
+        <Card>
           <CardHeader>
             <CardTitle className="text-base">Design</CardTitle>
           </CardHeader>
@@ -167,7 +180,7 @@ export default async function TaskDetailPage({ params }: Props) {
             <p>🎨 UI</p>
             <p>{task.figmaReady ? "🟢 Ready for Dev" : "⚪ Not ready"}</p>
             {task.figmaFile ? (
-              <p className="text-slate-600">
+              <p className="text-muted-foreground">
                 {task.figmaFile}
                 {task.figmaPage ? ` › ${task.figmaPage}` : ""}
                 {task.figmaFrame ? ` › ${task.figmaFrame}` : ""}
@@ -183,13 +196,13 @@ export default async function TaskDetailPage({ params }: Props) {
                 Open Figma
               </Button>
             ) : (
-              <p className="text-slate-500">No Figma linked yet.</p>
+              <p className="text-muted-foreground">No Figma linked yet.</p>
             )}
           </CardContent>
         </Card>
 
         {task.githubPrUrl ? (
-          <Card className="border-black/5 bg-white/80">
+          <Card>
             <CardHeader>
               <CardTitle className="text-base">GitHub</CardTitle>
             </CardHeader>
@@ -206,7 +219,7 @@ export default async function TaskDetailPage({ params }: Props) {
           </Card>
         ) : null}
 
-        <Card className="border-black/5 bg-white/80">
+        <Card>
           <CardHeader>
             <CardTitle className="text-base">Internal Docs</CardTitle>
           </CardHeader>
@@ -220,7 +233,7 @@ export default async function TaskDetailPage({ params }: Props) {
           </CardContent>
         </Card>
 
-        <Card className="border-black/5 bg-white/80">
+        <Card>
           <CardHeader>
             <CardTitle className="text-base">Decisions</CardTitle>
           </CardHeader>
@@ -230,12 +243,16 @@ export default async function TaskDetailPage({ params }: Props) {
                 {task.decisions[0].decision}
               </a>
             ) : (
-              <p className="text-slate-500">No decisions yet.</p>
+              <p className="text-muted-foreground">No decisions yet.</p>
             )}
           </CardContent>
         </Card>
 
-        <Card id="decision-log" className="border-black/5 bg-white/80">
+        <p className="pt-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+          Activity
+        </p>
+
+        <Card id="decision-log">
           <CardHeader>
             <CardTitle className="text-base">Decision log</CardTitle>
           </CardHeader>
@@ -243,22 +260,22 @@ export default async function TaskDetailPage({ params }: Props) {
             <DecisionLogForm taskId={task.id} />
             <div className="space-y-2">
               {task.decisions.map((d) => (
-                <div key={d.id} className="rounded-lg border border-black/5 p-3 text-sm">
+                <div key={d.id} className="rounded-lg border border-border bg-muted/40 p-3 text-sm">
                   <div className="font-medium">{d.decision}</div>
-                  {d.rationale ? <p className="text-slate-600">{d.rationale}</p> : null}
-                  <div className="mt-1 text-xs text-slate-400">
+                  {d.rationale ? <p className="text-muted-foreground">{d.rationale}</p> : null}
+                  <div className="mt-1 text-xs text-muted-foreground">
                     {d.author.name} · {d.createdAt.toISOString()}
                   </div>
                 </div>
               ))}
               {task.decisions.length === 0 ? (
-                <p className="text-sm text-slate-500">No decisions yet.</p>
+                <p className="text-sm text-muted-foreground">No decisions yet.</p>
               ) : null}
             </div>
           </CardContent>
         </Card>
 
-        <Card className="border-black/5 bg-white/80">
+        <Card>
           <CardHeader>
             <CardTitle className="text-base">AI advisory (Claude) → Engine decisions</CardTitle>
           </CardHeader>
@@ -280,36 +297,36 @@ export default async function TaskDetailPage({ params }: Props) {
                     assigneeName: string | null;
                   }[];
                 } | null;
-                if (!out) return <p className="text-slate-500">No engine output.</p>;
+                if (!out) return <p className="text-muted-foreground">No engine output.</p>;
                 return (
                   <div className="grid gap-4 sm:grid-cols-2">
                     <div>
-                      <div className="text-slate-500">Context summary</div>
+                      <div className="text-muted-foreground">Context summary</div>
                       <p>{out.contextSummary || "—"}</p>
                     </div>
                     <div>
-                      <div className="text-slate-500">Engine decision</div>
+                      <div className="text-muted-foreground">Engine decision</div>
                       <p>
                         Status <strong>{out.status}</strong> · Readiness{" "}
                         <strong>{out.readinessScore}</strong>
                       </p>
                       {out.blockedBy?.length ? (
-                        <div className="mt-2 rounded border border-amber-300 bg-amber-50 p-2">
-                          <p className="font-medium text-amber-900">🚧 Blocked</p>
+                        <div className="mt-2 rounded border border-destructive/30 bg-destructive/10 p-2">
+                          <p className="font-medium text-destructive">🚧 Blocked</p>
                           {out.blockedBy.map((dep) => (
-                            <p key={dep.id} className="text-xs text-amber-800">
+                            <p key={dep.id} className="text-xs text-destructive">
                               Waiting for <strong>{dep.title}</strong> ({dep.status})
                               {dep.assigneeName ? ` · Owner: ${dep.assigneeName}` : " · Unassigned"}
                             </p>
                           ))}
                         </div>
                       ) : null}
-                      <p className="text-xs text-slate-400">
+                      <p className="text-xs text-muted-foreground">
                         Claude ไม่ตั้ง status/readiness — Deterministic Engine เป็นผู้ตัดสิน
                       </p>
                     </div>
                     <div>
-                      <div className="text-slate-500">Questions for PM</div>
+                      <div className="text-muted-foreground">Questions for PM</div>
                       <ul className="list-disc pl-5">
                         {(out.questionsForPm ?? []).map((q) => (
                           <li key={q}>{q}</li>
@@ -318,7 +335,7 @@ export default async function TaskDetailPage({ params }: Props) {
                       </ul>
                     </div>
                     <div>
-                      <div className="text-slate-500">Missing context / conflicts</div>
+                      <div className="text-muted-foreground">Missing context / conflicts</div>
                       <ul className="list-disc pl-5">
                         {(out.missingContext ?? []).map((m) => (
                           <li key={m}>{m}</li>
@@ -335,25 +352,25 @@ export default async function TaskDetailPage({ params }: Props) {
                 );
               })()
             ) : (
-              <p className="text-slate-500">Run context to see Claude analysis + engine output.</p>
+              <p className="text-muted-foreground">Run context to see Claude analysis + engine output.</p>
             )}
           </CardContent>
         </Card>
 
-        <Card className="border-black/5 bg-white/80">
+        <Card>
           <CardHeader className="flex flex-row items-center justify-between gap-2">
             <CardTitle className="text-base">Handoff docs</CardTitle>
             <RegenerateHandoffButton taskId={task.id} />
           </CardHeader>
           <CardContent className="space-y-4">
             {task.handoffDocs.length === 0 ? (
-              <p className="text-sm text-slate-500">
+              <p className="text-sm text-muted-foreground">
                 No handoff docs yet — generated automatically once the task is ready, or via
                 Regenerate.
               </p>
             ) : (
               task.handoffDocs.map((doc) => (
-                <div key={doc.id} className="rounded-lg border border-black/5 p-3 text-sm">
+                <div key={doc.id} className="rounded-lg border border-border bg-muted/40 p-3 text-sm">
                   <div className="mb-2 flex items-center justify-between gap-2">
                     <div>
                       <Badge className="mr-2">{doc.role}</Badge>
@@ -373,21 +390,21 @@ export default async function TaskDetailPage({ params }: Props) {
           </CardContent>
         </Card>
 
-        <Card className="border-black/5 bg-white/80">
+        <Card>
           <CardHeader>
             <CardTitle className="text-base">Recent context runs</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             {task.contextRuns.map((run) => (
-              <div key={run.id} className="rounded-lg border border-black/5 p-3 text-xs">
-                <div className="mb-2 text-slate-500">{run.createdAt.toISOString()}</div>
+              <div key={run.id} className="rounded-lg border border-border bg-muted/40 p-3 text-xs">
+                <div className="mb-2 text-muted-foreground">{run.createdAt.toISOString()}</div>
                 <pre className="max-h-48 overflow-auto whitespace-pre-wrap">
                   {JSON.stringify(run.engineOutput, null, 2)}
                 </pre>
               </div>
             ))}
             {task.contextRuns.length === 0 ? (
-              <p className="text-sm text-slate-500">No runs yet.</p>
+              <p className="text-sm text-muted-foreground">No runs yet.</p>
             ) : null}
           </CardContent>
         </Card>
@@ -399,7 +416,7 @@ export default async function TaskDetailPage({ params }: Props) {
 function KeyValue({ label, value }: { label: string; value: string }) {
   return (
     <div>
-      <div className="text-slate-500">{label}</div>
+      <div className="text-muted-foreground">{label}</div>
       <p className="font-medium">{value}</p>
     </div>
   );

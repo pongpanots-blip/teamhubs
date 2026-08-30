@@ -31,6 +31,13 @@ export async function POST(req: Request) {
             role: "pm",
           },
         },
+        projects: {
+          create: {
+            name: body.teamName,
+            slug: "general",
+            memberships: { create: { userId: user.id, role: "pm" } },
+          },
+        },
       },
     });
 

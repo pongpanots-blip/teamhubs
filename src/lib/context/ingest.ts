@@ -67,9 +67,10 @@ function extractTitle(content: string): string | null {
   return match ? match[1]!.trim().slice(0, 200) : null;
 }
 
-/** Create or replace one team doc. Does not index — call indexTeamDoc after. */
+/** Create or replace one project's doc. Does not index — call indexTeamDoc after. */
 export async function saveTeamDoc(
   teamId: string,
+  projectId: string,
   rawPath: string,
   content: string,
   source: "upload" | "repo" = "upload",
@@ -81,8 +82,8 @@ export async function saveTeamDoc(
 
   const data = { content, sizeBytes, source, title: extractTitle(content), indexedAt: null };
   return prisma.teamDoc.upsert({
-    where: { teamId_path: { teamId, path: docPath } },
-    create: { teamId, path: docPath, ...data },
+    where: { projectId_path: { projectId, path: docPath } },
+    create: { teamId, projectId, path: docPath, ...data },
     update: data,
   });
 }
@@ -93,13 +94,14 @@ export async function indexTeamDoc(doc: TeamDoc): Promise<number> {
   const embeddings = await embedTexts(chunks);
 
   await prisma.docChunk.deleteMany({
-    where: { teamId: doc.teamId, sourcePath: doc.path },
+    where: { projectId: doc.projectId, sourcePath: doc.path },
   });
 
   for (let i = 0; i < chunks.length; i++) {
     const created = await prisma.docChunk.create({
       data: {
         teamId: doc.teamId,
+        projectId: doc.projectId,
         sourcePath: doc.path,
         content: chunks[i]!,
         chunkIndex: i,
@@ -120,9 +122,9 @@ export async function indexTeamDoc(doc: TeamDoc): Promise<number> {
   return chunks.length;
 }
 
-/** Re-embed every doc the team owns. */
-export async function reindexTeamDocs(teamId: string) {
-  const docs = await prisma.teamDoc.findMany({ where: { teamId }, orderBy: { path: "asc" } });
+/** Re-embed every doc the project owns. */
+export async function reindexTeamDocs(projectId: string) {
+  const docs = await prisma.teamDoc.findMany({ where: { projectId }, orderBy: { path: "asc" } });
   let chunks = 0;
   for (const doc of docs) {
     chunks += await indexTeamDoc(doc);
@@ -130,29 +132,29 @@ export async function reindexTeamDocs(teamId: string) {
   // Drop chunks left behind by docs that no longer exist.
   const paths = docs.map((d) => d.path);
   await prisma.docChunk.deleteMany({
-    where: { teamId, ...(paths.length ? { sourcePath: { notIn: paths } } : {}) },
+    where: { projectId, ...(paths.length ? { sourcePath: { notIn: paths } } : {}) },
   });
   return { files: docs.length, chunks };
 }
 
-export async function deleteTeamDoc(teamId: string, rawPath: string) {
+export async function deleteTeamDoc(projectId: string, rawPath: string) {
   const docPath = normalizeDocPath(rawPath);
-  const deleted = await prisma.teamDoc.deleteMany({ where: { teamId, path: docPath } });
+  const deleted = await prisma.teamDoc.deleteMany({ where: { projectId, path: docPath } });
   if (deleted.count === 0) throw new DocError("DOC_NOT_FOUND");
-  await prisma.docChunk.deleteMany({ where: { teamId, sourcePath: docPath } });
+  await prisma.docChunk.deleteMany({ where: { projectId, sourcePath: docPath } });
 }
 
 /**
- * Seed a team from the repo's own `docs/**` — a bootstrap convenience only.
- * Real teams upload their own docs; these land as TeamDoc rows like any other.
+ * Seed a project from the repo's own `docs/**` — a bootstrap convenience only.
+ * Real projects upload their own docs; these land as TeamDoc rows like any other.
  */
-export async function importRepoDocsForTeam(teamId: string, docsRoot?: string) {
+export async function importRepoDocsForTeam(teamId: string, projectId: string, docsRoot?: string) {
   const root = docsRoot ?? path.join(process.cwd(), "docs");
   const files = await walkMarkdown(root);
 
   let chunks = 0;
   for (const file of files) {
-    const doc = await saveTeamDoc(teamId, file.relative, file.content, "repo");
+    const doc = await saveTeamDoc(teamId, projectId, file.relative, file.content, "repo");
     chunks += await indexTeamDoc(doc);
   }
   return { files: files.length, chunks };
@@ -167,7 +169,7 @@ export type RetrievedChunk = {
 };
 
 export async function retrieveRelevantChunks(
-  teamId: string,
+  projectId: string,
   query: string,
   topK = 6,
   maxDistance = RAG_MAX_DISTANCE,
@@ -175,16 +177,18 @@ export async function retrieveRelevantChunks(
   const [embedding] = await embedTexts([query]);
   // Plain ORDER BY + LIMIT so the HNSW index (DocChunk_embedding_hnsw_idx) is
   // usable; a WHERE on the distance expression would force a sequential scan.
+  // Scoped by projectId, not teamId — otherwise one project's grilling session
+  // could surface another project's docs as if they were relevant context.
   const rows = await prisma.$queryRawUnsafe<
     { id: string; sourcePath: string; content: string; chunkIndex: number; distance: number }[]
   >(
     `SELECT id, "sourcePath", content, "chunkIndex", (embedding <=> $1::vector) AS distance
      FROM "DocChunk"
-     WHERE "teamId" = $2 AND embedding IS NOT NULL
+     WHERE "projectId" = $2 AND embedding IS NOT NULL
      ORDER BY embedding <=> $1::vector
      LIMIT $3`,
     vectorLiteral(embedding!),
-    teamId,
+    projectId,
     topK,
   );
   // Drop chunks that are merely the least-bad match — they are noise to Claude.

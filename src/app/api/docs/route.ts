@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { requireMembership, assertRole } from "@/lib/auth-session";
+import { requireMembership, requireProjectMembership, assertRole } from "@/lib/auth-session";
 import {
   DocError,
   MAX_DOC_BYTES,
@@ -11,10 +11,10 @@ import { prisma } from "@/lib/db";
 
 const MAX_FILES_PER_REQUEST = 20;
 
-async function listDocs(teamId: string) {
+async function listDocs(projectId: string) {
   const [docs, counts] = await Promise.all([
     prisma.teamDoc.findMany({
-      where: { teamId },
+      where: { projectId },
       orderBy: { path: "asc" },
       select: {
         path: true,
@@ -27,7 +27,7 @@ async function listDocs(teamId: string) {
     }),
     prisma.docChunk.groupBy({
       by: ["sourcePath"],
-      where: { teamId },
+      where: { projectId },
       _count: { id: true },
     }),
   ]);
@@ -37,8 +37,9 @@ async function listDocs(teamId: string) {
 
 export async function GET() {
   try {
-    const { membership } = await requireMembership();
-    return NextResponse.json({ docs: await listDocs(membership.teamId) });
+    const cx = await requireMembership();
+    const { project } = await requireProjectMembership(cx);
+    return NextResponse.json({ docs: await listDocs(project.id) });
   } catch (e) {
     return errorResponse(e);
   }
@@ -47,8 +48,10 @@ export async function GET() {
 /** Upload one or more markdown docs (multipart/form-data, field name `files`). */
 export async function POST(req: Request) {
   try {
-    const { membership } = await requireMembership();
-    assertRole(membership.role, ["pm", "ui", "backend", "mobile", "ai"]);
+    const cx = await requireMembership();
+    const { membership } = cx;
+    const { project, projectMembership } = await requireProjectMembership(cx);
+    assertRole(projectMembership.role, ["pm", "ui", "backend", "mobile", "ai"]);
 
     const form = await req.formData();
     const files = form.getAll("files").filter((f): f is File => f instanceof File);
@@ -58,11 +61,11 @@ export async function POST(req: Request) {
     const indexed: { path: string; chunks: number }[] = [];
     for (const file of files) {
       if (file.size > MAX_DOC_BYTES) throw new DocError("DOC_TOO_LARGE");
-      const doc = await saveTeamDoc(membership.teamId, file.name, await file.text());
+      const doc = await saveTeamDoc(membership.teamId, project.id, file.name, await file.text());
       indexed.push({ path: doc.path, chunks: await indexTeamDoc(doc) });
     }
 
-    return NextResponse.json({ indexed, docs: await listDocs(membership.teamId) });
+    return NextResponse.json({ indexed, docs: await listDocs(project.id) });
   } catch (e) {
     return errorResponse(e);
   }
@@ -70,12 +73,13 @@ export async function POST(req: Request) {
 
 export async function DELETE(req: Request) {
   try {
-    const { membership } = await requireMembership();
-    assertRole(membership.role, ["pm", "ui", "backend", "mobile", "ai"]);
+    const cx = await requireMembership();
+    const { project, projectMembership } = await requireProjectMembership(cx);
+    assertRole(projectMembership.role, ["pm", "ui", "backend", "mobile", "ai"]);
     const docPath = new URL(req.url).searchParams.get("path");
     if (!docPath) throw new DocError("MISSING_PATH");
-    await deleteTeamDoc(membership.teamId, docPath);
-    return NextResponse.json({ docs: await listDocs(membership.teamId) });
+    await deleteTeamDoc(project.id, docPath);
+    return NextResponse.json({ docs: await listDocs(project.id) });
   } catch (e) {
     return errorResponse(e);
   }

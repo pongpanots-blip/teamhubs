@@ -90,8 +90,10 @@ export async function POST(req: Request) {
     TASK_TAG_RE,
   );
   const task = tagMatch
-    ? await prisma.task.findFirst({ where: { id: tagMatch[1], teamId: match.row.teamId } })
-    : await prisma.task.findFirst({ where: { teamId: match.row.teamId, githubPrUrl: prUrl } });
+    ? await prisma.task.findFirst({ where: { id: tagMatch[1], projectId: match.row.projectId } })
+    : await prisma.task.findFirst({
+        where: { projectId: match.row.projectId, githubPrUrl: prUrl },
+      });
   if (!task) return NextResponse.json({ ok: true, skipped: "no task linked to this PR" });
 
   await prisma.task.update({

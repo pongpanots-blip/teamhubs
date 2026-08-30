@@ -12,6 +12,7 @@ import { DecisionLogForm } from "@/components/tasks/decision-log-form";
 import {
   RegenerateHandoffButton,
   DownloadHandoffButton,
+  UploadCompletionDocForm,
 } from "@/components/tasks/handoff-doc-actions";
 import {
   MissingContextPanel,
@@ -81,6 +82,9 @@ export default async function TaskDetailPage({ params }: Props) {
   /** Sub-tasks created from a grilling session carry a component; plain dependencies don't. */
   const subTaskDeps = task.dependsOn.filter((d) => d.dependency.component != null);
   const otherDeps = task.dependsOn.filter((d) => d.dependency.component == null);
+
+  const completionDocs = task.handoffDocs.filter((d) => d.role.startsWith("completion:"));
+  const genericHandoffDocs = task.handoffDocs.filter((d) => !d.role.startsWith("completion:"));
 
   return (
     <AppShell teamName={membership.team.name} role={membership.role}>
@@ -399,13 +403,13 @@ export default async function TaskDetailPage({ params }: Props) {
             <RegenerateHandoffButton taskId={task.id} />
           </CardHeader>
           <CardContent className="space-y-4">
-            {task.handoffDocs.length === 0 ? (
+            {genericHandoffDocs.length === 0 ? (
               <p className="text-sm text-muted-foreground">
                 No handoff docs yet — generated automatically once the task is ready, or via
                 Regenerate.
               </p>
             ) : (
-              task.handoffDocs.map((doc) => (
+              genericHandoffDocs.map((doc) => (
                 <div key={doc.id} className="rounded-lg border border-border bg-muted/40 p-3 text-sm">
                   <div className="mb-2 flex items-center justify-between gap-2">
                     <div>
@@ -425,6 +429,43 @@ export default async function TaskDetailPage({ params }: Props) {
             )}
           </CardContent>
         </Card>
+
+        {task.component ? (
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between gap-2">
+              <CardTitle className="text-base">Completion docs</CardTitle>
+              <UploadCompletionDocForm taskId={task.id} />
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {completionDocs.length === 0 ? (
+                <p className="text-sm text-muted-foreground">
+                  Nothing yet — merges a PR titled with{" "}
+                  <code className="text-xs">{`[TASK-${task.id}]`}</code> and a{" "}
+                  <code className="text-xs">{`docs/handoff/${task.id}.md`}</code> file, or an
+                  Upload here, will populate this.
+                </p>
+              ) : (
+                completionDocs.map((doc) => (
+                  <div key={doc.id} className="rounded-lg border border-border bg-muted/40 p-3 text-sm">
+                    <div className="mb-2 flex items-center justify-between gap-2">
+                      <div>
+                        <Badge className="mr-2">{doc.role.replace("completion:", "")}</Badge>
+                        <span className="font-medium">{doc.title}</span>
+                      </div>
+                      <DownloadHandoffButton
+                        fileName={`${task.title}-${doc.role}.md`}
+                        content={doc.content}
+                      />
+                    </div>
+                    <pre className="max-h-64 overflow-auto whitespace-pre-wrap text-xs">
+                      {doc.content}
+                    </pre>
+                  </div>
+                ))
+              )}
+            </CardContent>
+          </Card>
+        ) : null}
 
         <Card>
           <CardHeader>

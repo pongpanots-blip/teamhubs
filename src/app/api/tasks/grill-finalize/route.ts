@@ -94,6 +94,7 @@ export async function POST(req: Request) {
 
       if (subTasks.length) {
         const componentSummaries = subTasks.map((s) => ({
+          id: s.id,
           component: s.component! as (typeof TASK_COMPONENTS)[number],
           title: s.title,
           description: s.requirement,

@@ -1,5 +1,5 @@
-import Anthropic from "@anthropic-ai/sdk";
 import { z } from "zod";
+import { callModel, hasAiKey } from "@/lib/ai/model-client";
 import { BusinessRuleSchema, slugifyRuleKey } from "@/lib/business-rules";
 import { extractBusinessRulesHeuristic } from "@/lib/ai/extract-rules";
 import { TASK_COMPONENTS } from "@/lib/task-constants";
@@ -33,6 +33,8 @@ export type GrillResult = z.infer<typeof GrillResultSchema>;
 export const GrillTurnSchema = z.object({
   done: z.boolean(),
   question: z.string().optional(),
+  /** Short suggested answers the PM can tap instead of typing — omitted for genuinely open questions. */
+  choices: z.array(z.string().min(1)).max(5).optional(),
   result: GrillResultSchema.optional(),
 });
 export type GrillTurn = z.infer<typeof GrillTurnSchema>;
@@ -46,7 +48,7 @@ Cover, across the conversation (skip what is genuinely irrelevant, but check for
 - Which parts of the system this touches: UI, Backend/API, Mobile, AI. Only ask about a part if it's plausibly relevant.
 
 Return ONLY valid JSON, one of:
-{ "done": false, "question": string }
+{ "done": false, "question": string, "choices"?: string[] }
 or, once you have enough:
 {
   "done": true,
@@ -61,6 +63,7 @@ or, once you have enough:
 
 Rules:
 - Ask short, concrete questions. One at a time. Never a numbered list of multiple questions.
+- Whenever a question has a natural small set of likely answers (yes/no, a pick from a short list, a common default), include "choices": 2-5 short options the PM can tap instead of typing. The PM can still type a custom answer, so choices are a helpful shortcut, not a hard constraint — never invent choices for a question that is genuinely open-ended (e.g. "what should the discount amount be?").
 - Do not invent a fixed business-rules schema — only include rules this specific requirement needs.
 - "components" is the actual breakdown of sub-tasks to create — omit a component entirely if this requirement doesn't touch it.
 - Finalize (done: true) once the requirement, acceptance criteria, and affected components are clear enough to hand to engineers — do not grill forever over minor polish.`;
@@ -81,20 +84,20 @@ function parseTurn(rawText: string): GrillTurn {
   return turn;
 }
 
-/** Offline heuristic used only when ANTHROPIC_API_KEY is unset (dev / smoke tests). */
+/** Offline heuristic used only when GEMINI_API_KEY is unset (dev / smoke tests). */
 function heuristicTurn(messages: GrillMessage[], forceFinish: boolean): GrillTurn {
   const userTurns = messages.filter((m) => m.role === "user");
   const firstIntent = userTurns[0]?.content ?? "";
   const allText = userTurns.map((m) => m.content).join(" ");
 
-  const FIXED_QUESTIONS = [
-    "Acceptance criteria คืออะไรบ้าง? (ทำอะไรแล้วถือว่าเสร็จ)",
-    "มีผลกับหน้าจอ/ดีไซน์ (UI) ไหม?",
-    "ต้องมี API/Backend เพิ่มไหม?",
+  const FIXED_QUESTIONS: { question: string; choices?: string[] }[] = [
+    { question: "Acceptance criteria คืออะไรบ้าง? (ทำอะไรแล้วถือว่าเสร็จ)" },
+    { question: "มีผลกับหน้าจอ/ดีไซน์ (UI) ไหม?", choices: ["มี", "ไม่มี"] },
+    { question: "ต้องมี API/Backend เพิ่มไหม?", choices: ["ต้องมี", "ไม่ต้องมี"] },
   ];
 
   if (!forceFinish && userTurns.length <= FIXED_QUESTIONS.length) {
-    return { done: false, question: FIXED_QUESTIONS[userTurns.length - 1] };
+    return { done: false, ...FIXED_QUESTIONS[userTurns.length - 1] };
   }
 
   const heuristic = extractBusinessRulesHeuristic(firstIntent);
@@ -137,12 +140,8 @@ export async function grillTurn(
   messages: GrillMessage[],
   forceFinish = false,
 ): Promise<GrillTurn> {
-  const apiKey = process.env.ANTHROPIC_API_KEY;
-  if (!apiKey) return heuristicTurn(messages, forceFinish);
+  if (!hasAiKey()) return heuristicTurn(messages, forceFinish);
 
-  const client = new Anthropic({ apiKey });
-  // Grilling makes many small round-trip calls per task — use the cheapest model.
-  const model = process.env.ANTHROPIC_GRILL_MODEL ?? "claude-haiku-4-5-20251001";
   const turnMessages = forceFinish
     ? [
         ...messages,
@@ -153,16 +152,6 @@ export async function grillTurn(
         },
       ]
     : messages;
-  const message = await client.messages.create({
-    model,
-    max_tokens: 1500,
-    system: SYSTEM,
-    messages: turnMessages.map((m) => ({ role: m.role, content: m.content })),
-  });
-
-  const text = message.content
-    .filter((b) => b.type === "text")
-    .map((b) => (b.type === "text" ? b.text : ""))
-    .join("\n");
+  const text = await callModel({ system: SYSTEM, messages: turnMessages, maxTokens: 1500 });
   return parseTurn(text);
 }

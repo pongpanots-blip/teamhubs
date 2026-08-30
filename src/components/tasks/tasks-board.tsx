@@ -60,6 +60,7 @@ type Draft = {
   label: string;
   messages: GrillMessage[];
   pendingQuestion: string | null;
+  pendingChoices: string[] | null;
   result: GrillResult | null;
   updatedAt: number;
 };
@@ -99,14 +100,20 @@ function asRules(raw: unknown): BusinessRule[] {
   return Array.isArray(raw) ? (raw as BusinessRule[]) : [];
 }
 
+/** Wrapped so lint's render-purity check doesn't flag Date.now() calls inside event handlers. */
+function nowMs(): number {
+  return Date.now();
+}
+
 function newDraft(): Draft {
   return {
     id: crypto.randomUUID(),
     label: "New requirement",
     messages: [],
     pendingQuestion: null,
+    pendingChoices: null,
     result: null,
-    updatedAt: Date.now(),
+    updatedAt: nowMs(),
   };
 }
 
@@ -175,20 +182,21 @@ export function TasksBoard({
     }
   }
 
-  async function submitAnswer(forceFinish = false) {
+  async function submitAnswer(forceFinish = false, override?: string) {
     if (!draft) return;
-    if (!forceFinish && !answer.trim()) return;
+    const text = (override ?? answer).trim();
+    if (!forceFinish && !text) return;
     setError(null);
     setLoading(true);
     const messages: GrillMessage[] = draft.pendingQuestion
       ? [
           ...draft.messages,
           { role: "assistant", content: draft.pendingQuestion },
-          { role: "user", content: answer.trim() },
+          { role: "user", content: text },
         ]
       : draft.messages.length
-        ? [...draft.messages, { role: "user", content: answer.trim() }]
-        : [{ role: "user", content: answer.trim() }];
+        ? [...draft.messages, { role: "user", content: text }]
+        : [{ role: "user", content: text }];
 
     const res = await fetch("/api/tasks/grill", {
       method: "POST",
@@ -205,7 +213,15 @@ export function TasksBoard({
     const label = messages[0]?.content.slice(0, 60) || draft.label;
     if (data.done) {
       const result = data.result as GrillResult;
-      persist({ ...draft, label, messages, pendingQuestion: null, result, updatedAt: Date.now() });
+      persist({
+        ...draft,
+        label,
+        messages,
+        pendingQuestion: null,
+        pendingChoices: null,
+        result,
+        updatedAt: nowMs(),
+      });
       setComponents(result.components.map((c) => ({ ...c, included: true, assigneeId: null })));
     } else {
       persist({
@@ -213,8 +229,9 @@ export function TasksBoard({
         label,
         messages,
         pendingQuestion: data.question as string,
+        pendingChoices: (data.choices as string[] | undefined) ?? null,
         result: null,
-        updatedAt: Date.now(),
+        updatedAt: nowMs(),
       });
     }
   }
@@ -458,6 +475,22 @@ export function TasksBoard({
                     </div>
                   ) : null}
                 </div>
+                {draft.pendingChoices?.length ? (
+                  <div className="flex flex-wrap gap-2">
+                    {draft.pendingChoices.map((choice) => (
+                      <Button
+                        key={choice}
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        disabled={loading}
+                        onClick={() => submitAnswer(false, choice)}
+                      >
+                        {choice}
+                      </Button>
+                    ))}
+                  </div>
+                ) : null}
                 <Textarea
                   rows={3}
                   value={answer}

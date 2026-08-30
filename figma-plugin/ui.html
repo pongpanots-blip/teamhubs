@@ -20,8 +20,11 @@
 
   <div class="context" id="context">Select a frame to link…</div>
 
-  <label>Task ID</label>
-  <input id="taskId" placeholder="clxyz123..." />
+  <label>Task</label>
+  <input id="taskSearch" placeholder="Search tasks by title…" />
+  <select id="taskId">
+    <option value="">Save connection settings to load tasks…</option>
+  </select>
 
   <button class="primary" id="sendReady">🟢 Mark Ready for Dev</button>
   <button class="secondary" id="sendNotReady">Mark Not Ready</button>
@@ -38,10 +41,13 @@
   <script>
     const ctxEl = document.getElementById("context");
     const taskIdEl = document.getElementById("taskId");
+    const taskSearchEl = document.getElementById("taskSearch");
     const baseUrlEl = document.getElementById("baseUrl");
     const tokenEl = document.getElementById("token");
 
     let latestContext = null;
+    let lastTaskId = "";
+    let searchDebounce = null;
 
     window.onmessage = (e) => {
       const msg = e.data.pluginMessage;
@@ -53,9 +59,56 @@
       if (msg.type === "settings") {
         baseUrlEl.value = msg.settings.baseUrl || "";
         tokenEl.value = msg.settings.token || "";
-        taskIdEl.value = msg.settings.lastTaskId || "";
+        lastTaskId = msg.settings.lastTaskId || "";
+        if (baseUrlEl.value && tokenEl.value) loadTasks("");
       }
     };
+
+    async function loadTasks(q) {
+      const baseUrl = baseUrlEl.value.trim().replace(/\/$/, "");
+      const token = tokenEl.value.trim();
+      if (!baseUrl || !token) {
+        taskIdEl.innerHTML = '<option value="">Save connection settings to load tasks…</option>';
+        return;
+      }
+      taskIdEl.innerHTML = '<option value="">Loading tasks…</option>';
+      try {
+        const res = await fetch(baseUrl + "/api/plugin/tasks?q=" + encodeURIComponent(q || ""), {
+          headers: { Authorization: "Bearer " + token },
+        });
+        const data = await res.json();
+        if (!res.ok) {
+          taskIdEl.innerHTML = '<option value="">' + escapeHtml(data.error || "Failed to load") + "</option>";
+          return;
+        }
+        if (!data.tasks.length) {
+          taskIdEl.innerHTML = '<option value="">No tasks found</option>';
+          return;
+        }
+        taskIdEl.innerHTML =
+          '<option value="">Select a task…</option>' +
+          data.tasks
+            .map((t) => {
+              const badge = t.figmaReady ? "🟢" : "⚪";
+              return (
+                '<option value="' + escapeHtml(t.id) + '">' +
+                badge + " " + escapeHtml(t.title) + " (" + escapeHtml(t.status) + ")" +
+                "</option>"
+              );
+            })
+            .join("");
+        if (lastTaskId && data.tasks.some((t) => t.id === lastTaskId)) {
+          taskIdEl.value = lastTaskId;
+        }
+      } catch (err) {
+        taskIdEl.innerHTML = '<option value="">Network error</option>';
+      }
+    }
+
+    taskSearchEl.addEventListener("input", () => {
+      clearTimeout(searchDebounce);
+      searchDebounce = setTimeout(() => loadTasks(taskSearchEl.value.trim()), 300);
+    });
 
     function renderContext() {
       if (!latestContext || !latestContext.frameName) {
@@ -87,12 +140,13 @@
             settings: {
               baseUrl: baseUrlEl.value.trim(),
               token: tokenEl.value.trim(),
-              lastTaskId: taskIdEl.value.trim(),
+              lastTaskId: taskIdEl.value,
             },
           },
         },
         "*"
       );
+      loadTasks(taskSearchEl.value.trim());
       notify("Settings saved");
     };
 
@@ -101,11 +155,11 @@
         notify("Select a frame first", true);
         return;
       }
-      const taskId = taskIdEl.value.trim();
+      const taskId = taskIdEl.value;
       const baseUrl = baseUrlEl.value.trim().replace(/\/$/, "");
       const token = tokenEl.value.trim();
       if (!taskId || !baseUrl || !token) {
-        notify("Fill in Task ID and connection settings", true);
+        notify("Select a task and fill in connection settings", true);
         return;
       }
       if (!latestContext.fileKey) {

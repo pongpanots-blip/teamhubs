@@ -13,7 +13,7 @@ export default async function SettingsPage() {
   });
   if (!membership) redirect("/onboarding");
 
-  const [invites, providers] = await Promise.all([
+  const [invites, providers, team] = await Promise.all([
     membership.role === "pm"
       ? prisma.invite.findMany({
           where: { teamId: membership.teamId },
@@ -23,6 +23,10 @@ export default async function SettingsPage() {
     prisma.integrationCredential.findMany({
       where: { teamId: membership.teamId },
       select: { provider: true, updatedAt: true },
+    }),
+    prisma.team.findUnique({
+      where: { id: membership.teamId },
+      select: { pluginToken: true },
     }),
   ]);
 
@@ -41,6 +45,7 @@ export default async function SettingsPage() {
           provider: p.provider,
           updatedAt: p.updatedAt.toISOString(),
         }))}
+        hasPluginToken={Boolean(team?.pluginToken)}
       />
     </AppShell>
   );

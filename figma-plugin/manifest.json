@@ -1,0 +1,11 @@
+{
+  "name": "TeamHub — Ready for Dev",
+  "id": "teamhub-ready-for-dev",
+  "api": "1.0.0",
+  "main": "code.js",
+  "ui": "ui.html",
+  "editorType": ["figma"],
+  "networkAccess": {
+    "allowedDomains": ["*"]
+  }
+}

@@ -11,7 +11,6 @@ import { RunContextButton } from "@/components/tasks/run-context-button";
 import { DecisionLogForm } from "@/components/tasks/decision-log-form";
 import { parseBusinessRules } from "@/lib/business-rules";
 import {
-  TASK_PRIORITY_LABEL,
   TASK_PRIORITY_SHORT_LABEL,
   TASK_STATUS_LABEL,
   type TaskPriorityValue,

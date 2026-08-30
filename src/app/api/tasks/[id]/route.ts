@@ -11,6 +11,7 @@ import {
 } from "@/lib/business-rules";
 import { extractDynamicRequirement } from "@/lib/ai/extract-rules";
 import { cascadeFromTask } from "@/lib/engine/cascade";
+import { httpUrlSchema } from "@/lib/url-schema";
 
 const updateSchema = z.object({
   title: z.string().min(1).optional(),
@@ -23,10 +24,10 @@ const updateSchema = z.object({
   deadline: z.string().datetime().nullable().optional(),
   status: z.enum(TASK_STATUSES).optional(),
   assigneeId: z.string().nullable().optional(),
-  figmaUrl: z.string().nullable().optional(),
+  figmaUrl: httpUrlSchema.nullable().optional(),
   figmaReady: z.boolean().optional(),
-  githubIssueUrl: z.string().nullable().optional(),
-  githubPrUrl: z.string().nullable().optional(),
+  githubIssueUrl: httpUrlSchema.nullable().optional(),
+  githubPrUrl: httpUrlSchema.nullable().optional(),
   apiReady: z.boolean().optional(),
   internalDocPaths: z.array(z.string()).optional(),
   dependencyIds: z.array(z.string()).optional(),

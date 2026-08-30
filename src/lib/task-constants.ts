@@ -30,6 +30,13 @@ export const TASK_PRIORITY_LABEL: Record<TaskPriorityValue, string> = {
   p3: "P3 Low",
 };
 
+export const TASK_PRIORITY_SHORT_LABEL: Record<TaskPriorityValue, string> = {
+  p0: "Critical",
+  p1: "High",
+  p2: "Medium",
+  p3: "Low",
+};
+
 /** Assigned means ownership only — never treat as active work. */
 export function isActiveWork(status: TaskStatusValue): boolean {
   return status === "working" || status === "review";

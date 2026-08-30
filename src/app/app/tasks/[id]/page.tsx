@@ -31,7 +31,9 @@ export default async function TaskDetailPage({ params }: Props) {
     where: { id, teamId: membership.teamId },
     include: {
       assignee: true,
-      dependsOn: { include: { dependency: true } },
+      dependsOn: {
+        include: { dependency: { include: { assignee: true } } },
+      },
       decisions: {
         include: { author: { select: { name: true } } },
         orderBy: { createdAt: "desc" },

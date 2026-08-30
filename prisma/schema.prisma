@@ -36,6 +36,8 @@ enum NotificationType {
   task_unblocked
   task_blocked
   task_assigned
+  figma_ready
+  missing_context
 }
 
 enum DocSource {

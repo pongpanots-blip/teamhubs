@@ -187,6 +187,9 @@ export async function runContextPipeline(task: Task) {
     },
   });
 
+  await notifyFigmaReady(task, updated);
+  await notifyMissingContext(task, updated, engineOutput.missingContext);
+
   // The engine may have moved this task (e.g. into done/review); anything
   // depending on it must be re-evaluated too.
   const cascade = updated.status !== task.status ? await cascadeFromTask(task.id) : [];
@@ -200,6 +203,38 @@ export async function runContextPipeline(task: Task) {
     contextPack,
     validationWarnings,
   };
+}
+
+/** Design just became implementable — tell whoever is going to build it. */
+async function notifyFigmaReady(before: Task, after: Task) {
+  if (after.figmaReady === before.figmaReady || !after.figmaReady || !after.assigneeId) return;
+
+  await prisma.notification.create({
+    data: {
+      teamId: after.teamId,
+      userId: after.assigneeId,
+      taskId: after.id,
+      type: "figma_ready",
+      title: `🎨 Design ready: ${after.title}`,
+      body: `${after.title} is ready for development.`,
+    },
+  });
+}
+
+/** Claude flagged context the requirement is missing — tell the PM who owns it. */
+async function notifyMissingContext(before: Task, after: Task, missingContext: string[]) {
+  if (missingContext.length === 0 || before.readinessNotes === after.readinessNotes) return;
+
+  await prisma.notification.create({
+    data: {
+      teamId: after.teamId,
+      userId: after.createdById,
+      taskId: after.id,
+      type: "missing_context",
+      title: `⚠ Missing context: ${after.title}`,
+      body: `${after.assigneeId ? "Dev is" : "Task is"} waiting for: ${missingContext.slice(0, 3).join("; ")}`,
+    },
+  });
 }
 
 function parseBusinessRulesEmpty(raw: unknown): boolean {

@@ -16,9 +16,9 @@
     "check:home": "tsx scripts/check-home-logic.ts"
   },
   "dependencies": {
-    "@anthropic-ai/sdk": "^0.122.0",
     "@base-ui/react": "^1.7.0",
     "@better-auth/prisma-adapter": "^1.7.2",
+    "@google/genai": "^2.19.0",
     "@octokit/rest": "^22.0.1",
     "@prisma/client": "^6.19.0",
     "bcryptjs": "^3.0.3",

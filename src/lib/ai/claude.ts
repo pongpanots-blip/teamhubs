@@ -1,7 +1,7 @@
-import Anthropic from "@anthropic-ai/sdk";
 import type { ClaudeTaskAnalysis } from "@/lib/ai/schemas";
 import { validateClaudeAnalysis } from "@/lib/ai/validate";
 import { parseBusinessRules, type BusinessRule } from "@/lib/business-rules";
+import { callModel, hasAiKey } from "@/lib/ai/model-client";
 
 /**
  * Claude responsibilities (ONLY):
@@ -104,9 +104,8 @@ export async function analyzeTaskWithClaude(input: {
   const businessRules = parseBusinessRules(input.businessRules);
   const rulesText = rulesToText(businessRules);
   const slimPack = slimContextPackForPrompt(input.contextPack);
-  const apiKey = process.env.ANTHROPIC_API_KEY;
 
-  if (!apiKey) {
+  if (!hasAiKey()) {
     const hasDocs = (slimPack.docs?.length ?? 0) > 0;
     const hasDesign =
       Boolean((slimPack.figma as { name?: string } | null)?.name) ||
@@ -160,12 +159,7 @@ export async function analyzeTaskWithClaude(input: {
     return { analysis, raw, validationWarnings: warnings };
   }
 
-  const client = new Anthropic({ apiKey });
-  const model = process.env.ANTHROPIC_MODEL ?? "claude-sonnet-4-20250514";
-
-  const message = await client.messages.create({
-    model,
-    max_tokens: 2048,
+  const text = await callModel({
     system: SYSTEM,
     messages: [
       {
@@ -182,12 +176,8 @@ export async function analyzeTaskWithClaude(input: {
         }),
       },
     ],
+    maxTokens: 2048,
   });
-
-  const text = message.content
-    .filter((b) => b.type === "text")
-    .map((b) => (b.type === "text" ? b.text : ""))
-    .join("\n");
 
   const jsonMatch = text.match(/\{[\s\S]*\}/);
   if (!jsonMatch) {

@@ -1,7 +1,7 @@
 import { z } from "zod";
-import Anthropic from "@anthropic-ai/sdk";
 import type { ClaudeTaskAnalysis } from "@/lib/ai/schemas";
 import { parseBusinessRules, type BusinessRule } from "@/lib/business-rules";
+import { callModel, hasAiKey } from "@/lib/ai/model-client";
 
 /**
  * Handoff writer — splits a READY requirement into role-scoped markdown docs.
@@ -123,21 +123,16 @@ export async function generateHandoffDocs(
   input: HandoffInput,
 ): Promise<{ docs: HandoffDoc[]; raw: unknown }> {
   const rules = parseBusinessRules(input.businessRules);
-  const apiKey = process.env.ANTHROPIC_API_KEY;
 
-  if (!apiKey) {
+  if (!hasAiKey()) {
     const docs = [offlineDevDoc(input, rules)];
     if (input.figmaReady || input.figmaUrl) docs.push(offlineDesignDoc(input));
     return { docs, raw: docs };
   }
 
-  const client = new Anthropic({ apiKey });
-  const model = process.env.ANTHROPIC_MODEL ?? "claude-sonnet-4-20250514";
-
-  const message = await client.messages.create({
-    model,
-    max_tokens: 3072,
+  const text = await callModel({
     system: SYSTEM,
+    maxTokens: 3072,
     messages: [
       {
         role: "user",
@@ -161,11 +156,6 @@ export async function generateHandoffDocs(
       },
     ],
   });
-
-  const text = message.content
-    .filter((b) => b.type === "text")
-    .map((b) => (b.type === "text" ? b.text : ""))
-    .join("\n");
 
   const jsonMatch = text.match(/\[[\s\S]*\]/);
   if (!jsonMatch) {

@@ -1,0 +1,323 @@
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["postgresqlExtensions"]
+}
+
+datasource db {
+  provider   = "postgresql"
+  url        = env("DATABASE_URL")
+  extensions = [vector]
+}
+
+enum TeamRole {
+  pm
+  ui
+  dev
+}
+
+enum TaskStatus {
+  not_ready
+  ready
+  assigned
+  working
+  blocked
+  review
+  done
+}
+
+enum TaskPriority {
+  p0
+  p1
+  p2
+  p3
+}
+
+enum NotificationType {
+  task_unblocked
+  task_blocked
+  task_assigned
+}
+
+enum DocSource {
+  upload
+  repo
+}
+
+enum InviteStatus {
+  pending
+  accepted
+  revoked
+}
+
+model User {
+  id            String       @id @default(cuid())
+  name          String
+  email         String       @unique
+  emailVerified Boolean      @default(false)
+  image         String?
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+  sessions      Session[]
+  accounts      Account[]
+  memberships   Membership[]
+  assignedTasks Task[]       @relation("TaskAssignee")
+  createdTasks  Task[]       @relation("TaskCreator")
+  decisions     DecisionLog[]
+  invitesSent   Invite[]     @relation("InviteSender")
+  notifications Notification[]
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  expiresAt DateTime
+  token     String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  ipAddress String?
+  userAgent String?
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model Account {
+  id                    String    @id @default(cuid())
+  accountId             String
+  providerId            String
+  userId                String
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accessToken           String?
+  refreshToken          String?
+  idToken               String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  password              String?
+  issuer                String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  @@index([userId])
+}
+
+model Verification {
+  id         String   @id @default(cuid())
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([identifier])
+}
+
+model Team {
+  id            String                   @id @default(cuid())
+  name          String
+  slug          String                   @unique
+  createdAt     DateTime                 @default(now())
+  updatedAt     DateTime                 @updatedAt
+  memberships   Membership[]
+  invites       Invite[]
+  tasks         Task[]
+  docChunks     DocChunk[]
+  docs          TeamDoc[]
+  notifications Notification[]
+  contextRuns   ContextRun[]
+  credentials   IntegrationCredential[]
+}
+
+model Membership {
+  id        String   @id @default(cuid())
+  teamId    String
+  userId    String
+  role      TeamRole @default(dev)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  team      Team     @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([teamId, userId])
+  @@index([userId])
+}
+
+model Invite {
+  id          String       @id @default(cuid())
+  teamId      String
+  email       String
+  role        TeamRole     @default(dev)
+  token       String       @unique @default(cuid())
+  status      InviteStatus @default(pending)
+  invitedById String
+  expiresAt   DateTime
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  team        Team         @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  invitedBy   User         @relation("InviteSender", fields: [invitedById], references: [id])
+
+  @@index([teamId, email])
+}
+
+model Task {
+  id                 String       @id @default(cuid())
+  teamId             String
+  title              String
+  /// Short summary / description
+  description        String       @default("")
+  /// Explicit requirement text (must not live only in PM's head)
+  requirement        String       @default("")
+  /// Dynamic business rules — open-ended JSON array, NOT fixed coupon columns
+  businessRules      Json         @default("[]")
+  status             TaskStatus   @default(not_ready)
+  priority           TaskPriority @default(p2)
+  deadline           DateTime?
+  /// Owner — assigned person; Assigned ≠ Working
+  assigneeId         String?
+  createdById        String
+  acceptanceCriteria String       @default("")
+  figmaUrl           String?
+  /// Design is ready for implementation (not just linked)
+  figmaReady         Boolean      @default(false)
+  githubIssueUrl     String?
+  githubPrUrl        String?
+  /// Related internal doc paths (e.g. knowledge/engineering.md)
+  internalDocPaths   String[]     @default([])
+  /// Explicit API / backend readiness for this task
+  apiReady           Boolean      @default(false)
+  designLinked       Boolean      @default(false)
+  acPresent          Boolean      @default(false)
+  rulesPresent       Boolean      @default(false)
+  requirementPresent Boolean      @default(false)
+  readinessScore     Int          @default(0)
+  readinessNotes     String       @default("")
+  engineStatus       String?
+  lastContextRunId   String?
+  createdAt          DateTime     @default(now())
+  updatedAt          DateTime     @updatedAt
+
+  team        Team             @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  assignee    User?            @relation("TaskAssignee", fields: [assigneeId], references: [id])
+  createdBy   User             @relation("TaskCreator", fields: [createdById], references: [id])
+  dependsOn   TaskDependency[] @relation("DependentTask")
+  dependedBy  TaskDependency[] @relation("DependencyTask")
+  contextRuns   ContextRun[]
+  decisions     DecisionLog[]
+  notifications Notification[]
+
+  @@index([teamId, status])
+  @@index([assigneeId])
+  @@index([teamId, priority])
+}
+
+model DecisionLog {
+  id        String   @id @default(cuid())
+  taskId    String
+  authorId  String
+  decision  String
+  rationale String   @default("")
+  createdAt DateTime @default(now())
+  task      Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  author    User     @relation(fields: [authorId], references: [id])
+
+  @@index([taskId, createdAt])
+}
+
+model TaskDependency {
+  id           String   @id @default(cuid())
+  dependentId  String
+  dependencyId String
+  source       String   @default("manual") // manual | engine
+  createdAt    DateTime @default(now())
+  dependent    Task     @relation("DependentTask", fields: [dependentId], references: [id], onDelete: Cascade)
+  dependency   Task     @relation("DependencyTask", fields: [dependencyId], references: [id], onDelete: Cascade)
+
+  @@unique([dependentId, dependencyId])
+}
+
+model Notification {
+  id        String           @id @default(cuid())
+  teamId    String
+  /** Recipient. */
+  userId    String
+  taskId    String?
+  type      NotificationType
+  title     String
+  body      String
+  readAt    DateTime?
+  createdAt DateTime         @default(now())
+  team      Team             @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  task      Task?            @relation(fields: [taskId], references: [id], onDelete: Cascade)
+
+  @@index([userId, readAt])
+  @@index([teamId])
+}
+
+model TeamDoc {
+  id         String    @id @default(cuid())
+  teamId     String
+  /** Stable identifier used as DocChunk.sourcePath, e.g. "coupon.md". */
+  path       String
+  title      String?
+  content    String
+  source     DocSource @default(upload)
+  sizeBytes  Int
+  indexedAt  DateTime?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+  team       Team      @relation(fields: [teamId], references: [id], onDelete: Cascade)
+
+  @@unique([teamId, path])
+  @@index([teamId])
+}
+
+model DocChunk {
+  id         String                       @id @default(cuid())
+  teamId     String
+  sourcePath String
+  content    String
+  chunkIndex Int
+  metadata   Json?
+  // Stored via raw SQL as vector(1536); Prisma keeps a float array mirror for upserts in app layer.
+  embedding  Unsupported("vector(1536)")?
+  createdAt  DateTime                     @default(now())
+  updatedAt  DateTime                     @updatedAt
+  team       Team                         @relation(fields: [teamId], references: [id], onDelete: Cascade)
+
+  // HNSW index on `embedding` (vector_cosine_ops) lives in migration
+  // 20260830100000_docchunk_hnsw_index — Prisma cannot express it on an
+  // Unsupported() column. Keep it when squashing migrations.
+  @@unique([teamId, sourcePath, chunkIndex])
+  @@index([teamId])
+}
+
+model ContextRun {
+  id            String   @id @default(cuid())
+  teamId        String
+  taskId        String?
+  query         String
+  contextPack   Json
+  /** Parsed Claude analysis — replayed by the cascade so re-evaluation needs no API call. */
+  analysis      Json?
+  claudeRaw     Json?
+  engineOutput  Json?
+  error         String?
+  createdAt     DateTime @default(now())
+  team          Team     @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  task          Task?    @relation(fields: [taskId], references: [id], onDelete: SetNull)
+
+  @@index([teamId, taskId])
+}
+
+model IntegrationCredential {
+  id        String   @id @default(cuid())
+  teamId    String
+  provider  String // github | figma
+  payload   String // encrypted JSON
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  team      Team     @relation(fields: [teamId], references: [id], onDelete: Cascade)
+
+  @@unique([teamId, provider])
+}

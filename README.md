@@ -1,36 +1,45 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# TeamHub
 
-## Getting Started
+Web app for a small team (PM + UI + Devs): Context Engine (docs RAG, GitHub, Figma) → Claude structured JSON → Deterministic Engine (readiness / dependency / status).
 
-First, run the development server:
+## Stack
+
+- Next.js (App Router) + TypeScript + Tailwind + shadcn/ui
+- PostgreSQL 16 + pgvector (Docker Compose)
+- Prisma + Better Auth (email/password, team invites & roles)
+- Anthropic Claude API (`ANTHROPIC_API_KEY`; offline fallback when unset)
+- Local / Voyage / OpenAI embeddings (`EMBEDDING_PROVIDER`)
+
+## Quick start
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
+cp .env.example .env
+pnpm install
+# Prefer Docker when Desktop is running:
+pnpm db:up
+# Or use local Postgres with pgvector, then set DATABASE_URL in .env
+pnpm exec prisma db push   # or: pnpm db:migrate
 pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open http://localhost:3000 — register → create team → ingest docs → create task → **Run context**.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Smoke without UI (requires DB + migrated schema):
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+pnpm smoke
+```
 
-## Learn More
+## Scripts
 
-To learn more about Next.js, take a look at the following resources:
+| Script | Purpose |
+|--------|---------|
+| `pnpm db:up` | Start Postgres+pgvector |
+| `pnpm db:migrate` | Prisma migrate |
+| `pnpm docs:ingest` | CLI ingest for a team (see script) |
+| `pnpm smoke` | End-to-end smoke without UI |
+| `docker compose up --build` | Full stack (db + web) |
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Roles
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+`pm` · `ui` · `dev` — PM creates invites under Settings.

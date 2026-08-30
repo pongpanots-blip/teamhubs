@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8" />
+<style>
+  body { font: 12px -apple-system, sans-serif; margin: 0; padding: 12px; color: #111; }
+  h2 { font-size: 13px; margin: 0 0 8px; }
+  label { display: block; margin-top: 8px; font-weight: 600; }
+  input, select { width: 100%; box-sizing: border-box; padding: 6px; margin-top: 2px; font-size: 12px; }
+  button { width: 100%; margin-top: 10px; padding: 8px; font-size: 12px; cursor: pointer; }
+  .primary { background: #18a0fb; color: #fff; border: none; border-radius: 6px; }
+  .secondary { background: #f0f0f0; border: none; border-radius: 6px; }
+  .context { background: #f7f7f7; border-radius: 6px; padding: 8px; margin-top: 10px; font-size: 11px; line-height: 1.5; }
+  .muted { color: #888; }
+  details { margin-top: 12px; }
+</style>
+</head>
+<body>
+  <h2>Send to TeamHub</h2>
+
+  <div class="context" id="context">Select a frame to link…</div>
+
+  <label>Task</label>
+  <input id="taskSearch" placeholder="Search tasks by title…" />
+  <select id="taskId">
+    <option value="">Save connection settings to load tasks…</option>
+  </select>
+
+  <button class="primary" id="sendReady">🟢 Mark Ready for Dev</button>
+  <button class="secondary" id="sendNotReady">Mark Not Ready</button>
+
+  <details>
+    <summary>Connection settings</summary>
+    <label>TeamHub URL</label>
+    <input id="baseUrl" placeholder="https://your-teamhub.example.com" />
+    <label>Plugin token</label>
+    <input id="token" type="password" placeholder="figpi_..." />
+    <button class="secondary" id="saveSettings">Save settings</button>
+  </details>
+
+  <script>
+    const ctxEl = document.getElementById("context");
+    const taskIdEl = document.getElementById("taskId");
+    const taskSearchEl = document.getElementById("taskSearch");
+    const baseUrlEl = document.getElementById("baseUrl");
+    const tokenEl = document.getElementById("token");
+
+    let latestContext = null;
+    let lastTaskId = "";
+    let searchDebounce = null;
+
+    window.onmessage = (e) => {
+      const msg = e.data.pluginMessage;
+      if (!msg) return;
+      if (msg.type === "context") {
+        latestContext = msg.context;
+        renderContext();
+      }
+      if (msg.type === "settings") {
+        baseUrlEl.value = msg.settings.baseUrl || "";
+        tokenEl.value = msg.settings.token || "";
+        lastTaskId = msg.settings.lastTaskId || "";
+        if (baseUrlEl.value && tokenEl.value) loadTasks("");
+      }
+    };
+
+    async function loadTasks(q) {
+      const baseUrl = baseUrlEl.value.trim().replace(/\/$/, "");
+      const token = tokenEl.value.trim();
+      if (!baseUrl || !token) {
+        taskIdEl.innerHTML = '<option value="">Save connection settings to load tasks…</option>';
+        return;
+      }
+      taskIdEl.innerHTML = '<option value="">Loading tasks…</option>';
+      try {
+        const res = await fetch(baseUrl + "/api/plugin/tasks?q=" + encodeURIComponent(q || ""), {
+          headers: { Authorization: "Bearer " + token },
+        });
+        const data = await res.json();
+        if (!res.ok) {
+          taskIdEl.innerHTML = '<option value="">' + escapeHtml(data.error || "Failed to load") + "</option>";
+          return;
+        }
+        if (!data.tasks.length) {
+          taskIdEl.innerHTML = '<option value="">No tasks found</option>';
+          return;
+        }
+        taskIdEl.innerHTML =
+          '<option value="">Select a task…</option>' +
+          data.tasks
+            .map((t) => {
+              const badge = t.figmaReady ? "🟢" : "⚪";
+              return (
+                '<option value="' + escapeHtml(t.id) + '">' +
+                badge + " " + escapeHtml(t.title) + " (" + escapeHtml(t.status) + ")" +
+                "</option>"
+              );
+            })
+            .join("");
+        if (lastTaskId && data.tasks.some((t) => t.id === lastTaskId)) {
+          taskIdEl.value = lastTaskId;
+        }
+      } catch (err) {
+        taskIdEl.innerHTML = '<option value="">Network error</option>';
+      }
+    }
+
+    taskSearchEl.addEventListener("input", () => {
+      clearTimeout(searchDebounce);
+      searchDebounce = setTimeout(() => loadTasks(taskSearchEl.value.trim()), 300);
+    });
+
+    function renderContext() {
+      if (!latestContext || !latestContext.frameName) {
+        ctxEl.textContent = "Select a frame or layer to link…";
+        return;
+      }
+      ctxEl.innerHTML =
+        "<b>File:</b> " + escapeHtml(latestContext.fileName) + "<br/>" +
+        "<b>Page:</b> " + escapeHtml(latestContext.pageName) + "<br/>" +
+        "<b>Frame:</b> " + escapeHtml(latestContext.frameName);
+    }
+
+    function escapeHtml(s) {
+      return String(s).replace(/[&<>"']/g, (c) => ({
+        "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;",
+      }[c]));
+    }
+
+    function figmaUrlFor(ctx) {
+      const node = ctx.nodeId ? "?node-id=" + encodeURIComponent(ctx.nodeId) : "";
+      return "https://www.figma.com/file/" + ctx.fileKey + node;
+    }
+
+    document.getElementById("saveSettings").onclick = () => {
+      parent.postMessage(
+        {
+          pluginMessage: {
+            type: "save-settings",
+            settings: {
+              baseUrl: baseUrlEl.value.trim(),
+              token: tokenEl.value.trim(),
+              lastTaskId: taskIdEl.value,
+            },
+          },
+        },
+        "*"
+      );
+      loadTasks(taskSearchEl.value.trim());
+      notify("Settings saved");
+    };
+
+    async function send(status) {
+      if (!latestContext || !latestContext.frameName) {
+        notify("Select a frame first", true);
+        return;
+      }
+      const taskId = taskIdEl.value;
+      const baseUrl = baseUrlEl.value.trim().replace(/\/$/, "");
+      const token = tokenEl.value.trim();
+      if (!taskId || !baseUrl || !token) {
+        notify("Select a task and fill in connection settings", true);
+        return;
+      }
+      if (!latestContext.fileKey) {
+        notify("Save the file to Figma first (no file key yet)", true);
+        return;
+      }
+
+      parent.postMessage(
+        {
+          pluginMessage: {
+            type: "save-settings",
+            settings: { baseUrl, token, lastTaskId: taskId },
+          },
+        },
+        "*"
+      );
+
+      try {
+        const res = await fetch(baseUrl + "/api/plugin/tasks/" + encodeURIComponent(taskId) + "/figma", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: "Bearer " + token,
+          },
+          body: JSON.stringify({
+            file: latestContext.fileName,
+            page: latestContext.pageName,
+            frame: latestContext.frameName,
+            url: figmaUrlFor(latestContext),
+            status,
+          }),
+        });
+        const data = await res.json();
+        if (!res.ok) {
+          notify(data.error || "Request failed", true);
+          return;
+        }
+        notify(status === "ready_for_dev" ? "Marked Ready for Dev ✅" : "Marked Not Ready");
+      } catch (err) {
+        notify("Network error: " + err.message, true);
+      }
+    }
+
+    document.getElementById("sendReady").onclick = () => send("ready_for_dev");
+    document.getElementById("sendNotReady").onclick = () => send("not_ready");
+
+    function notify(message, error) {
+      parent.postMessage({ pluginMessage: { type: "notify", message, error: Boolean(error) } }, "*");
+    }
+
+    parent.postMessage({ pluginMessage: { type: "get-context" } }, "*");
+  </script>
+</body>
+</html>

@@ -13,6 +13,10 @@ import {
   RegenerateHandoffButton,
   DownloadHandoffButton,
 } from "@/components/tasks/handoff-doc-actions";
+import {
+  MissingContextPanel,
+  type MissingContextItem,
+} from "@/components/tasks/missing-context-panel";
 import { parseBusinessRules } from "@/lib/business-rules";
 import {
   TASK_PRIORITY_SHORT_LABEL,
@@ -55,6 +59,12 @@ export default async function TaskDetailPage({ params }: Props) {
   const businessRules = parseBusinessRules(task.businessRules);
   const prMatch = task.githubPrUrl?.match(/\/pull\/(\d+)/);
 
+  const latestRunOutput = task.contextRuns[0]?.engineOutput as {
+    missingContext?: string[];
+    questionsForPm?: string[];
+  } | null;
+  const missingContextItems = buildMissingContextItems(task, latestRunOutput);
+
   return (
     <AppShell teamName={membership.team.name} role={membership.role}>
       <div className="space-y-6">
@@ -82,6 +92,8 @@ export default async function TaskDetailPage({ params }: Props) {
             </div>
           </CardContent>
         </Card>
+
+        <MissingContextPanel taskId={task.id} items={missingContextItems} />
 
         <Card className="border-black/5 bg-white/80">
           <CardHeader>
@@ -152,8 +164,15 @@ export default async function TaskDetailPage({ params }: Props) {
             <CardTitle className="text-base">Design</CardTitle>
           </CardHeader>
           <CardContent className="space-y-2 text-sm">
-            <p>🎨 Figma</p>
+            <p>🎨 UI</p>
             <p>{task.figmaReady ? "🟢 Ready for Dev" : "⚪ Not ready"}</p>
+            {task.figmaFile ? (
+              <p className="text-slate-600">
+                {task.figmaFile}
+                {task.figmaPage ? ` › ${task.figmaPage}` : ""}
+                {task.figmaFrame ? ` › ${task.figmaFrame}` : ""}
+              </p>
+            ) : null}
             {task.figmaUrl ? (
               <Button
                 variant="outline"
@@ -384,4 +403,52 @@ function KeyValue({ label, value }: { label: string; value: string }) {
       <p className="font-medium">{value}</p>
     </div>
   );
+}
+
+function buildMissingContextItems(
+  task: {
+    requirementPresent: boolean;
+    rulesPresent: boolean;
+    acPresent: boolean;
+  },
+  latestRunOutput: { missingContext?: string[]; questionsForPm?: string[] } | null,
+): MissingContextItem[] {
+  const items: MissingContextItem[] = [];
+
+  if (!task.requirementPresent) {
+    items.push({
+      key: "requirement",
+      label: "Requirement not filled in",
+      question: "ช่วยระบุ requirement ของงานนี้ให้ชัดเจนหน่อยได้ไหม?",
+    });
+  }
+  if (!task.rulesPresent) {
+    items.push({
+      key: "rules",
+      label: "Business rules missing",
+      question: "Business rules ของงานนี้คืออะไรบ้าง?",
+    });
+  }
+  if (!task.acPresent) {
+    items.push({
+      key: "ac",
+      label: "Acceptance criteria missing",
+      question: "Acceptance criteria ของงานนี้คืออะไร?",
+    });
+  }
+
+  const engineItems = latestRunOutput?.missingContext ?? [];
+  const questions = latestRunOutput?.questionsForPm ?? [];
+  const seenLabels = new Set(items.map((i) => i.label.toLowerCase()));
+  engineItems.forEach((label, index) => {
+    if (seenLabels.has(label.toLowerCase())) return;
+    seenLabels.add(label.toLowerCase());
+    items.push({
+      key: `engine-${index}`,
+      label,
+      question: questions[index] ?? `รบกวนช่วยชี้แจง: ${label}`,
+    });
+  });
+
+  return items;
 }

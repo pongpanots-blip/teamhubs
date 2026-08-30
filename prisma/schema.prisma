@@ -36,6 +36,8 @@ enum NotificationType {
   task_unblocked
   task_blocked
   task_assigned
+  figma_ready
+  missing_context
 }
 
 enum DocSource {
@@ -116,6 +118,8 @@ model Team {
   id            String                  @id @default(cuid())
   name          String
   slug          String                  @unique
+  /// Bearer token used by the Figma plugin to push design status. Null until generated.
+  pluginToken   String?                 @unique
   createdAt     DateTime                @default(now())
   updatedAt     DateTime                @updatedAt
   memberships   Membership[]
@@ -179,6 +183,12 @@ model Task {
   figmaUrl           String?
   /// Design is ready for implementation (not just linked)
   figmaReady         Boolean      @default(false)
+  /// Figma file name, reported by the plugin
+  figmaFile          String?
+  /// Figma page name, reported by the plugin
+  figmaPage          String?
+  /// Figma frame/node name, reported by the plugin
+  figmaFrame         String?
   githubIssueUrl     String?
   githubPrUrl        String?
   /// Related internal doc paths (e.g. knowledge/engineering.md)

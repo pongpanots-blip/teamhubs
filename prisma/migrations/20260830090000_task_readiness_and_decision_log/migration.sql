@@ -1,8 +1,3 @@
--- Pre-existing drift fix: schema.prisma had columns/enum values/tables that were
--- never captured by a migration (added directly to schema.prisma without
--- `prisma migrate dev`). This migration brings migration history in line with
--- schema.prisma. Generated via `prisma migrate diff --from-url <dev db> --to-schema-datamodel`.
-
 -- CreateEnum
 CREATE TYPE "TaskPriority" AS ENUM ('p0', 'p1', 'p2', 'p3');
 
@@ -52,3 +47,4 @@ ALTER TABLE "DecisionLog" ADD CONSTRAINT "DecisionLog_taskId_fkey" FOREIGN KEY (
 
 -- AddForeignKey
 ALTER TABLE "DecisionLog" ADD CONSTRAINT "DecisionLog_authorId_fkey" FOREIGN KEY ("authorId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+

@@ -7,6 +7,10 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { RunContextButton } from "@/components/tasks/run-context-button";
 import { DecisionLogForm } from "@/components/tasks/decision-log-form";
+import {
+  MissingContextPanel,
+  type MissingContextItem,
+} from "@/components/tasks/missing-context-panel";
 import { parseBusinessRules } from "@/lib/business-rules";
 import {
   TASK_PRIORITY_LABEL,
@@ -45,6 +49,12 @@ export default async function TaskDetailPage({ params }: Props) {
   const priority = task.priority as TaskPriorityValue;
   const businessRules = parseBusinessRules(task.businessRules);
 
+  const latestRunOutput = task.contextRuns[0]?.engineOutput as {
+    missingContext?: string[];
+    questionsForPm?: string[];
+  } | null;
+  const missingContextItems = buildMissingContextItems(task, latestRunOutput);
+
   return (
     <AppShell teamName={membership.team.name} role={membership.role}>
       <div className="space-y-6">
@@ -65,6 +75,8 @@ export default async function TaskDetailPage({ params }: Props) {
           </div>
           <RunContextButton taskId={task.id} />
         </div>
+
+        <MissingContextPanel taskId={task.id} items={missingContextItems} />
 
         <div className="grid gap-4 lg:grid-cols-2">
           <Card className="border-black/5 bg-white/80">
@@ -305,4 +317,52 @@ function Flag({ label, on }: { label: string; on: boolean }) {
       <span className={on ? "text-emerald-700" : "text-amber-700"}>{on ? "yes" : "no"}</span>
     </div>
   );
+}
+
+function buildMissingContextItems(
+  task: {
+    requirementPresent: boolean;
+    rulesPresent: boolean;
+    acPresent: boolean;
+  },
+  latestRunOutput: { missingContext?: string[]; questionsForPm?: string[] } | null,
+): MissingContextItem[] {
+  const items: MissingContextItem[] = [];
+
+  if (!task.requirementPresent) {
+    items.push({
+      key: "requirement",
+      label: "Requirement not filled in",
+      question: "ช่วยระบุ requirement ของงานนี้ให้ชัดเจนหน่อยได้ไหม?",
+    });
+  }
+  if (!task.rulesPresent) {
+    items.push({
+      key: "rules",
+      label: "Business rules missing",
+      question: "Business rules ของงานนี้คืออะไรบ้าง?",
+    });
+  }
+  if (!task.acPresent) {
+    items.push({
+      key: "ac",
+      label: "Acceptance criteria missing",
+      question: "Acceptance criteria ของงานนี้คืออะไร?",
+    });
+  }
+
+  const engineItems = latestRunOutput?.missingContext ?? [];
+  const questions = latestRunOutput?.questionsForPm ?? [];
+  const seenLabels = new Set(items.map((i) => i.label.toLowerCase()));
+  engineItems.forEach((label, index) => {
+    if (seenLabels.has(label.toLowerCase())) return;
+    seenLabels.add(label.toLowerCase());
+    items.push({
+      key: `engine-${index}`,
+      label,
+      question: questions[index] ?? `รบกวนช่วยชี้แจง: ${label}`,
+    });
+  });
+
+  return items;
 }

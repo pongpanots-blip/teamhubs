@@ -147,8 +147,15 @@ export default async function TaskDetailPage({ params }: Props) {
             <CardTitle className="text-base">Design</CardTitle>
           </CardHeader>
           <CardContent className="space-y-2 text-sm">
-            <p>🎨 Figma</p>
+            <p>🎨 UI</p>
             <p>{task.figmaReady ? "🟢 Ready for Dev" : "⚪ Not ready"}</p>
+            {task.figmaFile ? (
+              <p className="text-slate-600">
+                {task.figmaFile}
+                {task.figmaPage ? ` › ${task.figmaPage}` : ""}
+                {task.figmaFrame ? ` › ${task.figmaFrame}` : ""}
+              </p>
+            ) : null}
             {task.figmaUrl ? (
               <Button
                 variant="outline"

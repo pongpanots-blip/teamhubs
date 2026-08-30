@@ -17,10 +17,12 @@ export function SettingsPanels({
   role,
   invites,
   providers,
+  hasPluginToken,
 }: {
   role: string;
   invites: { id: string; email: string; role: string; token: string; status: string }[];
   providers: { provider: string; updatedAt: string }[];
+  hasPluginToken: boolean;
 }) {
   const [email, setEmail] = useState("");
   const [inviteRole, setInviteRole] = useState("dev");
@@ -31,6 +33,8 @@ export function SettingsPanels({
   const [figmaToken, setFigmaToken] = useState("");
   const [figmaFileKey, setFigmaFileKey] = useState("");
   const [intMsg, setIntMsg] = useState<string | null>(null);
+  const [pluginToken, setPluginToken] = useState<string | null>(null);
+  const [pluginHasToken, setPluginHasToken] = useState(hasPluginToken);
 
   async function createInvite(e: React.FormEvent) {
     e.preventDefault();
@@ -74,6 +78,17 @@ export function SettingsPanels({
     });
     const data = await res.json();
     setIntMsg(res.ok ? "Figma credentials saved" : data.error);
+  }
+
+  async function generatePluginToken() {
+    const res = await fetch("/api/integrations/plugin-token", { method: "POST" });
+    const data = await res.json();
+    if (!res.ok) {
+      setIntMsg(data.error);
+      return;
+    }
+    setPluginToken(data.token);
+    setPluginHasToken(true);
   }
 
   return (
@@ -188,6 +203,29 @@ export function SettingsPanels({
             </Button>
           </form>
           {intMsg ? <p className="mt-3 text-sm text-slate-700">{intMsg}</p> : null}
+        </CardContent>
+      </Card>
+
+      <Card className="border-black/5 bg-white/80">
+        <CardHeader>
+          <CardTitle className="text-base">Figma Plugin</CardTitle>
+          <CardDescription>
+            Lets designers mark a task &quot;Ready for Dev&quot; from inside Figma.
+            Token status: {pluginHasToken ? "generated" : "not generated"}
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <Button variant="outline" size="sm" onClick={generatePluginToken}>
+            {pluginHasToken ? "Regenerate token" : "Generate token"}
+          </Button>
+          {pluginToken ? (
+            <div className="space-y-1">
+              <p className="text-sm text-slate-700">
+                Paste this into the TeamHub Figma plugin. It won&apos;t be shown again.
+              </p>
+              <Input readOnly value={pluginToken} onFocus={(e) => e.currentTarget.select()} />
+            </div>
+          ) : null}
         </CardContent>
       </Card>
     </div>

@@ -51,6 +51,44 @@ function siblingsToText(siblings: GrillHandoffComponent[]): string {
     .join("\n");
 }
 
+/**
+ * Sub-tasks from the same grill session never block each other (only the
+ * parent depends on them) — but a naive reading of the doc still leaves a
+ * dev guessing whether they can start now. Spell it out per component pair.
+ */
+function integrationToText(own: GrillHandoffComponent, siblings: GrillHandoffComponent[]): string {
+  if (siblings.length === 0) {
+    return "This is the only component for this requirement — no coordination needed.";
+  }
+
+  const backend = siblings.find((s) => s.component === "backend");
+  const consumers = siblings.filter((s) => s.component === "ui" || s.component === "mobile");
+  const lines: string[] = [];
+
+  if (own.component === "backend") {
+    if (consumers.length > 0) {
+      lines.push(
+        `**Expose a clear contract for the frontend.** ${consumers
+          .map((c) => `${TASK_COMPONENT_LABEL[c.component]} (${c.assigneeName ?? "unassigned"})`)
+          .join(" and ")} will call into what you build here — decide the endpoint(s), request/response shape, and error cases up front, and share that contract with them as early as possible so they can build against it (even before you finish the implementation).`,
+      );
+    }
+    lines.push(
+      "**You don't need to wait on anyone.** Nothing else in this requirement blocks you — start now.",
+    );
+  } else if ((own.component === "ui" || own.component === "mobile") && backend) {
+    lines.push(
+      `**You don't need to wait for ${TASK_COMPONENT_LABEL["backend"]} to be done.** Start building with mocked/sample data matching the expected response shape now, then swap in the real API once ${backend.assigneeName ?? "the backend dev"} shares the contract for "${backend.title}".`,
+    );
+  } else {
+    lines.push(
+      "**You don't need to wait on anyone.** Nothing else in this requirement blocks you — start now.",
+    );
+  }
+
+  return lines.join("\n\n");
+}
+
 export function buildGrillHandoffDoc(input: GrillHandoffInput): { title: string; content: string } {
   const rules = parseBusinessRules(input.businessRules);
   const label = TASK_COMPONENT_LABEL[input.own.component];
@@ -73,6 +111,9 @@ export function buildGrillHandoffDoc(input: GrillHandoffInput): { title: string;
     `**${input.own.title}**`,
     "",
     input.own.description || "—",
+    "",
+    "## Can you start now? / How this fits with the rest",
+    integrationToText(input.own, input.siblings),
     "",
     "## Other components in this requirement",
     siblingsToText(input.siblings),

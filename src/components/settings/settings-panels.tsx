@@ -28,6 +28,7 @@ export function SettingsPanels({
   const [ghToken, setGhToken] = useState("");
   const [ghOwner, setGhOwner] = useState("");
   const [ghRepo, setGhRepo] = useState("");
+  const [ghWebhookSecret, setGhWebhookSecret] = useState("");
   const [figmaToken, setFigmaToken] = useState("");
   const [figmaFileKey, setFigmaFileKey] = useState("");
   const [intMsg, setIntMsg] = useState<string | null>(null);
@@ -55,7 +56,7 @@ export function SettingsPanels({
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         provider: "github",
-        payload: { token: ghToken, owner: ghOwner, repo: ghRepo },
+        payload: { token: ghToken, owner: ghOwner, repo: ghRepo, webhookSecret: ghWebhookSecret },
       }),
     });
     const data = await res.json();
@@ -138,7 +139,9 @@ export function SettingsPanels({
         <CardHeader>
           <CardTitle className="text-base">GitHub</CardTitle>
           <CardDescription>
-            Connected: {providers.some((p) => p.provider === "github") ? "yes" : "no"}
+            Connected: {providers.some((p) => p.provider === "github") ? "yes" : "no"}. Add a webhook
+            to your repo pointing at <code>/api/webhooks/github</code> (content type
+            application/json, events: Pull requests) to auto-resolve dependencies on merge.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -154,6 +157,14 @@ export function SettingsPanels({
             <div className="space-y-2">
               <Label>Repo</Label>
               <Input value={ghRepo} onChange={(e) => setGhRepo(e.target.value)} />
+            </div>
+            <div className="space-y-2 sm:col-span-3">
+              <Label>Webhook secret</Label>
+              <Input
+                type="password"
+                value={ghWebhookSecret}
+                onChange={(e) => setGhWebhookSecret(e.target.value)}
+              />
             </div>
             <Button type="submit" className="sm:col-span-3">
               Save GitHub

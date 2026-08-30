@@ -10,6 +10,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { RunContextButton } from "@/components/tasks/run-context-button";
 import { DecisionLogForm } from "@/components/tasks/decision-log-form";
 import {
+  RegenerateHandoffButton,
+  DownloadHandoffButton,
+} from "@/components/tasks/handoff-doc-actions";
+import {
   MissingContextPanel,
   type MissingContextItem,
 } from "@/components/tasks/missing-context-panel";
@@ -45,6 +49,7 @@ export default async function TaskDetailPage({ params }: Props) {
         orderBy: { createdAt: "desc" },
       },
       contextRuns: { orderBy: { createdAt: "desc" }, take: 3 },
+      handoffDocs: { orderBy: { role: "asc" } },
     },
   });
   if (!task) notFound();
@@ -331,6 +336,39 @@ export default async function TaskDetailPage({ params }: Props) {
               })()
             ) : (
               <p className="text-slate-500">Run context to see Claude analysis + engine output.</p>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card className="border-black/5 bg-white/80">
+          <CardHeader className="flex flex-row items-center justify-between gap-2">
+            <CardTitle className="text-base">Handoff docs</CardTitle>
+            <RegenerateHandoffButton taskId={task.id} />
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {task.handoffDocs.length === 0 ? (
+              <p className="text-sm text-slate-500">
+                No handoff docs yet — generated automatically once the task is ready, or via
+                Regenerate.
+              </p>
+            ) : (
+              task.handoffDocs.map((doc) => (
+                <div key={doc.id} className="rounded-lg border border-black/5 p-3 text-sm">
+                  <div className="mb-2 flex items-center justify-between gap-2">
+                    <div>
+                      <Badge className="mr-2">{doc.role}</Badge>
+                      <span className="font-medium">{doc.title}</span>
+                    </div>
+                    <DownloadHandoffButton
+                      fileName={`${task.title}-${doc.role}.md`}
+                      content={doc.content}
+                    />
+                  </div>
+                  <pre className="max-h-64 overflow-auto whitespace-pre-wrap text-xs">
+                    {doc.content}
+                  </pre>
+                </div>
+              ))
             )}
           </CardContent>
         </Card>

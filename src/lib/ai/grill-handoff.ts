@@ -8,6 +8,7 @@ import { parseBusinessRules, type BusinessRule } from "@/lib/business-rules";
  * assistant and start implementing immediately.
  */
 export type GrillHandoffComponent = {
+  id: string;
   component: TaskComponentValue;
   title: string;
   description: string;
@@ -89,6 +90,14 @@ function integrationToText(own: GrillHandoffComponent, siblings: GrillHandoffCom
   return lines.join("\n\n");
 }
 
+function deployChecklistToText(taskId: string): string {
+  return [
+    `1. Put \`[TASK-${taskId}]\` in your PR title — the system links the merge to this exact sub-task automatically (no need to paste the PR URL anywhere).`,
+    `2. Commit a short completion doc to \`docs/handoff/${taskId}.md\` in the same PR — what you built, the API/interface shape, anything the other components need. On merge, it's automatically attached here and forwarded to every sibling sub-task.`,
+    `3. Didn't commit it, or need to share before merging? Upload the same .md directly on this task's page instead (Completion doc → Upload) — it forwards the same way, but doesn't change task status.`,
+  ].join("\n");
+}
+
 export function buildGrillHandoffDoc(input: GrillHandoffInput): { title: string; content: string } {
   const rules = parseBusinessRules(input.businessRules);
   const label = TASK_COMPONENT_LABEL[input.own.component];
@@ -117,6 +126,9 @@ export function buildGrillHandoffDoc(input: GrillHandoffInput): { title: string;
     "",
     "## Other components in this requirement",
     siblingsToText(input.siblings),
+    "",
+    "## Deploy checklist",
+    deployChecklistToText(input.own.id),
   ].filter((l) => l !== "");
 
   return { title, content: lines.join("\n") };

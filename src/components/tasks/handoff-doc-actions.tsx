@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type ChangeEvent } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 
@@ -53,5 +53,57 @@ export function DownloadHandoffButton({
     <Button variant="outline" size="sm" onClick={download}>
       Download .md
     </Button>
+  );
+}
+
+/**
+ * Manual alternative to committing docs/handoff/{taskId}.md to a PR — same
+ * forwarding to sibling sub-tasks, but doesn't touch status.
+ */
+export function UploadCompletionDocForm({ taskId }: { taskId: string }) {
+  const router = useRouter();
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function onFileChange(e: ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    setLoading(true);
+    setError(null);
+    try {
+      const content = await file.text();
+      const res = await fetch(`/api/tasks/${taskId}/completion-doc`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ content }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data.error ?? "Failed");
+        return;
+      }
+      router.refresh();
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return (
+    <div className="space-y-1">
+      <label className="inline-flex">
+        <Button variant="outline" size="sm" disabled={loading} nativeButton={false} render={<span />}>
+          {loading ? "Uploading…" : "Upload completion .md"}
+        </Button>
+        <input
+          type="file"
+          accept=".md,text/markdown"
+          className="hidden"
+          onChange={onFileChange}
+          disabled={loading}
+        />
+      </label>
+      {error ? <p className="text-xs text-red-600">{error}</p> : null}
+    </div>
   );
 }

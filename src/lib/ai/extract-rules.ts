@@ -3,7 +3,7 @@ import {
   slugifyRuleKey,
   type BusinessRule,
 } from "@/lib/business-rules";
-import { callModel, hasAiKey } from "@/lib/ai/model-client";
+import { callModel, hasAiKey, extractBalancedJson } from "@/lib/ai/model-client";
 
 const SYSTEM = `You extract product business rules from a PM's free-form requirement.
 Return ONLY valid JSON:
@@ -178,16 +178,13 @@ export async function extractDynamicRequirement(text: string): Promise<Extracted
     messages: [{ role: "user", content: trimmed }],
     maxTokens: 1500,
   });
-  const jsonMatch = rawText.match(/\{[\s\S]*\}/);
-  if (!jsonMatch) {
+
+  let parsed: { titleHint?: string; requirement?: string; businessRules?: unknown };
+  try {
+    parsed = JSON.parse(extractBalancedJson(rawText));
+  } catch {
     return extractBusinessRulesHeuristic(trimmed);
   }
-
-  const parsed = JSON.parse(jsonMatch[0]) as {
-    titleHint?: string;
-    requirement?: string;
-    businessRules?: unknown;
-  };
 
   const businessRules = BusinessRulesSchema.parse(parsed.businessRules ?? []).map((r) => ({
     ...r,

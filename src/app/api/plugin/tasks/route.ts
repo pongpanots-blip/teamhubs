@@ -1,14 +1,14 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
-import { requireTeamFromPluginToken } from "@/lib/plugin-auth";
+import { requireProjectFromPluginToken } from "@/lib/plugin-auth";
 
 export async function GET(req: Request) {
   try {
-    const team = await requireTeamFromPluginToken(req);
+    const project = await requireProjectFromPluginToken(req);
     const q = new URL(req.url).searchParams.get("q")?.trim() ?? "";
     const tasks = await prisma.task.findMany({
       where: {
-        teamId: team.id,
+        projectId: project.id,
         ...(q ? { title: { contains: q, mode: "insensitive" } } : {}),
       },
       select: { id: true, title: true, status: true, figmaReady: true },

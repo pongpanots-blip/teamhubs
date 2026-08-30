@@ -1,5 +1,10 @@
 import { z } from "zod";
-import { callModel, hasAiKey } from "@/lib/ai/model-client";
+import {
+  callModel,
+  hasAiKey,
+  extractBalancedJson,
+  ResponseTruncatedError,
+} from "@/lib/ai/model-client";
 import { BusinessRuleSchema, slugifyRuleKey } from "@/lib/business-rules";
 import { extractBusinessRulesHeuristic } from "@/lib/ai/extract-rules";
 import { TASK_COMPONENTS } from "@/lib/task-constants";
@@ -69,9 +74,7 @@ Rules:
 - Finalize (done: true) once the requirement, acceptance criteria, and affected components are clear enough to hand to engineers — do not grill forever over minor polish.`;
 
 function parseTurn(rawText: string): GrillTurn {
-  const jsonMatch = rawText.match(/\{[\s\S]*\}/);
-  if (!jsonMatch) throw new Error("Claude did not return JSON");
-  const parsed = JSON.parse(jsonMatch[0]);
+  const parsed = JSON.parse(extractBalancedJson(rawText));
   const turn = GrillTurnSchema.parse(parsed);
   if (turn.done && !turn.result) throw new Error("done=true but no result");
   if (!turn.done && !turn.question) throw new Error("done=false but no question");
@@ -152,6 +155,12 @@ export async function grillTurn(
         },
       ]
     : messages;
-  const text = await callModel({ system: SYSTEM, messages: turnMessages, maxTokens: 1500 });
+  let text: string;
+  try {
+    text = await callModel({ system: SYSTEM, messages: turnMessages, maxTokens: 2000 });
+  } catch (e) {
+    if (!(e instanceof ResponseTruncatedError)) throw e;
+    text = await callModel({ system: SYSTEM, messages: turnMessages, maxTokens: 4000 });
+  }
   return parseTurn(text);
 }

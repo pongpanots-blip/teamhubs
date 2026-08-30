@@ -337,8 +337,9 @@ export function SettingsPanels({
         <CardHeader>
           <CardTitle className="text-base">Figma Plugin</CardTitle>
           <CardDescription>
-            Lets designers mark a task &quot;Ready for Dev&quot; from inside Figma.
-            Token status: {pluginHasToken ? "generated" : "not generated"}
+            Lets designers mark a task &quot;Ready for Dev&quot; from inside Figma. Scoped to
+            the current project ({currentProjectSlug}). Token status:{" "}
+            {pluginHasToken ? "generated" : "not generated"}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-3">

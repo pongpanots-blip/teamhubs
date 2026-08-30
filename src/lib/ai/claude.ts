@@ -1,7 +1,7 @@
 import type { ClaudeTaskAnalysis } from "@/lib/ai/schemas";
 import { validateClaudeAnalysis } from "@/lib/ai/validate";
 import { parseBusinessRules, type BusinessRule } from "@/lib/business-rules";
-import { callModel, hasAiKey } from "@/lib/ai/model-client";
+import { callModel, hasAiKey, extractBalancedJson, ResponseTruncatedError } from "@/lib/ai/model-client";
 
 /**
  * Claude responsibilities (ONLY):
@@ -159,31 +159,34 @@ export async function analyzeTaskWithClaude(input: {
     return { analysis, raw, validationWarnings: warnings };
   }
 
-  const text = await callModel({
-    system: SYSTEM,
-    messages: [
-      {
-        role: "user",
-        content: JSON.stringify({
-          task: {
-            title: input.taskTitle,
-            description: input.taskDescription,
-            requirement: input.requirement,
-            businessRules,
-            acceptanceCriteria: input.acceptanceCriteria,
-          },
-          contextPack: slimPack,
-        }),
-      },
-    ],
-    maxTokens: 2048,
-  });
+  const messages = [
+    {
+      role: "user" as const,
+      content: JSON.stringify({
+        task: {
+          title: input.taskTitle,
+          description: input.taskDescription,
+          requirement: input.requirement,
+          businessRules,
+          acceptanceCriteria: input.acceptanceCriteria,
+        },
+        contextPack: slimPack,
+      }),
+    },
+  ];
 
-  const jsonMatch = text.match(/\{[\s\S]*\}/);
-  if (!jsonMatch) {
-    throw new Error("Claude did not return JSON");
+  // 4096 covers normal responses; if the model still hits the ceiling (rare —
+  // a very large RAG context pack can push it there), retry once with more
+  // headroom rather than surfacing a confusing JSON-parse error to the caller.
+  let text: string;
+  try {
+    text = await callModel({ system: SYSTEM, messages, maxTokens: 4096 });
+  } catch (e) {
+    if (!(e instanceof ResponseTruncatedError)) throw e;
+    text = await callModel({ system: SYSTEM, messages, maxTokens: 8192 });
   }
-  const raw = JSON.parse(jsonMatch[0]);
+
+  const raw = JSON.parse(extractBalancedJson(text));
   const { analysis, warnings } = validateClaudeAnalysis(raw);
   return { analysis, raw, validationWarnings: warnings };
 }

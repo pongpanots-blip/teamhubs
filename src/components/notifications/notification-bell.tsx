@@ -17,6 +17,15 @@ type Notification = {
 /** Polls rather than sockets — the engine only moves tasks on user actions. */
 const POLL_MS = 30_000;
 
+const TYPE_BORDER_COLOR: Record<string, string> = {
+  task_unblocked: "border-l-emerald-500",
+  task_blocked: "border-l-amber-500",
+  task_assigned: "border-l-sky-500",
+  figma_ready: "border-l-pink-500",
+  missing_context: "border-l-red-500",
+};
+const DEFAULT_BORDER_COLOR = "border-l-slate-300";
+
 export function NotificationBell() {
   const [items, setItems] = useState<Notification[]>([]);
   const [open, setOpen] = useState(false);
@@ -90,9 +99,9 @@ export function NotificationBell() {
               items.map((n) => {
                 const row = (
                   <div
-                    className={`rounded-md px-2 py-2 text-sm hover:bg-slate-900/5 ${
-                      n.readAt ? "text-slate-500" : "text-slate-900"
-                    }`}
+                    className={`rounded-md border-l-4 px-2 py-2 text-sm hover:bg-slate-900/5 ${
+                      TYPE_BORDER_COLOR[n.type] ?? DEFAULT_BORDER_COLOR
+                    } ${n.readAt ? "text-slate-500" : "text-slate-900"}`}
                   >
                     <p className="font-medium">{n.title}</p>
                     <p className="text-xs text-slate-500">{n.body}</p>

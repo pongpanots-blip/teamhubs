@@ -5,18 +5,11 @@ export async function middleware(request: NextRequest) {
   const sessionCookie = getSessionCookie(request);
   const { pathname } = request.nextUrl;
 
-  const isApp = pathname.startsWith("/app");
-  const isAuthPage =
-    pathname.startsWith("/login") ||
-    pathname.startsWith("/register") ||
-    pathname.startsWith("/onboarding");
-
-  if (isApp && !sessionCookie) {
+  // Cookie presence ≠ valid session. Only gate /app here.
+  // Do not bounce /login|/register → /app on cookie alone — that loops when
+  // the cookie is stale and the page redirects back to /login.
+  if (pathname.startsWith("/app") && !sessionCookie) {
     return NextResponse.redirect(new URL("/login", request.url));
-  }
-
-  if (isAuthPage && sessionCookie && (pathname === "/login" || pathname === "/register")) {
-    return NextResponse.redirect(new URL("/app", request.url));
   }
 
   return NextResponse.next();

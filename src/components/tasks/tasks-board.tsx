@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
+import { TaskStatusBadge } from "@/components/tasks/status-badge";
 import { resolveRecommendation } from "@/lib/ai/grill-recommendation";
 import {
   Dialog,
@@ -34,13 +35,22 @@ import {
   TASK_PRIORITY_LABEL,
   TASK_COMPONENT_LABEL,
   COMPONENT_TO_ROLE,
+  TASK_STATUSES,
   type TaskPriorityValue,
   type TaskStatusValue,
   TASK_STATUS_LABEL,
 } from "@/lib/task-constants";
+import { taskStatusStyle } from "@/lib/task-status-style";
 import { projectTask } from "@/lib/routes";
 import type { BusinessRule } from "@/lib/business-rules";
 import type { GrillMessage, GrillResult } from "@/lib/ai/grill";
+
+const PRIORITY_DOT_COLOR: Record<TaskPriorityValue, string> = {
+  p0: "oklch(0.577 0.245 27.325)",
+  p1: "oklch(0.62 0.15 70)",
+  p2: "oklch(0.55 0.05 240)",
+  p3: "var(--muted-foreground)",
+};
 
 type TaskRow = {
   id: string;
@@ -93,16 +103,6 @@ function saveDrafts(drafts: Draft[]) {
   window.localStorage.setItem(DRAFTS_KEY, JSON.stringify(drafts));
 }
 
-const statusVariant: Record<string, "default" | "secondary" | "destructive" | "outline"> = {
-  not_ready: "secondary",
-  ready: "default",
-  assigned: "outline",
-  working: "default",
-  blocked: "destructive",
-  review: "outline",
-  done: "secondary",
-};
-
 function asRules(raw: unknown): BusinessRule[] {
   return Array.isArray(raw) ? (raw as BusinessRule[]) : [];
 }
@@ -151,6 +151,9 @@ export function TasksBoard({
   const [creating, setCreating] = useState(false);
   const [runningId, setRunningId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [view, setView] = useState<"list" | "board">("list");
+  const [statusFilter, setStatusFilter] = useState<TaskStatusValue | "all">("all");
+  const [assigneeFilter, setAssigneeFilter] = useState("all");
   const currentProject = projects.find((p) => p.slug === currentProjectSlug) ?? {
     slug: currentProjectSlug,
     name: currentProjectSlug,
@@ -169,6 +172,23 @@ export function TasksBoard({
       }),
     [tasks],
   );
+
+  const assigneeOptions = useMemo(
+    () => Array.from(new Set(sorted.map((t) => t.assignee?.name).filter((n): n is string => !!n))),
+    [sorted],
+  );
+
+  const filtered = useMemo(
+    () =>
+      sorted.filter(
+        (t) =>
+          (statusFilter === "all" || t.status === statusFilter) &&
+          (assigneeFilter === "all" || t.assignee?.name === assigneeFilter),
+      ),
+    [sorted, statusFilter, assigneeFilter],
+  );
+
+  const blockedCount = sorted.filter((t) => t.status === "blocked").length;
 
   async function refresh() {
     const res = await fetch(`/api/tasks?project=${encodeURIComponent(currentProjectSlug)}`);
@@ -338,12 +358,38 @@ export function TasksBoard({
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight text-slate-900">Tasks</h1>
-          <p className="text-sm text-slate-600">
-            AI grills the PM one question at a time, then splits the work by component.
-          </p>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <h1 className="text-[22px] font-semibold tracking-tight">Tasks</h1>
+        <div className="flex items-center gap-2.5">
+          <Select value={assigneeFilter} onValueChange={(v) => v && setAssigneeFilter(v)}>
+            <SelectTrigger className="h-8 rounded-lg text-xs">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Assignee: All</SelectItem>
+              {assigneeOptions.map((name) => (
+                <SelectItem key={name} value={name}>
+                  {name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <div className="inline-flex overflow-hidden rounded-lg ring-1 ring-border">
+            <button
+              type="button"
+              onClick={() => setView("list")}
+              className={`px-3.5 py-1.5 text-xs font-medium ${view === "list" ? "bg-primary text-primary-foreground" : "text-muted-foreground"}`}
+            >
+              List
+            </button>
+            <button
+              type="button"
+              onClick={() => setView("board")}
+              className={`px-3.5 py-1.5 text-xs font-medium ${view === "board" ? "bg-primary text-primary-foreground" : "text-muted-foreground"}`}
+            >
+              Board
+            </button>
+          </div>
         </div>
         <Dialog
           open={open}
@@ -445,43 +491,51 @@ export function TasksBoard({
               </div>
             ) : draft.result ? (
               <div className="space-y-4">
-                <div className="space-y-1 rounded-lg border border-black/10 bg-slate-50 p-3">
-                  <div className="text-sm font-medium">{draft.result.titleHint}</div>
-                  <p className="text-xs text-slate-600">{draft.result.requirement}</p>
+                <div className="rounded-[14px] bg-card p-4 ring-1 ring-foreground/[0.08]">
+                  <div className="text-sm font-semibold">{draft.result.titleHint}</div>
+                  <p className="mt-1.5 text-[13px] leading-relaxed text-muted-foreground">
+                    {draft.result.requirement}
+                  </p>
                   {draft.result.acceptanceCriteria ? (
-                    <p className="text-xs text-slate-600">
+                    <p className="mt-1.5 text-[13px] leading-relaxed text-muted-foreground">
                       AC: {draft.result.acceptanceCriteria}
                     </p>
                   ) : null}
                   {draft.result.businessRules.length ? (
-                    <ul className="space-y-1 text-sm">
-                      {draft.result.businessRules.map((r) => (
-                        <li key={r.key} className="flex justify-between gap-2">
-                          <span className="text-slate-500">{r.label}</span>
+                    <div className="mt-1">
+                      {draft.result.businessRules.map((r, i) => (
+                        <div
+                          key={r.key}
+                          className={`flex justify-between gap-2 py-1.5 text-[13px] ${i > 0 ? "border-t border-border" : ""}`}
+                        >
+                          <span className="text-muted-foreground">{r.label}</span>
                           <span className="font-medium">
                             {r.value}
                             {r.unit ? ` ${r.unit}` : ""}
                           </span>
-                        </li>
+                        </div>
                       ))}
-                    </ul>
+                    </div>
                   ) : null}
                 </div>
 
-                <div className="space-y-2">
-                  <Label>Sub-task ต่อ component</Label>
+                <div className="space-y-2.5">
+                  <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
+                    Sub-tasks per component
+                  </p>
                   {components.length === 0 ? (
-                    <p className="text-xs text-slate-500">ไม่มี component ที่เกี่ยวข้อง</p>
+                    <p className="text-xs text-muted-foreground">ไม่มี component ที่เกี่ยวข้อง</p>
                   ) : null}
                   {components.map((c, i) => (
                     <div
                       key={`${c.component}-${i}`}
-                      className="space-y-2 rounded-lg border border-black/10 p-2"
+                      className="rounded-xl border border-border p-3"
                     >
-                      <div className="flex items-center justify-between gap-2">
-                        <label className="flex items-center gap-2 text-sm font-medium">
+                      <div className="mb-2 flex items-center gap-2">
+                        <label className="flex items-center gap-2 text-[13px] font-medium">
                           <input
                             type="checkbox"
+                            className="size-4 rounded border-border"
                             checked={c.included}
                             onChange={(e) =>
                               setComponents((prev) =>
@@ -491,46 +545,51 @@ export function TasksBoard({
                               )
                             }
                           />
-                          {TASK_COMPONENT_LABEL[c.component]}
+                          <Badge variant="secondary" className="font-normal">
+                            {TASK_COMPONENT_LABEL[c.component]}
+                          </Badge>
+                          <span className={c.included ? "" : "text-muted-foreground"}>{c.title}</span>
                         </label>
                       </div>
                       {c.included ? (
                         <>
-                          <p className="text-xs text-slate-600">{c.title}</p>
-                          <Select
-                            value={c.assigneeId ?? undefined}
-                            onValueChange={(value) =>
-                              setComponents((prev) =>
-                                prev.map((p, pi) =>
-                                  pi === i ? { ...p, assigneeId: value || null } : p,
-                                ),
-                              )
-                            }
-                          >
-                            <SelectTrigger>
-                              <SelectValue placeholder="Assign to…" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {members
-                                .filter(
-                                  (m) =>
-                                    m.projectSlug === draft.projectSlug &&
-                                    m.role === COMPONENT_TO_ROLE[c.component],
+                          <p className="mb-2 pl-6 text-xs text-muted-foreground">{c.description}</p>
+                          <div className="pl-6">
+                            <Select
+                              value={c.assigneeId ?? undefined}
+                              onValueChange={(value) =>
+                                setComponents((prev) =>
+                                  prev.map((p, pi) =>
+                                    pi === i ? { ...p, assigneeId: value || null } : p,
+                                  ),
                                 )
-                                .map((m) => (
-                                  <SelectItem key={m.id} value={m.id}>
-                                    {m.name}
-                                  </SelectItem>
-                                ))}
-                            </SelectContent>
-                          </Select>
+                              }
+                            >
+                              <SelectTrigger className="max-w-[220px]">
+                                <SelectValue placeholder="Assign to…" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {members
+                                  .filter(
+                                    (m) =>
+                                      m.projectSlug === draft.projectSlug &&
+                                      m.role === COMPONENT_TO_ROLE[c.component],
+                                  )
+                                  .map((m) => (
+                                    <SelectItem key={m.id} value={m.id}>
+                                      {m.name}
+                                    </SelectItem>
+                                  ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
                         </>
                       ) : null}
                     </div>
                   ))}
                 </div>
 
-                <div className="flex gap-2">
+                <div className="flex gap-2.5">
                   <Button variant="outline" className="flex-1" onClick={() => setDraft(null)}>
                     ย้อนกลับ
                   </Button>
@@ -541,49 +600,56 @@ export function TasksBoard({
               </div>
             ) : (
               <div className="space-y-3">
-                <div className="space-y-1">
+                <div className="flex flex-col gap-3">
                   {draft.messages.map((m, i) => (
-                    <div
-                      key={i}
-                      className={
-                        m.role === "user"
-                          ? "rounded-lg bg-slate-900 px-3 py-2 text-sm text-white"
-                          : "rounded-lg bg-slate-100 px-3 py-2 text-sm text-slate-800"
-                      }
-                    >
-                      {m.content}
+                    <div key={i} className={`flex ${m.role === "user" ? "justify-end" : "justify-start"}`}>
+                      <div
+                        className={
+                          m.role === "user"
+                            ? "max-w-[78%] rounded-2xl rounded-br-[4px] bg-primary px-3.5 py-2.5 text-[13px] leading-relaxed text-primary-foreground"
+                            : "max-w-[78%] rounded-2xl rounded-bl-[4px] bg-card px-3.5 py-2.5 text-[13px] leading-relaxed ring-1 ring-foreground/[0.08]"
+                        }
+                      >
+                        {m.content}
+                      </div>
                     </div>
                   ))}
                   {draft.pendingQuestion ? (
-                    <div className="rounded-lg bg-slate-100 px-3 py-2 text-sm text-slate-800">
-                      {draft.pendingQuestion}
+                    <div className="flex justify-start">
+                      <div className="max-w-[78%] rounded-2xl rounded-bl-[4px] bg-card px-3.5 py-2.5 text-[13px] leading-relaxed ring-1 ring-foreground/[0.08]">
+                        {draft.pendingQuestion}
+                      </div>
                     </div>
                   ) : null}
                   {recommendation.hintText ? (
-                    <div className="px-3 text-sm text-slate-500">💡 แนะนำ: {recommendation.hintText}</div>
+                    <div className="px-1 text-xs text-muted-foreground">
+                      💡 แนะนำ: {recommendation.hintText}
+                    </div>
                   ) : null}
                 </div>
                 {draft.pendingChoices?.length ? (
                   <div className="flex flex-wrap gap-2">
                     {draft.pendingChoices.map((choice) => (
-                      <Button
+                      <button
                         key={choice}
                         type="button"
-                        size="sm"
-                        variant="outline"
                         disabled={loading}
                         onClick={() => submitAnswer(false, choice)}
+                        className="inline-flex items-center gap-1.5 rounded-full border border-border bg-card px-3 py-1.5 text-xs disabled:opacity-50"
                       >
                         {choice}
                         {choice === recommendation.matchedChoice ? (
-                          <Badge variant="secondary">แนะนำ</Badge>
+                          <Badge variant="secondary" className="h-4 px-1.5 text-[10px]">
+                            แนะนำ
+                          </Badge>
                         ) : null}
-                      </Button>
+                      </button>
                     ))}
                   </div>
                 ) : null}
                 <Textarea
                   rows={3}
+                  className="rounded-[14px]"
                   value={answer}
                   onChange={(e) => setAnswer(e.target.value)}
                   placeholder={
@@ -592,7 +658,7 @@ export function TasksBoard({
                       : "พิมพ์คำตอบ…"
                   }
                 />
-                <div className="flex gap-2">
+                <div className="flex gap-2.5">
                   <Button
                     variant="outline"
                     className="flex-1"
@@ -619,6 +685,93 @@ export function TasksBoard({
 
       {error && !open ? <p className="text-sm text-red-600">{error}</p> : null}
 
+      <div className="flex flex-wrap items-center gap-2">
+        <button
+          type="button"
+          onClick={() => setStatusFilter("all")}
+          className={`rounded-full border px-2.5 py-1 text-xs ${
+            statusFilter === "all"
+              ? "border-primary bg-primary text-primary-foreground"
+              : "border-border text-muted-foreground"
+          }`}
+        >
+          All ({sorted.length})
+        </button>
+        {blockedCount > 0 ? (
+          <button
+            type="button"
+            onClick={() => setStatusFilter((f) => (f === "blocked" ? "all" : "blocked"))}
+            className="rounded-full border px-2.5 py-1 text-xs font-medium"
+            style={
+              statusFilter === "blocked"
+                ? { backgroundColor: "var(--st-blocked)", color: "white", borderColor: "var(--st-blocked)" }
+                : { color: "var(--st-blocked)", borderColor: "oklch(0.577 0.245 27.325 / 0.3)", backgroundColor: "var(--st-blocked-bg)" }
+            }
+          >
+            🚧 Blocked ({blockedCount})
+          </button>
+        ) : null}
+      </div>
+
+      {view === "board" ? (
+        <div className="flex gap-3.5 overflow-x-auto pb-2">
+          {TASK_STATUSES.map((s) => {
+            const columnTasks = filtered.filter((t) => t.status === s);
+            const { color } = taskStatusStyle(s);
+            return (
+              <div key={s} className="w-[232px] flex-none">
+                <div className="mb-2.5 flex items-center gap-2 px-1">
+                  <span className="size-2 shrink-0 rounded-full" style={{ backgroundColor: color }} />
+                  <span className="text-xs font-semibold tracking-wide text-foreground uppercase">
+                    {TASK_STATUS_LABEL[s]}
+                  </span>
+                  <span className="ml-auto text-[11px] text-muted-foreground">{columnTasks.length}</span>
+                </div>
+                <div
+                  className={`flex flex-col gap-2 ${s === "blocked" ? "-mx-1.5 rounded-lg p-1.5" : ""}`}
+                  style={s === "blocked" ? { backgroundColor: "var(--st-blocked-bg)" } : undefined}
+                >
+                  {columnTasks.map((t) => (
+                    <Link
+                      key={t.id}
+                      href={projectTask(currentProjectSlug, t.id)}
+                      className="block rounded-[10px] bg-card px-3 py-2.5 ring-1 ring-foreground/[0.07]"
+                    >
+                      {t.dependsOn.length > 0 ? (
+                        <span
+                          className="mb-1.5 inline-flex h-[17px] items-center rounded-full px-1.5 text-[10px] font-medium"
+                          style={{ backgroundColor: "oklch(0.52 0.14 300 / 0.1)", color: "oklch(0.46 0.14 300)" }}
+                        >
+                          🔍 part of {t.dependsOn.length} sub-tasks
+                        </span>
+                      ) : null}
+                      <p className="mb-2 text-[12.5px] font-medium leading-snug">{t.title}</p>
+                      <div className="flex items-center gap-2">
+                        <span
+                          className="size-1.5 shrink-0 rounded-full"
+                          style={{ backgroundColor: PRIORITY_DOT_COLOR[t.priority] }}
+                        />
+                        <span className="text-[11px] text-muted-foreground">
+                          {t.deadline ? new Date(t.deadline).toLocaleDateString("en-US", { month: "short", day: "numeric" }) : "—"}
+                        </span>
+                        <span className="ml-auto flex size-5 shrink-0 items-center justify-center rounded-full bg-muted text-[10px] font-semibold text-muted-foreground">
+                          {t.assignee?.name?.[0]?.toUpperCase() ?? "?"}
+                        </span>
+                      </div>
+                      <div className="mt-2 h-[3px] overflow-hidden rounded-full bg-muted">
+                        <div
+                          className="h-full rounded-full bg-foreground"
+                          style={{ width: `${t.readinessScore}%` }}
+                        />
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      ) : (
       <div className="overflow-hidden rounded-xl border border-black/5 bg-white/80">
         <Table>
           <TableHeader>
@@ -632,7 +785,7 @@ export function TasksBoard({
             </TableRow>
           </TableHeader>
           <TableBody>
-            {sorted.map((t) => {
+            {filtered.map((t) => {
               const rules = asRules(t.businessRules);
               return (
                 <TableRow key={t.id}>
@@ -640,9 +793,21 @@ export function TasksBoard({
                     <Link href={projectTask(currentProjectSlug, t.id)} className="font-medium hover:underline">
                       {t.title}
                     </Link>
-                    <div className="text-xs text-slate-500">
+                    <div className="mt-0.5 flex items-center gap-1.5 text-xs text-slate-500">
+                      <span
+                        className="size-1.5 shrink-0 rounded-full"
+                        style={{ backgroundColor: PRIORITY_DOT_COLOR[t.priority] }}
+                      />
                       {TASK_PRIORITY_LABEL[t.priority]}
                     </div>
+                    {t.dependsOn.length > 0 ? (
+                      <span
+                        className="mt-1 inline-flex h-[18px] items-center rounded-full px-1.5 text-[10.5px] font-medium"
+                        style={{ backgroundColor: "oklch(0.52 0.14 300 / 0.1)", color: "oklch(0.46 0.14 300)" }}
+                      >
+                        🔍 part of {t.dependsOn.length} sub-tasks
+                      </span>
+                    ) : null}
                   </TableCell>
                   <TableCell className="text-sm">
                     {t.assignee?.name ?? <span className="text-slate-400">Unassigned</span>}
@@ -653,9 +818,7 @@ export function TasksBoard({
                       : "—"}
                   </TableCell>
                   <TableCell>
-                    <Badge variant={statusVariant[t.status] ?? "secondary"}>
-                      {TASK_STATUS_LABEL[t.status]}
-                    </Badge>
+                    <TaskStatusBadge status={t.status} />
                   </TableCell>
                   <TableCell>
                     <div className="font-medium">{t.readinessScore}</div>
@@ -681,7 +844,7 @@ export function TasksBoard({
                 </TableRow>
               );
             })}
-            {sorted.length === 0 ? (
+            {filtered.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={6} className="py-10 text-center text-slate-500">
                   Paste a free-form intent — IntrovertHubs builds BusinessRules[] dynamically.
@@ -691,6 +854,7 @@ export function TasksBoard({
           </TableBody>
         </Table>
       </div>
+      )}
     </div>
   );
 }

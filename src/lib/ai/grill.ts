@@ -8,6 +8,7 @@ import {
 import { BusinessRuleSchema, slugifyRuleKey } from "@/lib/business-rules";
 import { extractBusinessRulesHeuristic } from "@/lib/ai/extract-rules";
 import { TASK_COMPONENTS } from "@/lib/task-constants";
+import type { RetrievedChunk } from "@/lib/context/ingest";
 
 /**
  * Task intake grilling — turns a PM's one-line intent into a real requirement
@@ -43,6 +44,17 @@ export const GrillTurnSchema = z.object({
   result: GrillResultSchema.optional(),
 });
 export type GrillTurn = z.infer<typeof GrillTurnSchema>;
+
+function buildSystemPrompt(docs: RetrievedChunk[]): string {
+  if (docs.length === 0) return SYSTEM;
+  const docsBlock = docs
+    .map((d) => `### ${d.sourcePath}\n${d.content}`)
+    .join("\n\n");
+  return `${SYSTEM}
+
+Project docs (reference, may be partial — ground your questions and the final requirement in these when relevant, and don't contradict them):
+${docsBlock}`;
+}
 
 const SYSTEM = `You are a PM intake interviewer inside IntrovertHubs. A PM opens a task with a short, often vague, intent.
 Your job: ask ONE clarifying question at a time — in the same language the PM is using — until you have enough to write a real requirement. Never accept a bare intent as "done" immediately; always dig into scope, edge cases, and who is affected before finalizing.
@@ -142,9 +154,11 @@ function heuristicTurn(messages: GrillMessage[], forceFinish: boolean): GrillTur
 export async function grillTurn(
   messages: GrillMessage[],
   forceFinish = false,
+  docs: RetrievedChunk[] = [],
 ): Promise<GrillTurn> {
   if (!hasAiKey()) return heuristicTurn(messages, forceFinish);
 
+  const system = buildSystemPrompt(docs);
   const turnMessages = forceFinish
     ? [
         ...messages,
@@ -157,10 +171,10 @@ export async function grillTurn(
     : messages;
   let text: string;
   try {
-    text = await callModel({ system: SYSTEM, messages: turnMessages, maxTokens: 2000 });
+    text = await callModel({ system, messages: turnMessages, maxTokens: 2000 });
   } catch (e) {
     if (!(e instanceof ResponseTruncatedError)) throw e;
-    text = await callModel({ system: SYSTEM, messages: turnMessages, maxTokens: 4000 });
+    text = await callModel({ system, messages: turnMessages, maxTokens: 4000 });
   }
   return parseTurn(text);
 }

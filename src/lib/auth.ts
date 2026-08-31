@@ -10,7 +10,14 @@ export const auth = betterAuth({
   user: {
     additionalFields: {},
   },
-  trustedOrigins: [process.env.BETTER_AUTH_URL ?? "http://localhost:3000"],
+  trustedOrigins: [
+    ...(process.env.BETTER_AUTH_URL ? [process.env.BETTER_AUTH_URL] : []),
+    // Dev servers frequently end up on a different port than whatever is
+    // baked into BETTER_AUTH_URL (the configured port already taken, a
+    // different machine, etc). Trust any localhost port outside production
+    // rather than hardcoding one and breaking auth every time it drifts.
+    ...(process.env.NODE_ENV !== "production" ? ["http://localhost:*"] : []),
+  ],
 });
 
 export type Session = typeof auth.$Infer.Session;

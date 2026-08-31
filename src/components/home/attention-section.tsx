@@ -1,31 +1,38 @@
 import Link from "next/link";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { AttentionCounts } from "@/lib/home";
 import { projectTasks } from "@/lib/routes";
 
 const ATTENTION_ITEMS: {
   key: keyof AttentionCounts;
   emoji: string;
-  label: (count: number) => string;
+  label: string;
   query: string;
+  color: string;
+  bg: string;
 }[] = [
   {
     key: "missingContext",
     emoji: "⚠",
-    label: (n) => `${n} Missing Context`,
+    label: "Missing context",
     query: "missing_context",
+    color: "oklch(0.5 0.13 70)",
+    bg: "oklch(0.62 0.15 70 / 0.1)",
   },
   {
     key: "blocked",
     emoji: "🚧",
-    label: (n) => `${n} Blocked`,
+    label: "Blocked",
     query: "blocked",
+    color: "var(--st-blocked)",
+    bg: "var(--st-blocked-bg)",
   },
   {
     key: "uiReadyForDev",
     emoji: "🎨",
-    label: (n) => `${n} UI Ready for Dev`,
+    label: "UI ready for dev",
     query: "ui_ready",
+    color: "var(--st-done)",
+    bg: "oklch(0.55 0.13 150 / 0.1)",
   },
 ];
 
@@ -37,22 +44,25 @@ export function AttentionSection({
   projectSlug: string;
 }) {
   return (
-    <Card className="border-black/5 bg-white/80">
-      <CardHeader>
-        <CardTitle className="text-base font-semibold text-slate-900">Attention</CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-2">
+    <section>
+      <h2 className="mb-3 text-[15px] font-semibold">Attention</h2>
+      <div className="grid grid-cols-3 gap-3">
         {ATTENTION_ITEMS.map((item) => (
           <Link
             key={item.key}
             href={`${projectTasks(projectSlug)}?attention=${item.query}`}
-            className="flex items-center gap-2 rounded-md px-2 py-1.5 text-sm text-slate-700 hover:bg-slate-900/5"
+            className="flex flex-col gap-1 rounded-xl p-4"
+            style={{ backgroundColor: item.bg }}
           >
-            <span aria-hidden>{item.emoji}</span>
-            <span>{item.label(counts[item.key])}</span>
+            <span className="text-[28px] font-semibold tracking-tight" style={{ color: item.color }}>
+              {counts[item.key]}
+            </span>
+            <span className="text-xs font-medium" style={{ color: item.color }}>
+              {item.emoji} {item.label}
+            </span>
           </Link>
         ))}
-      </CardContent>
-    </Card>
+      </div>
+    </section>
   );
 }

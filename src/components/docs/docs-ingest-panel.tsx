@@ -2,7 +2,6 @@
 
 import { useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
 export type TeamDocSummary = {
   path: string;
@@ -82,10 +81,10 @@ export function DocsIngestPanel({
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap items-center justify-between gap-3">
+      <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Docs / RAG</h1>
-          <p className="text-sm text-slate-600">
+          <h1 className="text-[22px] font-semibold tracking-tight">Docs / RAG</h1>
+          <p className="mt-1 text-[13px] text-muted-foreground">
             Your team&apos;s knowledge base. Only the most relevant chunks are ever sent to Claude.
           </p>
         </div>
@@ -132,34 +131,43 @@ export function DocsIngestPanel({
         </div>
       </div>
 
-      {message ? <p className="text-sm text-emerald-700">{message}</p> : null}
-      {error ? <p className="text-sm text-red-600">{error}</p> : null}
+      {message ? <p className="text-[13px]" style={{ color: "var(--st-done)" }}>{message}</p> : null}
+      {error ? <p className="text-[13px] text-destructive">{error}</p> : null}
 
-      <Card className="border-black/5 bg-white/80">
-        <CardHeader>
-          <CardTitle className="text-base">Indexed docs</CardTitle>
-          <CardDescription>Chunks stored in PostgreSQL + pgvector, scoped to this team</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-2">
-          {docs.length === 0 ? (
-            <p className="text-sm text-slate-500">
-              No docs yet. Upload your <code className="rounded bg-black/5 px-1">.md</code> specs —
-              e.g. coupon.md, payment.md, checkout.md.
-            </p>
-          ) : (
-            docs.map((doc) => (
-              <div key={doc.path} className="flex items-center justify-between gap-3 text-sm">
+      <div className="rounded-[14px] bg-card/80 p-[18px] ring-1 ring-foreground/5">
+        <h2 className="text-[15px] font-semibold">Indexed docs</h2>
+        <p className="mt-1 mb-3.5 text-xs text-muted-foreground">
+          Chunks stored in PostgreSQL + pgvector, scoped to this project
+        </p>
+        {docs.length === 0 ? (
+          <p className="text-sm text-muted-foreground">
+            No docs yet. Upload your <code className="rounded bg-black/5 px-1">.md</code> specs —
+            e.g. coupon.md, payment.md, checkout.md.
+          </p>
+        ) : (
+          <div>
+            {docs.map((doc, i) => (
+              <div
+                key={doc.path}
+                className={`flex items-center justify-between gap-3 py-2.5 text-[13px] ${i > 0 ? "border-t border-border" : ""}`}
+              >
                 <div className="min-w-0">
                   <p className="truncate font-medium">{doc.path}</p>
-                  {doc.title ? <p className="truncate text-xs text-slate-500">{doc.title}</p> : null}
+                  {doc.title ? (
+                    <p className="truncate text-[11px] text-muted-foreground">{doc.title}</p>
+                  ) : null}
                 </div>
-                <div className="flex shrink-0 items-center gap-3 text-slate-500">
+                <div className="flex shrink-0 items-center gap-3 text-xs text-muted-foreground">
                   <span>{doc.chunks} chunks</span>
-                  <span className="text-xs">{Math.max(1, Math.round(doc.sizeBytes / 1024))} KB</span>
-                  {doc.indexedAt ? null : <span className="text-xs text-amber-600">not indexed</span>}
+                  <span>{Math.max(1, Math.round(doc.sizeBytes / 1024))} KB</span>
+                  {doc.indexedAt ? null : (
+                    <span className="text-[11px]" style={{ color: "oklch(0.62 0.15 70)" }}>
+                      not indexed
+                    </span>
+                  )}
                   <button
                     type="button"
-                    className="text-xs text-red-600 hover:underline disabled:opacity-50"
+                    className="text-destructive hover:underline disabled:opacity-50"
                     disabled={busy !== null}
                     onClick={() =>
                       run(
@@ -173,10 +181,10 @@ export function DocsIngestPanel({
                   </button>
                 </div>
               </div>
-            ))
-          )}
-        </CardContent>
-      </Card>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 }

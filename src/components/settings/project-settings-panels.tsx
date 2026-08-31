@@ -5,7 +5,7 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { SettingsCard } from "@/components/settings/settings-card";
 import {
   Select,
   SelectContent,
@@ -119,10 +119,10 @@ export function ProjectSettingsPanels({
   }
 
   return (
-    <div className="space-y-6">
+    <div className="mx-auto max-w-[800px] space-y-5">
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight">{projectName} settings</h1>
-        <p className="text-sm text-slate-600">
+        <h1 className="text-[22px] font-semibold tracking-tight">{projectName} settings</h1>
+        <p className="mt-1.5 text-[13px] leading-relaxed text-muted-foreground">
           Members and integrations for this project only.{" "}
           <Link href={TEAM_SETTINGS} className="underline">
             Team settings
@@ -132,68 +132,29 @@ export function ProjectSettingsPanels({
       </div>
 
       {isPm ? (
-        <Card className="border-black/5 bg-white/80">
-          <CardHeader>
-            <CardTitle className="text-base">Members</CardTitle>
-            <CardDescription>
-              People in this project. Anyone already on the team is added instantly; anyone else
-              gets an invite that puts them in the team and this project at once.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              {teamMembers.map((m) => (
-                <div key={m.id} className="flex items-center justify-between gap-2 text-sm">
-                  <span className="min-w-0 flex-1 truncate">
-                    {m.name} · {m.email}
-                  </span>
-                  <Select
-                    value={memberRoles[m.id] || undefined}
-                    onValueChange={(value) => {
-                      if (!value) return;
-                      setMemberRoles((prev) => ({ ...prev, [m.id]: value }));
-                      void assignProjectRole(m.id, value);
-                    }}
-                  >
-                    <SelectTrigger className="w-36">
-                      <SelectValue placeholder="Not in project" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {TEAM_ROLES.map((r) => (
-                        <SelectItem key={r} value={r}>
-                          {TEAM_ROLE_LABEL[r]}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              ))}
-              {memberMsg ? <p className="text-sm text-slate-700">{memberMsg}</p> : null}
-            </div>
-
-            <form
-              onSubmit={inviteToProject}
-              className="grid gap-3 border-t border-black/5 pt-4 sm:grid-cols-3"
-            >
-              <div className="space-y-2">
-                <Label>Invite by email</Label>
-                <Input
-                  type="email"
-                  value={inviteEmail}
-                  onChange={(e) => setInviteEmail(e.target.value)}
-                  required
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>Role</Label>
+        <SettingsCard
+          title="Members"
+          description="People in this project. Anyone already on the team is added instantly; anyone else gets an invite that puts them in the team and this project at once."
+        >
+          <div>
+            {teamMembers.map((m, i) => (
+              <div
+                key={m.id}
+                className={`flex items-center justify-between gap-2 py-2 text-[13px] ${i > 0 ? "border-t border-border" : ""}`}
+              >
+                <span className="min-w-0 flex-1 truncate">
+                  {m.name} · {m.email}
+                </span>
                 <Select
-                  value={inviteRole}
+                  value={memberRoles[m.id] || undefined}
                   onValueChange={(value) => {
-                    if (value) setInviteRole(value);
+                    if (!value) return;
+                    setMemberRoles((prev) => ({ ...prev, [m.id]: value }));
+                    void assignProjectRole(m.id, value);
                   }}
                 >
-                  <SelectTrigger>
-                    <SelectValue />
+                  <SelectTrigger className="h-8 w-36 text-xs">
+                    <SelectValue placeholder="Not in project" />
                   </SelectTrigger>
                   <SelectContent>
                     {TEAM_ROLES.map((r) => (
@@ -204,123 +165,154 @@ export function ProjectSettingsPanels({
                   </SelectContent>
                 </Select>
               </div>
-              <div className="flex items-end">
-                <Button type="submit" className="w-full">
-                  Invite to project
-                </Button>
-              </div>
-            </form>
-            {inviteMsg ? <p className="text-sm text-slate-700">{inviteMsg}</p> : null}
-          </CardContent>
-        </Card>
+            ))}
+            {memberMsg ? <p className="mt-2 text-sm">{memberMsg}</p> : null}
+          </div>
+
+          <form
+            onSubmit={inviteToProject}
+            className="mt-4 grid gap-3 border-t border-border pt-4 sm:grid-cols-[1.2fr_1fr_auto] sm:items-end"
+          >
+            <div className="space-y-1.5">
+              <Label className="text-xs">Invite by email</Label>
+              <Input
+                type="email"
+                value={inviteEmail}
+                onChange={(e) => setInviteEmail(e.target.value)}
+                required
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs">Role</Label>
+              <Select
+                value={inviteRole}
+                onValueChange={(value) => {
+                  if (value) setInviteRole(value);
+                }}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {TEAM_ROLES.map((r) => (
+                    <SelectItem key={r} value={r}>
+                      {TEAM_ROLE_LABEL[r]}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <Button type="submit">Invite to project</Button>
+          </form>
+          {inviteMsg ? <p className="mt-2 text-sm">{inviteMsg}</p> : null}
+        </SettingsCard>
       ) : null}
 
-      <Card className="border-black/5 bg-white/80">
-        <CardHeader>
-          <CardTitle className="text-base">GitHub</CardTitle>
-          <CardDescription>
-            Connected: {providers.some((p) => p.provider === "github") ? "yes" : "no"}. Add a webhook
-            to your repo pointing at <code>/api/webhooks/github</code> (content type
-            application/json, events: Pull requests) to auto-resolve dependencies on merge.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              void saveCredential("github", {
-                token: ghToken,
-                owner: ghOwner,
-                repo: ghRepo,
-                webhookSecret: ghWebhookSecret,
-              });
-            }}
-            className="grid gap-3 sm:grid-cols-3"
-          >
-            <div className="space-y-2">
-              <Label>Token</Label>
-              <Input type="password" value={ghToken} onChange={(e) => setGhToken(e.target.value)} />
-            </div>
-            <div className="space-y-2">
-              <Label>Owner</Label>
-              <Input value={ghOwner} onChange={(e) => setGhOwner(e.target.value)} />
-            </div>
-            <div className="space-y-2">
-              <Label>Repo</Label>
-              <Input value={ghRepo} onChange={(e) => setGhRepo(e.target.value)} />
-            </div>
-            <div className="space-y-2 sm:col-span-3">
-              <Label>Webhook secret</Label>
-              <Input
-                type="password"
-                value={ghWebhookSecret}
-                onChange={(e) => setGhWebhookSecret(e.target.value)}
-              />
-            </div>
-            <Button type="submit" className="sm:col-span-3">
-              Save GitHub
-            </Button>
-          </form>
-        </CardContent>
-      </Card>
+      <SettingsCard
+        title="GitHub"
+        description={
+          <>
+            Connected: {providers.some((p) => p.provider === "github") ? "yes" : "no"}. Add a
+            webhook to your repo pointing at{" "}
+            <code className="rounded bg-muted px-1 py-0.5 font-mono text-[11px]">
+              /api/webhooks/github
+            </code>{" "}
+            (content type application/json, events: Pull requests) to auto-resolve dependencies on
+            merge.
+          </>
+        }
+      >
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            void saveCredential("github", {
+              token: ghToken,
+              owner: ghOwner,
+              repo: ghRepo,
+              webhookSecret: ghWebhookSecret,
+            });
+          }}
+          className="grid gap-3 sm:grid-cols-3"
+        >
+          <div className="space-y-1.5">
+            <Label className="text-xs">Token</Label>
+            <Input type="password" value={ghToken} onChange={(e) => setGhToken(e.target.value)} />
+          </div>
+          <div className="space-y-1.5">
+            <Label className="text-xs">Owner</Label>
+            <Input value={ghOwner} onChange={(e) => setGhOwner(e.target.value)} />
+          </div>
+          <div className="space-y-1.5">
+            <Label className="text-xs">Repo</Label>
+            <Input value={ghRepo} onChange={(e) => setGhRepo(e.target.value)} />
+          </div>
+          <div className="space-y-1.5 sm:col-span-3">
+            <Label className="text-xs">Webhook secret</Label>
+            <Input
+              type="password"
+              value={ghWebhookSecret}
+              onChange={(e) => setGhWebhookSecret(e.target.value)}
+            />
+          </div>
+          <Button type="submit" className="sm:col-span-3">
+            Save GitHub
+          </Button>
+        </form>
+      </SettingsCard>
 
-      <Card className="border-black/5 bg-white/80">
-        <CardHeader>
-          <CardTitle className="text-base">Figma</CardTitle>
-          <CardDescription>
-            Connected: {providers.some((p) => p.provider === "figma") ? "yes" : "no"}
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              void saveCredential("figma", { token: figmaToken, fileKey: figmaFileKey });
-            }}
-            className="grid gap-3 sm:grid-cols-2"
-          >
-            <div className="space-y-2">
-              <Label>Token</Label>
-              <Input
-                type="password"
-                value={figmaToken}
-                onChange={(e) => setFigmaToken(e.target.value)}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label>File key</Label>
-              <Input value={figmaFileKey} onChange={(e) => setFigmaFileKey(e.target.value)} />
-            </div>
-            <Button type="submit" className="sm:col-span-2">
-              Save Figma
-            </Button>
-          </form>
-          {intMsg ? <p className="mt-3 text-sm text-slate-700">{intMsg}</p> : null}
-        </CardContent>
-      </Card>
+      <SettingsCard
+        title="Figma"
+        description={`Connected: ${providers.some((p) => p.provider === "figma") ? "yes" : "no"}`}
+      >
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            void saveCredential("figma", { token: figmaToken, fileKey: figmaFileKey });
+          }}
+          className="grid gap-3 sm:grid-cols-2"
+        >
+          <div className="space-y-1.5">
+            <Label className="text-xs">Token</Label>
+            <Input
+              type="password"
+              value={figmaToken}
+              onChange={(e) => setFigmaToken(e.target.value)}
+            />
+          </div>
+          <div className="space-y-1.5">
+            <Label className="text-xs">File key</Label>
+            <Input value={figmaFileKey} onChange={(e) => setFigmaFileKey(e.target.value)} />
+          </div>
+          <Button type="submit" className="sm:col-span-2">
+            Save Figma
+          </Button>
+        </form>
+        {intMsg ? <p className="mt-3 text-sm">{intMsg}</p> : null}
+      </SettingsCard>
 
-      <Card className="border-black/5 bg-white/80">
-        <CardHeader>
-          <CardTitle className="text-base">Figma Plugin</CardTitle>
-          <CardDescription>
-            Lets designers mark a task &quot;Ready for Dev&quot; from inside Figma. Scoped to this
-            project ({projectSlug}). Token status: {pluginHasToken ? "generated" : "not generated"}
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-3">
+      <SettingsCard
+        title="Figma Plugin"
+        description={`Lets designers mark a task "Ready for Dev" from inside Figma. Scoped to this project (${projectSlug}). Token status: ${pluginHasToken ? "generated" : "not generated"}`}
+      >
+        <div className="space-y-3">
           <Button variant="outline" size="sm" onClick={generatePluginToken}>
             {pluginHasToken ? "Regenerate token" : "Generate token"}
           </Button>
           {pluginToken ? (
             <div className="space-y-1">
-              <p className="text-sm text-slate-700">
+              <p className="text-xs text-muted-foreground">
                 Paste this into the IntrovertHubs Figma plugin. It won&apos;t be shown again.
               </p>
-              <Input readOnly value={pluginToken} onFocus={(e) => e.currentTarget.select()} />
+              <Input
+                readOnly
+                value={pluginToken}
+                onFocus={(e) => e.currentTarget.select()}
+                className="font-mono text-xs"
+              />
             </div>
           ) : null}
-        </CardContent>
-      </Card>
+        </div>
+      </SettingsCard>
     </div>
   );
 }

@@ -21,13 +21,13 @@ type Notification = {
 const POLL_MS = 30_000;
 
 const TYPE_BORDER_COLOR: Record<string, string> = {
-  task_unblocked: "border-l-emerald-500",
-  task_blocked: "border-l-amber-500",
-  task_assigned: "border-l-sky-500",
-  figma_ready: "border-l-pink-500",
-  missing_context: "border-l-red-500",
+  task_unblocked: "oklch(0.55 0.13 150)",
+  task_blocked: "oklch(0.62 0.15 70)",
+  task_assigned: "oklch(0.55 0.14 240)",
+  figma_ready: "oklch(0.6 0.18 350)",
+  missing_context: "oklch(0.577 0.245 27.325)",
 };
-const DEFAULT_BORDER_COLOR = "border-l-slate-300";
+const DEFAULT_BORDER_COLOR = "var(--border)";
 
 export function NotificationBell() {
   const [items, setItems] = useState<Notification[]>([]);
@@ -70,46 +70,54 @@ export function NotificationBell() {
       <button
         type="button"
         aria-label={unread ? `${unread} unread notifications` : "Notifications"}
-        className="relative rounded-md p-2 text-slate-600 hover:bg-slate-900/5 hover:text-slate-900"
+        className="relative flex size-8 items-center justify-center rounded-lg text-foreground hover:bg-foreground/5"
         onClick={() => setOpen((v) => !v)}
       >
-        <Bell className="h-4 w-4" />
+        <Bell className="size-[17px]" strokeWidth={1.8} />
         {unread > 0 ? (
-          <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-600 px-1 text-[10px] font-medium text-white">
+          <span
+            className="absolute -top-px -right-px flex h-[15px] min-w-[15px] items-center justify-center rounded-full px-[3px] text-[9.5px] font-semibold text-white"
+            style={{ backgroundColor: "oklch(0.55 0.22 27)" }}
+          >
             {unread > 9 ? "9+" : unread}
           </span>
         ) : null}
       </button>
 
       {open ? (
-        <div className="absolute right-0 z-20 mt-2 w-80 rounded-lg border border-black/10 bg-white p-2 shadow-lg">
-          <div className="flex items-center justify-between px-2 py-1">
-            <span className="text-xs font-medium text-slate-500">Notifications</span>
+        <div className="absolute top-10 right-0 z-20 w-80 rounded-xl bg-card p-1.5 shadow-[0_0_0_1px_rgb(0_0_0_/_0.08),0_10px_30px_rgb(0_0_0_/_0.1)]">
+          <div className="flex items-center justify-between px-2 py-1.5">
+            <span className="text-[11px] font-semibold tracking-wide text-muted-foreground uppercase">
+              Notifications
+            </span>
             {unread > 0 ? (
               <button
                 type="button"
-                className="text-xs text-slate-500 hover:underline"
+                className="text-[11px] text-muted-foreground hover:underline"
                 onClick={() => void markAllRead()}
               >
                 Mark all read
               </button>
             ) : null}
           </div>
-          <div className="max-h-80 overflow-y-auto">
+          <div className="flex max-h-[340px] flex-col gap-0.5 overflow-y-auto">
             {items.length === 0 ? (
-              <p className="px-2 py-3 text-sm text-slate-500">Nothing yet.</p>
+              <p className="px-2 py-3 text-sm text-muted-foreground">Nothing yet.</p>
             ) : (
               items.map((n) => {
                 const row = (
                   <div
-                    className={`rounded-md border-l-4 px-2 py-2 text-sm hover:bg-slate-900/5 ${
-                      TYPE_BORDER_COLOR[n.type] ?? DEFAULT_BORDER_COLOR
-                    } ${n.readAt ? "text-slate-500" : "text-slate-900"}`}
+                    className="rounded-lg border-l-[3px] px-2.5 py-2 text-sm hover:bg-foreground/5"
+                    style={{ borderColor: TYPE_BORDER_COLOR[n.type] ?? DEFAULT_BORDER_COLOR }}
                   >
-                    <p className="font-medium">{n.title}</p>
-                    <p className="text-xs text-slate-500">{n.body}</p>
+                    <p className={`text-[13px] font-medium ${n.readAt ? "text-muted-foreground" : "text-foreground"}`}>
+                      {n.title}
+                    </p>
+                    <p className="mt-0.5 text-xs text-muted-foreground">{n.body}</p>
                     {n.projectName ? (
-                      <p className="mt-0.5 text-[11px] text-slate-400">{n.projectName}</p>
+                      <p className="mt-0.5 text-[11px]" style={{ color: "oklch(0.7 0 0)" }}>
+                        {n.projectName}
+                      </p>
                     ) : null}
                   </div>
                 );

@@ -40,8 +40,15 @@ export default async function TaskDetailPage({ params }: Props) {
     include: {
       assignee: true,
       dependsOn: {
-        include: { dependency: { include: { assignee: true } } },
+        include: {
+          dependency: {
+            include: { assignee: true, handoffDocs: { orderBy: { role: "asc" } } },
+          },
+        },
       },
+      // A grilled sub-task hangs off its parent task, which is where the
+      // requirement's business rules actually live.
+      dependedBy: { include: { dependent: true } },
       decisions: {
         include: { author: { select: { name: true } } },
         orderBy: { createdAt: "desc" },
@@ -54,7 +61,13 @@ export default async function TaskDetailPage({ params }: Props) {
 
   const status = task.status as TaskStatusValue;
   const priority = task.priority as TaskPriorityValue;
-  const businessRules = parseBusinessRules(task.businessRules);
+  // Business rules belong to the parent requirement — a sub-task inherits and
+  // displays its parent's rules rather than showing an empty card.
+  const parentTask = task.component
+    ? (task.dependedBy.find((d) => d.dependent.component == null)?.dependent ?? null)
+    : null;
+  const rulesOwner = parentTask ?? task;
+  const businessRules = parseBusinessRules(rulesOwner.businessRules);
   const prMatch = task.githubPrUrl?.match(/\/pull\/(\d+)/);
 
   const latestRunOutput = task.contextRuns[0]?.engineOutput as {
@@ -113,24 +126,35 @@ export default async function TaskDetailPage({ params }: Props) {
                 </p>
               </div>
               <div className="flex flex-col gap-2">
-                {subTaskDeps.map((d) => (
-                  <Link
-                    key={d.id}
-                    href={projectTask(project.slug, d.dependency.id)}
-                    className="flex flex-wrap items-center gap-2 rounded-[10px] bg-card p-3 text-sm ring-1 ring-foreground/[0.06] hover:bg-muted/40"
-                  >
-                    <Badge variant="secondary" className="capitalize">
-                      {d.dependency.component}
-                    </Badge>
-                    <span className="font-medium">{d.dependency.title}</span>
-                    <span className="text-xs text-muted-foreground">
-                      — {d.dependency.assignee?.name ?? "Unassigned"}
-                    </span>
-                    <span className="ml-auto">
+                {subTaskDeps.map((d) => {
+                  const doc = d.dependency.handoffDocs[0];
+                  return (
+                    <div
+                      key={d.id}
+                      className="flex flex-wrap items-center gap-2 rounded-[10px] bg-card p-3 text-sm ring-1 ring-foreground/[0.06]"
+                    >
+                      <Link
+                        href={projectTask(project.slug, d.dependency.id)}
+                        className="flex min-w-0 flex-1 flex-wrap items-center gap-2 hover:underline"
+                      >
+                        <Badge variant="secondary" className="capitalize">
+                          {d.dependency.component}
+                        </Badge>
+                        <span className="font-medium">{d.dependency.title}</span>
+                        <span className="text-xs text-muted-foreground">
+                          — {d.dependency.assignee?.name ?? "Unassigned"}
+                        </span>
+                      </Link>
                       <TaskStatusBadge status={d.dependency.status as TaskStatusValue} />
-                    </span>
-                  </Link>
-                ))}
+                      {doc ? (
+                        <DownloadHandoffButton
+                          fileName={`${d.dependency.component}-${d.dependency.id}.md`}
+                          content={doc.content}
+                        />
+                      ) : null}
+                    </div>
+                  );
+                })}
               </div>
             </div>
           ) : null}
@@ -164,6 +188,14 @@ export default async function TaskDetailPage({ params }: Props) {
               <CardTitle className="text-base">Business Rules</CardTitle>
             </CardHeader>
             <CardContent>
+              {parentTask ? (
+                <p className="mb-2 text-xs text-muted-foreground">
+                  Inherited from the parent task{" "}
+                  <Link className="underline" href={projectTask(project.slug, parentTask.id)}>
+                    {parentTask.title}
+                  </Link>
+                </p>
+              ) : null}
               {businessRules.length === 0 ? (
                 <p className="text-sm text-muted-foreground">No rules extracted yet.</p>
               ) : (

@@ -8,6 +8,8 @@ import { analyzeTaskWithClaude } from "@/lib/ai/claude";
 import { generateHandoffDocs, type HandoffDoc } from "@/lib/ai/handoff";
 import { runDeterministicEngine, type EngineOutput } from "@/lib/engine";
 import { cascadeFromTask } from "@/lib/engine/cascade";
+import { recordStatusChange } from "@/lib/tasks/status-history";
+import type { TaskStatusValue } from "@/lib/task-constants";
 import type { Task } from "@prisma/client";
 import type { ClaudeTaskAnalysis } from "@/lib/ai/schemas";
 
@@ -167,6 +169,16 @@ export async function runContextPipeline(task: Task) {
   const shouldSeedRules =
     parseBusinessRulesEmpty(task.businessRules) &&
     analysis.extractedBusinessRules.length > 0;
+
+  if (engineOutput.status !== task.status) {
+    // No actor: the readiness pipeline moved this card, not a person.
+    await recordStatusChange({
+      taskId: task.id,
+      from: task.status as TaskStatusValue,
+      to: engineOutput.status as TaskStatusValue,
+      changedById: null,
+    });
+  }
 
   const updated = await prisma.task.update({
     where: { id: task.id },

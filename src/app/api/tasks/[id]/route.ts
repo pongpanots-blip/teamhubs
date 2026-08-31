@@ -4,6 +4,8 @@ import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import { requireMembership } from "@/lib/auth-session";
 import { requireTaskAccess, assertAssignable } from "@/lib/tasks/access";
+import { recordStatusChange } from "@/lib/tasks/status-history";
+import { computeTaskMetrics } from "@/lib/tasks/metrics";
 import { errorResponse } from "@/lib/api-error";
 import { TASK_PRIORITIES, TASK_STATUSES, type TaskStatusValue } from "@/lib/task-constants";
 import {
@@ -55,6 +57,7 @@ export async function GET(_req: Request, { params }: Params) {
           orderBy: { createdAt: "desc" },
         },
         contextRuns: { orderBy: { createdAt: "desc" }, take: 5 },
+        statusHistory: { orderBy: { changedAt: "asc" } },
       },
     });
     if (!task) return NextResponse.json({ error: "NOT_FOUND" }, { status: 404 });
@@ -63,6 +66,14 @@ export async function GET(_req: Request, { params }: Params) {
         ...task,
         businessRules: parseBusinessRules(task.businessRules),
       },
+      metrics: computeTaskMetrics({
+        createdAt: task.createdAt,
+        history: task.statusHistory.map((h) => ({
+          fromStatus: h.fromStatus as TaskStatusValue | null,
+          toStatus: h.toStatus as TaskStatusValue,
+          changedAt: h.changedAt,
+        })),
+      }),
     });
   } catch (e) {
     return errorResponse(e);
@@ -160,6 +171,12 @@ export async function PATCH(req: Request, { params }: Params) {
     }
 
     if (task.status !== existing.status) {
+      await recordStatusChange({
+        taskId: task.id,
+        from: existing.status as TaskStatusValue,
+        to: task.status as TaskStatusValue,
+        changedById: cx.user.id,
+      });
       await notifyTaskEvent(
         {
           kind: "status",

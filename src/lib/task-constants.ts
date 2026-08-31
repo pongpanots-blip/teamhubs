@@ -84,3 +84,44 @@ export const COMPONENT_TO_ROLE: Record<TaskComponentValue, TeamRoleValue> = {
   mobile: "mobile",
   ai: "ai",
 };
+
+export const STATUS_CATEGORIES = ["backlog", "active", "waiting", "done"] as const;
+export type StatusCategoryValue = (typeof STATUS_CATEGORIES)[number];
+
+/**
+ * Which flow bucket each status belongs to.
+ *
+ * `assigned` is backlog, not active — ownership is not work (see isActiveWork).
+ * Counting it as active would make cycle time start the moment a PM picks an
+ * owner, which is exactly the inflation the metric is meant to expose.
+ * `review` and `blocked` are both waiting: the card is idle, waiting on someone.
+ */
+export const STATUS_CATEGORY: Record<TaskStatusValue, StatusCategoryValue> = {
+  not_ready: "backlog",
+  ready: "backlog",
+  assigned: "backlog",
+  working: "active",
+  blocked: "waiting",
+  review: "waiting",
+  done: "done",
+};
+
+/**
+ * Forward progress order, used to detect rework (a move to a lower rank).
+ * `blocked` shares a rank with `working` on purpose: getting blocked mid-work
+ * is an interruption, not a step backwards, and should not inflate rework.
+ */
+const STATUS_RANK: Record<TaskStatusValue, number> = {
+  not_ready: 0,
+  ready: 1,
+  assigned: 2,
+  working: 3,
+  blocked: 3,
+  review: 4,
+  done: 5,
+};
+
+/** True when a transition moves the card backwards through the workflow. */
+export function isRework(from: TaskStatusValue, to: TaskStatusValue): boolean {
+  return STATUS_RANK[to] < STATUS_RANK[from];
+}

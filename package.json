@@ -14,7 +14,8 @@
     "docs:ingest": "tsx scripts/ingest-docs.ts",
     "smoke": "tsx scripts/smoke.ts",
     "check:home": "tsx scripts/check-home-logic.ts",
-    "check:grill-recommendation": "tsx scripts/check-grill-recommendation.ts"
+    "check:grill-recommendation": "tsx scripts/check-grill-recommendation.ts",
+    "check:task-metrics": "tsx scripts/check-task-metrics.ts"
   },
   "dependencies": {
     "@base-ui/react": "^1.7.0",

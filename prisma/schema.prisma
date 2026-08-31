@@ -80,6 +80,7 @@ model User {
   decisions          DecisionLog[]
   invitesSent        Invite[]            @relation("InviteSender")
   notifications      Notification[]
+  statusChanges      TaskStatusHistory[] @relation("StatusChangeAuthor")
 }
 
 model Session {
@@ -148,20 +149,20 @@ model Team {
 /// credentials are scoped here so unrelated projects don't leak context
 /// into each other's grilling sessions.
 model Project {
-  id          String                  @id @default(cuid())
-  teamId      String
-  name        String
-  slug        String
+  id            String                  @id @default(cuid())
+  teamId        String
+  name          String
+  slug          String
   /// Bearer token used by the Figma plugin to push design status. Null until generated.
-  pluginToken String?                 @unique
-  createdAt   DateTime                @default(now())
-  updatedAt   DateTime                @updatedAt
-  team        Team                    @relation(fields: [teamId], references: [id], onDelete: Cascade)
-  memberships ProjectMembership[]
-  tasks       Task[]
-  docs        TeamDoc[]
-  docChunks   DocChunk[]
-  credentials IntegrationCredential[]
+  pluginToken   String?                 @unique
+  createdAt     DateTime                @default(now())
+  updatedAt     DateTime                @updatedAt
+  team          Team                    @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  memberships   ProjectMembership[]
+  tasks         Task[]
+  docs          TeamDoc[]
+  docChunks     DocChunk[]
+  credentials   IntegrationCredential[]
   notifications Notification[]
   contextRuns   ContextRun[]
   invites       Invite[]
@@ -269,18 +270,19 @@ model Task {
   createdAt          DateTime       @default(now())
   updatedAt          DateTime       @updatedAt
 
-  team          Team             @relation(fields: [teamId], references: [id], onDelete: Cascade)
-  project       Project          @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  assignee      User?            @relation("TaskAssignee", fields: [assigneeId], references: [id])
-  createdBy     User             @relation("TaskCreator", fields: [createdById], references: [id])
-  dependsOn     TaskDependency[] @relation("DependentTask")
-  dependedBy    TaskDependency[] @relation("DependencyTask")
+  team          Team                @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  project       Project             @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  assignee      User?               @relation("TaskAssignee", fields: [assigneeId], references: [id])
+  createdBy     User                @relation("TaskCreator", fields: [createdById], references: [id])
+  dependsOn     TaskDependency[]    @relation("DependentTask")
+  dependedBy    TaskDependency[]    @relation("DependencyTask")
   contextRuns   ContextRun[]
   decisions     DecisionLog[]
   notifications Notification[]
   handoffDocs   TaskHandoff[]
-  parent        Task?            @relation("TaskSubTasks", fields: [parentId], references: [id], onDelete: SetNull)
-  subTasks      Task[]           @relation("TaskSubTasks")
+  statusHistory TaskStatusHistory[]
+  parent        Task?               @relation("TaskSubTasks", fields: [parentId], references: [id], onDelete: SetNull)
+  subTasks      Task[]              @relation("TaskSubTasks")
 
   @@index([parentId])
   @@index([teamId, status])
@@ -438,4 +440,34 @@ model IntegrationCredential {
   project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
 
   @@unique([projectId, provider])
+}
+
+/// Coarse grouping of TaskStatus used by every flow metric. Kept separate from
+/// the status itself so statuses can be renamed/added without breaking history.
+enum StatusCategory {
+  backlog
+  active
+  waiting
+  done
+}
+
+/// Append-only log of every status transition. This is the single source the
+/// flow metrics (cycle time, time in status, WIP age, rework) are derived from
+/// — nothing here is ever updated or recomputed after the fact.
+model TaskStatusHistory {
+  id          String         @id @default(cuid())
+  taskId      String
+  /// Null on the very first row (task creation).
+  fromStatus  TaskStatus?
+  toStatus    TaskStatus
+  /// Category of `toStatus` at the time of writing — frozen so a later change
+  /// to the status→category mapping cannot rewrite historical metrics.
+  category    StatusCategory
+  changedAt   DateTime       @default(now())
+  /// Null when the engine, a webhook or the context pipeline made the change.
+  changedById String?
+  task        Task           @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  changedBy   User?          @relation("StatusChangeAuthor", fields: [changedById], references: [id], onDelete: SetNull)
+
+  @@index([taskId, changedAt])
 }

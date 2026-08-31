@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { TASK_STATUS_LABEL, type TaskStatusValue } from "@/lib/task-constants";
 import { isOpenStatus, type HomeTask } from "@/lib/home";
+import { projectTask } from "@/lib/routes";
 
 const STATUS_DOT: Record<TaskStatusValue, string> = {
   blocked: "🔴",
@@ -25,7 +26,7 @@ function matchesFilter(task: HomeTask, filter: FilterKey): boolean {
   return isOpenStatus(task.status);
 }
 
-function TaskList({ tasks }: { tasks: HomeTask[] }) {
+function TaskList({ tasks, projectSlug }: { tasks: HomeTask[]; projectSlug: string }) {
   if (tasks.length === 0) {
     return <p className="py-4 text-center text-sm text-slate-500">Nothing here.</p>;
   }
@@ -34,7 +35,7 @@ function TaskList({ tasks }: { tasks: HomeTask[] }) {
       {tasks.map((task) => (
         <li key={task.id} className="flex items-center gap-2 py-2 text-sm">
           <span aria-hidden>{STATUS_DOT[task.status]}</span>
-          <Link href={`/app/tasks/${task.id}`} className="flex-1 font-medium hover:underline">
+          <Link href={projectTask(projectSlug, task.id)} className="flex-1 font-medium hover:underline">
             {task.title}
           </Link>
           <span className="text-xs text-slate-500">{TASK_STATUS_LABEL[task.status]}</span>
@@ -44,7 +45,13 @@ function TaskList({ tasks }: { tasks: HomeTask[] }) {
   );
 }
 
-export function MyWorkSection({ tasks }: { tasks: HomeTask[] }) {
+export function MyWorkSection({
+  tasks,
+  projectSlug,
+}: {
+  tasks: HomeTask[];
+  projectSlug: string;
+}) {
   const [filter, setFilter] = useState<FilterKey>("active");
 
   const filtered = useMemo(
@@ -65,7 +72,7 @@ export function MyWorkSection({ tasks }: { tasks: HomeTask[] }) {
             <TabsTrigger value="done">Done</TabsTrigger>
           </TabsList>
           <TabsContent value={filter}>
-            <TaskList tasks={filtered} />
+            <TaskList tasks={filtered} projectSlug={projectSlug} />
           </TabsContent>
         </Tabs>
       </CardContent>

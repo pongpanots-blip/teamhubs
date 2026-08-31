@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { requireMembership, requireProjectMembership } from "@/lib/auth-session";
+import { requireMembership, requireProjectBySlug } from "@/lib/auth-session";
+import { errorResponse } from "@/lib/api-error";
 import { grillTurn } from "@/lib/ai/grill";
 import { retrieveRelevantChunks } from "@/lib/context/ingest";
 
@@ -10,7 +11,7 @@ const schema = z.object({
     .min(1),
   forceFinish: z.boolean().optional(),
   /** Project the draft was started in — same project the finished draft will be created under. */
-  projectSlug: z.string().optional(),
+  projectSlug: z.string().min(1),
 });
 
 /**
@@ -22,7 +23,7 @@ export async function POST(req: Request) {
   try {
     const cx = await requireMembership();
     const body = schema.parse(await req.json());
-    const { project } = await requireProjectMembership(cx, body.projectSlug);
+    const { project } = await requireProjectBySlug(cx, body.projectSlug);
 
     const query = body.messages.map((m) => m.content).join("\n");
     const docs = query.trim() ? await retrieveRelevantChunks(project.id, query) : [];
@@ -30,7 +31,6 @@ export async function POST(req: Request) {
     const turn = await grillTurn(body.messages, body.forceFinish, docs);
     return NextResponse.json(turn);
   } catch (e) {
-    const msg = e instanceof Error ? e.message : "ERROR";
-    return NextResponse.json({ error: msg }, { status: msg === "UNAUTHORIZED" ? 401 : 400 });
+    return errorResponse(e);
   }
 }

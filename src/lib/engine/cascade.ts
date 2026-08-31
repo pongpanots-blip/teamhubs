@@ -140,6 +140,7 @@ async function notifyStatusChange(result: Reevaluation) {
   await prisma.notification.create({
     data: {
       teamId: task.teamId,
+      projectId: task.projectId,
       userId: task.assigneeId,
       taskId: task.id,
       type: becameBlocked ? "task_blocked" : "task_unblocked",

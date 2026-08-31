@@ -2,12 +2,16 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { addDays } from "date-fns";
 import { prisma } from "@/lib/db";
-import { requireMembership, assertRole } from "@/lib/auth-session";
+import { requireMembership, requireProjectBySlug, assertRole } from "@/lib/auth-session";
+import { errorResponse } from "@/lib/api-error";
 import { TEAM_ROLES } from "@/lib/task-constants";
 
 const schema = z.object({
   email: z.string().email(),
   role: z.enum(TEAM_ROLES).default("backend"),
+  /** Optional: also make them a member of this project on accept. */
+  projectSlug: z.string().min(1).optional(),
+  projectRole: z.enum(TEAM_ROLES).optional(),
 });
 
 export async function GET() {
@@ -16,23 +20,30 @@ export async function GET() {
     assertRole(membership.role, ["pm"]);
     const invites = await prisma.invite.findMany({
       where: { teamId: membership.teamId },
+      include: { project: { select: { slug: true, name: true } } },
       orderBy: { createdAt: "desc" },
     });
     return NextResponse.json({ invites });
   } catch (e) {
-    const msg = e instanceof Error ? e.message : "ERROR";
-    return NextResponse.json({ error: msg }, { status: 400 });
+    return errorResponse(e);
   }
 }
 
 export async function POST(req: Request) {
   try {
-    const { user, membership } = await requireMembership();
+    const cx = await requireMembership();
+    const { user, membership } = cx;
     assertRole(membership.role, ["pm"]);
     const body = schema.parse(await req.json());
+    const project = body.projectSlug
+      ? (await requireProjectBySlug(cx, body.projectSlug)).project
+      : null;
+
     const invite = await prisma.invite.create({
       data: {
         teamId: membership.teamId,
+        projectId: project?.id ?? null,
+        projectRole: project ? (body.projectRole ?? body.role) : null,
         email: body.email.toLowerCase(),
         role: body.role,
         invitedById: user.id,
@@ -44,7 +55,6 @@ export async function POST(req: Request) {
       acceptUrl: `/invite/${invite.token}`,
     });
   } catch (e) {
-    const msg = e instanceof Error ? e.message : "ERROR";
-    return NextResponse.json({ error: msg }, { status: 400 });
+    return errorResponse(e);
   }
 }

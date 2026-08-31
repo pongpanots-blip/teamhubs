@@ -2,7 +2,10 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/db";
-import { requireMembership, requireProjectMembership } from "@/lib/auth-session";
+import { requireMembership } from "@/lib/auth-session";
+import { requireProjectFromQuery } from "@/lib/project-scope";
+import { assertAssignable } from "@/lib/tasks/access";
+import { errorResponse } from "@/lib/api-error";
 import { TASK_PRIORITIES, TASK_STATUSES } from "@/lib/task-constants";
 import { BusinessRuleSchema, rulesPresent } from "@/lib/business-rules";
 import { extractDynamicRequirement } from "@/lib/ai/extract-rules";
@@ -28,10 +31,10 @@ const createSchema = z.object({
   status: z.enum(TASK_STATUSES).optional(),
 });
 
-export async function GET() {
+export async function GET(req: Request) {
   try {
     const cx = await requireMembership();
-    const { project } = await requireProjectMembership(cx);
+    const { project } = await requireProjectFromQuery(cx, req);
     const tasks = await prisma.task.findMany({
       where: { projectId: project.id },
       include: {
@@ -45,8 +48,7 @@ export async function GET() {
     });
     return NextResponse.json({ tasks });
   } catch (e) {
-    const msg = e instanceof Error ? e.message : "ERROR";
-    return NextResponse.json({ error: msg }, { status: msg === "UNAUTHORIZED" ? 401 : 400 });
+    return errorResponse(e);
   }
 }
 
@@ -54,8 +56,9 @@ export async function POST(req: Request) {
   try {
     const cx = await requireMembership();
     const { user, membership } = cx;
-    const { project } = await requireProjectMembership(cx);
+    const { project } = await requireProjectFromQuery(cx, req);
     const body = createSchema.parse(await req.json());
+    await assertAssignable(project.id, body.assigneeId);
 
     let requirement = body.requirement ?? "";
     let businessRules = body.businessRules ?? [];
@@ -115,7 +118,6 @@ export async function POST(req: Request) {
 
     return NextResponse.json({ task }, { status: 201 });
   } catch (e) {
-    const msg = e instanceof Error ? e.message : "ERROR";
-    return NextResponse.json({ error: msg }, { status: 400 });
+    return errorResponse(e);
   }
 }

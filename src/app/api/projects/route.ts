@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/db";
-import { requireMembership, assertRole } from "@/lib/auth-session";
+import { requireMembership, assertRole, listAccessibleProjects } from "@/lib/auth-session";
+import { errorResponse } from "@/lib/api-error";
 
 const schema = z.object({
   name: z.string().min(2),
@@ -11,25 +12,25 @@ const schema = z.object({
     .regex(/^[a-z0-9-]+$/),
 });
 
+/** Only projects the caller can actually open — a PM sees the whole team's. */
 export async function GET() {
   try {
-    const { user, membership } = await requireMembership();
-    const projects = await prisma.project.findMany({
-      where: { teamId: membership.teamId },
-      include: { memberships: { where: { userId: user.id } } },
-      orderBy: { createdAt: "asc" },
+    const cx = await requireMembership();
+    const projects = await listAccessibleProjects(cx);
+    const myRoles = await prisma.projectMembership.findMany({
+      where: { userId: cx.user.id, projectId: { in: projects.map((p) => p.id) } },
     });
+    const roleByProject = new Map(myRoles.map((m) => [m.projectId, m.role]));
     return NextResponse.json({
       projects: projects.map((p) => ({
         id: p.id,
         name: p.name,
         slug: p.slug,
-        myRole: p.memberships[0]?.role ?? null,
+        myRole: roleByProject.get(p.id) ?? (cx.membership.role === "pm" ? "pm" : null),
       })),
     });
   } catch (e) {
-    const msg = e instanceof Error ? e.message : "ERROR";
-    return NextResponse.json({ error: msg }, { status: msg === "UNAUTHORIZED" ? 401 : 400 });
+    return errorResponse(e);
   }
 }
 
@@ -50,7 +51,6 @@ export async function POST(req: Request) {
 
     return NextResponse.json({ project }, { status: 201 });
   } catch (e) {
-    const msg = e instanceof Error ? e.message : "ERROR";
-    return NextResponse.json({ error: msg }, { status: msg === "FORBIDDEN" ? 403 : 400 });
+    return errorResponse(e);
   }
 }

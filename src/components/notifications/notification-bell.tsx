@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { Bell } from "lucide-react";
+import { projectTask } from "@/lib/routes";
 
 type Notification = {
   id: string;
@@ -10,6 +11,8 @@ type Notification = {
   title: string;
   body: string;
   taskId: string | null;
+  projectSlug: string | null;
+  projectName: string | null;
   readAt: string | null;
   createdAt: string;
 };
@@ -105,10 +108,17 @@ export function NotificationBell() {
                   >
                     <p className="font-medium">{n.title}</p>
                     <p className="text-xs text-slate-500">{n.body}</p>
+                    {n.projectName ? (
+                      <p className="mt-0.5 text-[11px] text-slate-400">{n.projectName}</p>
+                    ) : null}
                   </div>
                 );
-                return n.taskId ? (
-                  <Link key={n.id} href={`/app/tasks/${n.taskId}`} onClick={() => setOpen(false)}>
+                return n.taskId && n.projectSlug ? (
+                  <Link
+                    key={n.id}
+                    href={projectTask(n.projectSlug, n.taskId)}
+                    onClick={() => setOpen(false)}
+                  >
                     {row}
                   </Link>
                 ) : (

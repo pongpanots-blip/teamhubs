@@ -25,8 +25,16 @@ const ERROR_MESSAGES: Record<string, string> = {
   FORBIDDEN: "You do not have permission to change docs",
 };
 
-export function DocsIngestPanel({ initialDocs }: { initialDocs: TeamDocSummary[] }) {
+export function DocsIngestPanel({
+  initialDocs,
+  projectSlug,
+}: {
+  initialDocs: TeamDocSummary[];
+  projectSlug: string;
+}) {
   const [docs, setDocs] = useState(initialDocs);
+  // Docs are per-project, so every call names the project explicitly.
+  const q = `project=${encodeURIComponent(projectSlug)}`;
   const [busy, setBusy] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -55,7 +63,7 @@ export function DocsIngestPanel({ initialDocs }: { initialDocs: TeamDocSummary[]
   }
 
   async function refresh() {
-    const res = await fetch("/api/docs");
+    const res = await fetch(`/api/docs?${q}`);
     const data = await res.json();
     if (res.ok) setDocs(data.docs);
   }
@@ -65,7 +73,7 @@ export function DocsIngestPanel({ initialDocs }: { initialDocs: TeamDocSummary[]
     for (const file of Array.from(files)) form.append("files", file);
     await run<{ indexed: { chunks: number }[] }>(
       "upload",
-      () => fetch("/api/docs", { method: "POST", body: form }),
+      () => fetch(`/api/docs?${q}`, { method: "POST", body: form }),
       (data: { indexed: { chunks: number }[] }) =>
         `Uploaded ${data.indexed.length} file(s) → ${data.indexed.reduce((s, i) => s + i.chunks, 0)} chunks`,
     );
@@ -99,7 +107,7 @@ export function DocsIngestPanel({ initialDocs }: { initialDocs: TeamDocSummary[]
             onClick={() =>
               run<{ files: number; chunks: number }>(
                 "reindex",
-                () => fetch("/api/docs/ingest", { method: "POST" }),
+                () => fetch(`/api/docs/ingest?${q}`, { method: "POST" }),
                 (data) =>
                   `Re-indexed ${data.files} docs → ${data.chunks} chunks`,
               )
@@ -113,7 +121,7 @@ export function DocsIngestPanel({ initialDocs }: { initialDocs: TeamDocSummary[]
             onClick={() =>
               run<{ files: number; chunks: number }>(
                 "seed",
-                () => fetch("/api/docs/ingest?source=repo", { method: "POST" }),
+                () => fetch(`/api/docs/ingest?source=repo&${q}`, { method: "POST" }),
                 (data) =>
                   `Imported ${data.files} sample docs → ${data.chunks} chunks`,
               )
@@ -156,7 +164,7 @@ export function DocsIngestPanel({ initialDocs }: { initialDocs: TeamDocSummary[]
                     onClick={() =>
                       run(
                         `delete:${doc.path}`,
-                        () => fetch(`/api/docs?path=${encodeURIComponent(doc.path)}`, { method: "DELETE" }),
+                        () => fetch(`/api/docs?${q}&path=${encodeURIComponent(doc.path)}`, { method: "DELETE" }),
                         () => `Deleted ${doc.path}`,
                       )
                     }

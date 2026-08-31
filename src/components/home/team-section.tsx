@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { pickCurrentTask, type HomeTask } from "@/lib/home";
 import type { TeamRoleValue } from "@/lib/task-constants";
+import { projectTask } from "@/lib/routes";
 
 export type TeamMemberRow = {
   id: string;
@@ -11,7 +12,13 @@ export type TeamMemberRow = {
   tasks: HomeTask[];
 };
 
-export function TeamSection({ members }: { members: TeamMemberRow[] }) {
+export function TeamSection({
+  members,
+  projectSlug,
+}: {
+  members: TeamMemberRow[];
+  projectSlug: string;
+}) {
   return (
     <Card className="border-black/5 bg-white/80">
       <CardHeader>
@@ -35,7 +42,7 @@ export function TeamSection({ members }: { members: TeamMemberRow[] }) {
                 {task ? (
                   <span className="flex items-center gap-1">
                     <span aria-hidden>→</span>
-                    <Link href={`/app/tasks/${task.id}`} className="hover:underline">
+                    <Link href={projectTask(projectSlug, task.id)} className="hover:underline">
                       {task.title}
                     </Link>
                     {extraCount > 0 ? (

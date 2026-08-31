@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
-import { requireMembership, requireProjectMembership, assertRole } from "@/lib/auth-session";
+import { requireMembership, assertRole } from "@/lib/auth-session";
+import { requireProjectFromQuery } from "@/lib/project-scope";
 import {
   DocError,
   MAX_DOC_BYTES,
@@ -35,10 +36,10 @@ async function listDocs(projectId: string) {
   return docs.map((d) => ({ ...d, chunks: chunkByPath.get(d.path) ?? 0 }));
 }
 
-export async function GET() {
+export async function GET(req: Request) {
   try {
     const cx = await requireMembership();
-    const { project } = await requireProjectMembership(cx);
+    const { project } = await requireProjectFromQuery(cx, req);
     return NextResponse.json({ docs: await listDocs(project.id) });
   } catch (e) {
     return errorResponse(e);
@@ -50,8 +51,8 @@ export async function POST(req: Request) {
   try {
     const cx = await requireMembership();
     const { membership } = cx;
-    const { project, projectMembership } = await requireProjectMembership(cx);
-    assertRole(projectMembership.role, ["pm", "ui", "backend", "mobile", "ai"]);
+    const { project, role } = await requireProjectFromQuery(cx, req);
+    assertRole(role, ["pm", "ui", "backend", "mobile", "ai"]);
 
     const form = await req.formData();
     const files = form.getAll("files").filter((f): f is File => f instanceof File);
@@ -74,8 +75,8 @@ export async function POST(req: Request) {
 export async function DELETE(req: Request) {
   try {
     const cx = await requireMembership();
-    const { project, projectMembership } = await requireProjectMembership(cx);
-    assertRole(projectMembership.role, ["pm", "ui", "backend", "mobile", "ai"]);
+    const { project, role } = await requireProjectFromQuery(cx, req);
+    assertRole(role, ["pm", "ui", "backend", "mobile", "ai"]);
     const docPath = new URL(req.url).searchParams.get("path");
     if (!docPath) throw new DocError("MISSING_PATH");
     await deleteTeamDoc(project.id, docPath);
@@ -87,7 +88,17 @@ export async function DELETE(req: Request) {
 
 function errorResponse(e: unknown) {
   const msg = e instanceof Error ? e.message : "ERROR";
-  const status = e instanceof DocError ? 400 : msg === "UNAUTHORIZED" ? 401 : msg === "FORBIDDEN" ? 403 : 500;
+  const status = e instanceof DocError
+    ? 400
+    : msg === "UNAUTHORIZED"
+      ? 401
+      : msg === "FORBIDDEN"
+        ? 403
+        : msg === "NOT_FOUND"
+          ? 404
+          : msg === "PROJECT_REQUIRED"
+            ? 400
+            : 500;
   if (status === 500) console.error(e);
   return NextResponse.json({ error: msg }, { status });
 }

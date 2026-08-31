@@ -144,6 +144,7 @@ export async function runContextPipeline(task: Task) {
   const run = await prisma.contextRun.create({
     data: {
       teamId: task.teamId,
+      projectId: task.projectId,
       taskId: task.id,
       query,
       contextPack: {
@@ -275,6 +276,7 @@ async function notifyFigmaReady(before: Task, after: Task) {
   await prisma.notification.create({
     data: {
       teamId: after.teamId,
+      projectId: after.projectId,
       userId: after.assigneeId,
       taskId: after.id,
       type: "figma_ready",
@@ -291,6 +293,7 @@ async function notifyMissingContext(before: Task, after: Task, missingContext: s
   await prisma.notification.create({
     data: {
       teamId: after.teamId,
+      projectId: after.projectId,
       userId: after.createdById,
       taskId: after.id,
       type: "missing_context",

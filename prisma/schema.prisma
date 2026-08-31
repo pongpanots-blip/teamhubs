@@ -162,6 +162,9 @@ model Project {
   docs        TeamDoc[]
   docChunks   DocChunk[]
   credentials IntegrationCredential[]
+  notifications Notification[]
+  contextRuns   ContextRun[]
+  invites       Invite[]
 
   @@unique([teamId, slug])
 }
@@ -199,8 +202,12 @@ model Membership {
 model Invite {
   id          String       @id @default(cuid())
   teamId      String
+  /// Set when the invite also grants membership of one project. Null = team-only invite.
+  projectId   String?
   email       String
   role        TeamRole     @default(backend)
+  /// Role granted inside `projectId`. Null whenever `projectId` is null.
+  projectRole TeamRole?
   token       String       @unique @default(cuid())
   status      InviteStatus @default(pending)
   invitedById String
@@ -208,6 +215,7 @@ model Invite {
   createdAt   DateTime     @default(now())
   updatedAt   DateTime     @updatedAt
   team        Team         @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  project     Project?     @relation(fields: [projectId], references: [id], onDelete: Cascade)
   invitedBy   User         @relation("InviteSender", fields: [invitedById], references: [id])
 
   @@index([teamId, email])
@@ -304,6 +312,8 @@ model TaskDependency {
 model Notification {
   id        String           @id @default(cuid())
   teamId    String
+  /// Project the notification belongs to — filters out people who left the project.
+  projectId String
   /**
    * Recipient.
    */
@@ -315,11 +325,13 @@ model Notification {
   readAt    DateTime?
   createdAt DateTime         @default(now())
   team      Team             @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  project   Project          @relation(fields: [projectId], references: [id], onDelete: Cascade)
   user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
   task      Task?            @relation(fields: [taskId], references: [id], onDelete: Cascade)
 
   @@index([userId, readAt])
   @@index([teamId])
+  @@index([projectId])
 }
 
 model TeamDoc {
@@ -369,6 +381,7 @@ model DocChunk {
 model ContextRun {
   id           String   @id @default(cuid())
   teamId       String
+  projectId    String
   taskId       String?
   query        String
   contextPack  Json
@@ -381,9 +394,11 @@ model ContextRun {
   error        String?
   createdAt    DateTime @default(now())
   team         Team     @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  project      Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
   task         Task?    @relation(fields: [taskId], references: [id], onDelete: SetNull)
 
   @@index([teamId, taskId])
+  @@index([projectId])
 }
 
 model TaskHandoff {

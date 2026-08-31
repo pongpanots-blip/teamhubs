@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
-import { requireMembership, requireProjectMembership, assertRole } from "@/lib/auth-session";
+import { requireMembership, assertRole } from "@/lib/auth-session";
+import { requireProjectFromQuery } from "@/lib/project-scope";
+import { errorResponse } from "@/lib/api-error";
 import { importRepoDocsForTeam, reindexTeamDocs } from "@/lib/context/ingest";
 
 /**
@@ -10,8 +12,8 @@ export async function POST(req: Request) {
   try {
     const cx = await requireMembership();
     const { membership } = cx;
-    const { project, projectMembership } = await requireProjectMembership(cx);
-    assertRole(projectMembership.role, ["pm", "ui", "backend", "mobile", "ai"]);
+    const { project, role } = await requireProjectFromQuery(cx, req);
+    assertRole(role, ["pm", "ui", "backend", "mobile", "ai"]);
     const source = new URL(req.url).searchParams.get("source");
     const result =
       source === "repo"
@@ -19,9 +21,6 @@ export async function POST(req: Request) {
         : await reindexTeamDocs(project.id);
     return NextResponse.json(result);
   } catch (e) {
-    const msg = e instanceof Error ? e.message : "ERROR";
-    const status = msg === "UNAUTHORIZED" ? 401 : msg === "FORBIDDEN" ? 403 : 500;
-    if (status === 500) console.error(e);
-    return NextResponse.json({ error: msg }, { status });
+    return errorResponse(e);
   }
 }

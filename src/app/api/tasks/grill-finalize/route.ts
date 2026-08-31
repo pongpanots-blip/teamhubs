@@ -2,7 +2,9 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/db";
-import { requireMembership, requireProjectMembership } from "@/lib/auth-session";
+import { requireMembership, requireProjectBySlug } from "@/lib/auth-session";
+import { assertAssignable } from "@/lib/tasks/access";
+import { errorResponse } from "@/lib/api-error";
 import { BusinessRuleSchema, rulesPresent } from "@/lib/business-rules";
 import { TASK_COMPONENTS, TASK_COMPONENT_LABEL } from "@/lib/task-constants";
 import { buildGrillHandoffDoc } from "@/lib/ai/grill-handoff";
@@ -26,8 +28,8 @@ const schema = z.object({
     .default([]),
   /** Full grilling Q&A, stored as one DecisionLog entry for later review. */
   transcript: z.string().default(""),
-  /** Project the draft was started in — defaults to the header's current project. */
-  projectSlug: z.string().optional(),
+  /** Project the finished draft is created under. */
+  projectSlug: z.string().min(1),
 });
 
 /**
@@ -41,7 +43,10 @@ export async function POST(req: Request) {
     const cx = await requireMembership();
     const { user, membership } = cx;
     const body = schema.parse(await req.json());
-    const { project } = await requireProjectMembership(cx, body.projectSlug);
+    const { project } = await requireProjectBySlug(cx, body.projectSlug);
+    for (const c of body.components) {
+      await assertAssignable(project.id, c.assigneeId);
+    }
 
     const result = await prisma.$transaction(async (tx) => {
       const parent = await tx.task.create({
@@ -84,6 +89,7 @@ export async function POST(req: Request) {
           await tx.notification.create({
             data: {
               teamId: membership.teamId,
+              projectId: project.id,
               userId: sub.assigneeId,
               taskId: sub.id,
               type: "task_assigned",
@@ -142,7 +148,6 @@ export async function POST(req: Request) {
 
     return NextResponse.json(result, { status: 201 });
   } catch (e) {
-    const msg = e instanceof Error ? e.message : "ERROR";
-    return NextResponse.json({ error: msg }, { status: 400 });
+    return errorResponse(e);
   }
 }

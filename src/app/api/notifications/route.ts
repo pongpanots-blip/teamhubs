@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { requireMembership } from "@/lib/auth-session";
+import { requireMembership, listAccessibleProjects } from "@/lib/auth-session";
+import { errorResponse } from "@/lib/api-error";
 import { prisma } from "@/lib/db";
 
 const readSchema = z.object({
@@ -8,11 +9,20 @@ const readSchema = z.object({
   all: z.boolean().optional(),
 });
 
+/**
+ * Notifications span every project the caller can open, each tagged with its
+ * project so the bell can deep-link — hiding them behind the project you happen
+ * to have open would defeat the point of telling you something is waiting.
+ * Projects the caller has left drop out of the filter automatically.
+ */
 export async function GET() {
   try {
-    const { user, membership } = await requireMembership();
+    const cx = await requireMembership();
+    const projects = await listAccessibleProjects(cx);
+    const projectById = new Map(projects.map((p) => [p.id, p]));
+
     const notifications = await prisma.notification.findMany({
-      where: { userId: user.id, teamId: membership.teamId },
+      where: { userId: cx.user.id, projectId: { in: projects.map((p) => p.id) } },
       orderBy: { createdAt: "desc" },
       take: 30,
       select: {
@@ -21,12 +31,18 @@ export async function GET() {
         title: true,
         body: true,
         taskId: true,
+        projectId: true,
         readAt: true,
         createdAt: true,
       },
     });
+
     return NextResponse.json({
-      notifications,
+      notifications: notifications.map((n) => ({
+        ...n,
+        projectSlug: projectById.get(n.projectId)?.slug ?? null,
+        projectName: projectById.get(n.projectId)?.name ?? null,
+      })),
       unread: notifications.filter((n) => !n.readAt).length,
     });
   } catch (e) {
@@ -51,10 +67,4 @@ export async function POST(req: Request) {
   } catch (e) {
     return errorResponse(e);
   }
-}
-
-function errorResponse(e: unknown) {
-  const msg = e instanceof Error ? e.message : "ERROR";
-  const status = msg === "UNAUTHORIZED" ? 401 : msg === "NO_TEAM" ? 403 : 400;
-  return NextResponse.json({ error: msg }, { status });
 }

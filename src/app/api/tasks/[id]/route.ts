@@ -3,6 +3,8 @@ import { z } from "zod";
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import { requireMembership } from "@/lib/auth-session";
+import { requireTaskAccess, assertAssignable } from "@/lib/tasks/access";
+import { errorResponse } from "@/lib/api-error";
 import { TASK_PRIORITIES, TASK_STATUSES } from "@/lib/task-constants";
 import {
   BusinessRuleSchema,
@@ -37,10 +39,11 @@ type Params = { params: Promise<{ id: string }> };
 
 export async function GET(_req: Request, { params }: Params) {
   try {
-    const { membership } = await requireMembership();
+    const cx = await requireMembership();
     const { id } = await params;
-    const task = await prisma.task.findFirst({
-      where: { id, teamId: membership.teamId },
+    await requireTaskAccess(cx, id);
+    const task = await prisma.task.findUnique({
+      where: { id },
       include: {
         assignee: { select: { id: true, name: true, email: true } },
         dependsOn: { include: { dependency: true } },
@@ -60,21 +63,19 @@ export async function GET(_req: Request, { params }: Params) {
       },
     });
   } catch (e) {
-    const msg = e instanceof Error ? e.message : "ERROR";
-    return NextResponse.json({ error: msg }, { status: 400 });
+    return errorResponse(e);
   }
 }
 
 export async function PATCH(req: Request, { params }: Params) {
   try {
-    const { membership } = await requireMembership();
+    const cx = await requireMembership();
     const { id } = await params;
-    const existing = await prisma.task.findFirst({
-      where: { id, teamId: membership.teamId },
-    });
-    if (!existing) return NextResponse.json({ error: "NOT_FOUND" }, { status: 404 });
+    const { project } = await requireTaskAccess(cx, id);
+    const existing = await prisma.task.findUniqueOrThrow({ where: { id } });
 
     const body = updateSchema.parse(await req.json());
+    await assertAssignable(project.id, body.assigneeId);
 
     let requirement = body.requirement;
     let businessRules = body.businessRules;
@@ -175,23 +176,18 @@ export async function PATCH(req: Request, { params }: Params) {
         })),
     });
   } catch (e) {
-    const msg = e instanceof Error ? e.message : "ERROR";
-    return NextResponse.json({ error: msg }, { status: 400 });
+    return errorResponse(e);
   }
 }
 
 export async function DELETE(_req: Request, { params }: Params) {
   try {
-    const { membership } = await requireMembership();
+    const cx = await requireMembership();
     const { id } = await params;
-    const existing = await prisma.task.findFirst({
-      where: { id, teamId: membership.teamId },
-    });
-    if (!existing) return NextResponse.json({ error: "NOT_FOUND" }, { status: 404 });
+    await requireTaskAccess(cx, id);
     await prisma.task.delete({ where: { id } });
     return NextResponse.json({ ok: true });
   } catch (e) {
-    const msg = e instanceof Error ? e.message : "ERROR";
-    return NextResponse.json({ error: msg }, { status: 400 });
+    return errorResponse(e);
   }
 }

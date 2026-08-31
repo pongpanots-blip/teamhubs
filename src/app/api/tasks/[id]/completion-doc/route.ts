@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/db";
 import { requireMembership } from "@/lib/auth-session";
+import { requireTaskAccess } from "@/lib/tasks/access";
+import { errorResponse } from "@/lib/api-error";
 import { forwardCompletionDoc } from "@/lib/tasks/completion-doc";
 
 const schema = z.object({ content: z.string().min(1) });
@@ -16,12 +18,12 @@ type Params = { params: Promise<{ id: string }> };
  */
 export async function POST(req: Request, { params }: Params) {
   try {
-    const { membership } = await requireMembership();
+    const cx = await requireMembership();
     const { id } = await params;
+    await requireTaskAccess(cx, id);
     const body = schema.parse(await req.json());
 
-    const task = await prisma.task.findFirst({ where: { id, teamId: membership.teamId } });
-    if (!task) return NextResponse.json({ error: "NOT_FOUND" }, { status: 404 });
+    const task = await prisma.task.findUniqueOrThrow({ where: { id } });
     if (!task.component) {
       return NextResponse.json({ error: "NOT_A_COMPONENT_SUBTASK" }, { status: 400 });
     }
@@ -35,7 +37,6 @@ export async function POST(req: Request, { params }: Params) {
 
     return NextResponse.json(result);
   } catch (e) {
-    const msg = e instanceof Error ? e.message : "ERROR";
-    return NextResponse.json({ error: msg }, { status: 400 });
+    return errorResponse(e);
   }
 }

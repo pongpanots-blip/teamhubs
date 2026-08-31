@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
+import { resolveRecommendation } from "@/lib/ai/grill-recommendation";
 import {
   Dialog,
   DialogContent,
@@ -66,6 +67,7 @@ type Draft = {
   messages: GrillMessage[];
   pendingQuestion: string | null;
   pendingChoices: string[] | null;
+  pendingRecommendation: string | null;
   result: GrillResult | null;
   updatedAt: number;
 };
@@ -119,6 +121,7 @@ function newDraft(project: ProjectOption): Draft {
     messages: [],
     pendingQuestion: null,
     pendingChoices: null,
+    pendingRecommendation: null,
     result: null,
     updatedAt: nowMs(),
   };
@@ -244,6 +247,7 @@ export function TasksBoard({
         messages,
         pendingQuestion: null,
         pendingChoices: null,
+        pendingRecommendation: null,
         result,
         updatedAt: nowMs(),
       });
@@ -255,6 +259,7 @@ export function TasksBoard({
         messages,
         pendingQuestion: data.question as string,
         pendingChoices: (data.choices as string[] | undefined) ?? null,
+        pendingRecommendation: (data.recommendation as string | undefined) ?? null,
         result: null,
         updatedAt: nowMs(),
       });
@@ -325,6 +330,11 @@ export function TasksBoard({
     }
     await refresh();
   }
+
+  const recommendation = resolveRecommendation(
+    draft?.pendingChoices ?? null,
+    draft?.pendingRecommendation ?? null,
+  );
 
   return (
     <div className="space-y-4">
@@ -549,6 +559,9 @@ export function TasksBoard({
                       {draft.pendingQuestion}
                     </div>
                   ) : null}
+                  {recommendation.hintText ? (
+                    <div className="px-3 text-sm text-slate-500">💡 แนะนำ: {recommendation.hintText}</div>
+                  ) : null}
                 </div>
                 {draft.pendingChoices?.length ? (
                   <div className="flex flex-wrap gap-2">
@@ -562,6 +575,9 @@ export function TasksBoard({
                         onClick={() => submitAnswer(false, choice)}
                       >
                         {choice}
+                        {choice === recommendation.matchedChoice ? (
+                          <Badge variant="secondary">แนะนำ</Badge>
+                        ) : null}
                       </Button>
                     ))}
                   </div>

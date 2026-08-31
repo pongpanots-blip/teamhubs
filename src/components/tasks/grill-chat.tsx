@@ -543,9 +543,19 @@ export function GrillChat({
               </div>
             ) : null}
             {recommendation.hintText ? (
-              <div className="px-1 text-xs text-muted-foreground">
-                💡 แนะนำ: {recommendation.hintText}
-              </div>
+              <button
+                type="button"
+                disabled={loading}
+                onClick={() => {
+                  // Drop the hint into the composer so the PM can tweak it before sending.
+                  setAnswer(recommendation.hintText!);
+                  composerRef.current?.focus();
+                }}
+                className="block w-full rounded-[10px] px-1 py-1 text-left text-xs text-muted-foreground hover:bg-card disabled:opacity-50"
+              >
+                💡 แนะนำ: {recommendation.hintText}{" "}
+                <span className="underline">ใช้คำแนะนำนี้</span>
+              </button>
             ) : null}
           </div>
 

@@ -1,13 +1,14 @@
 "use client";
 
-import Link from "next/link";
+import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { TaskStatusBadge } from "@/components/tasks/status-badge";
-import { projectTask } from "@/lib/routes";
+import { CardRow, DropZone } from "@/components/sprints/card-row";
 import {
+  daysLeft,
+  loadByPerson,
+  sprintProgress,
   sprintState,
   totalPoints,
   type SprintCard as Card_,
@@ -23,6 +24,13 @@ const STATE_LABEL = {
 function formatRange(startAt: string, endAt: string): string {
   const fmt = (iso: string) => iso.slice(0, 10);
   return `${fmt(startAt)} → ${fmt(endAt)}`;
+}
+
+/** "3 days left" / "2 days over" / "ends today" — the number a PM actually reads. */
+function formatDaysLeft(endAt: string): string {
+  const days = daysLeft(endAt);
+  if (days === 0) return "ends today";
+  return days > 0 ? `${days} days left` : `${-days} days over`;
 }
 
 export function SprintPanel({
@@ -52,11 +60,14 @@ export function SprintPanel({
   // Committing and sizing cards is a task edit, which any project member may
   // make — gating it here would hide an action the API happily accepts.
   const state = sprintState(sprint);
+  const progress = sprintProgress(sprint.tasks);
   const current = totalPoints(sprint.tasks);
+  const [byPerson, setByPerson] = useState(false);
   // Only meaningful once the commitment is frozen — before kick-off, "scope
   // change" is just planning.
-  const drift =
-    sprint.committedPoints === null ? null : current - sprint.committedPoints;
+  const drift = sprint.committedPoints === null ? null : current - sprint.committedPoints;
+  const people = loadByPerson(sprint.tasks);
+  const open = state !== "completed";
 
   return (
     <Card>
@@ -79,81 +90,145 @@ export function SprintPanel({
             )}
             {canManage && state === "active" && (
               <Button size="sm" variant="secondary" disabled={busy} onClick={onComplete}>
-                Complete
+                Complete sprint
               </Button>
             )}
           </div>
         </div>
         <CardDescription>
           {formatRange(sprint.startAt, sprint.endAt)}
+          {state === "active" ? ` · ${formatDaysLeft(sprint.endAt)}` : ""}
           {sprint.goal ? ` · ${sprint.goal}` : " · No goal set yet"}
         </CardDescription>
       </CardHeader>
 
       <CardContent className="space-y-4">
-        <div className="flex flex-wrap gap-6 text-sm">
-          <span className="text-slate-600">
-            Committed:{" "}
-            <strong className="tabular-nums text-slate-900">
-              {sprint.committedPoints ?? "—"}
-            </strong>
-          </span>
-          <span className="text-slate-600">
-            In scope now:{" "}
-            <strong className="tabular-nums text-slate-900">{current}</strong>
-          </span>
-          {drift !== null && drift !== 0 && (
-            <span className={drift > 0 ? "text-red-600" : "text-slate-600"}>
-              {drift > 0 ? `+${drift} added after kick-off` : `${drift} traded out`}
+        <div className="space-y-1.5">
+          <div className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-1 text-sm">
+            <span className="font-medium text-slate-900">
+              {progress.percent}% done
+              <span className="ml-2 font-normal text-slate-600 tabular-nums">
+                {progress.doneCards}/{progress.totalCards} cards
+                {progress.totalPoints > 0
+                  ? ` · ${progress.donePoints}/${progress.totalPoints} pts`
+                  : " · not sized yet"}
+              </span>
             </span>
+            <span className="text-slate-600">
+              Committed:{" "}
+              <strong className="tabular-nums text-slate-900">
+                {sprint.committedPoints ?? "—"}
+              </strong>
+              {drift !== null && drift !== 0 && (
+                <span className={drift > 0 ? " text-red-600" : " text-slate-600"}>
+                  {drift > 0 ? ` +${drift} added` : ` ${drift} traded out`}
+                </span>
+              )}
+            </span>
+          </div>
+          <div className="h-2 overflow-hidden rounded-full bg-muted">
+            <div
+              className="h-full rounded-full bg-foreground transition-[width] duration-300"
+              style={{ width: `${progress.percent}%` }}
+            />
+          </div>
+        </div>
+
+        <div className="flex items-center justify-between gap-2">
+          <span className="text-xs text-slate-500">
+            {open ? "Drop a card here to commit it" : "Closed — the commitment is final"}
+          </span>
+          {sprint.tasks.length > 0 && (
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => setByPerson((v) => !v)}
+              aria-pressed={byPerson}
+            >
+              {byPerson ? "Show as one list" : "Group by person"}
+            </Button>
           )}
         </div>
 
-        {sprint.tasks.length === 0 ? (
-          <p className="text-sm text-slate-500">No cards committed yet.</p>
-        ) : (
-          <ul className="divide-y divide-black/5">
-            {sprint.tasks.map((card) => (
-              <li key={card.id} className="flex items-center gap-3 py-2">
-                <Link
-                  href={projectTask(projectSlug, card.id)}
-                  className="flex-1 truncate text-sm hover:underline"
-                >
-                  {card.title}
-                </Link>
-                <TaskStatusBadge status={card.status} />
-                <Input
-                  type="number"
-                  min={0}
-                  aria-label={`Story points for ${card.title}`}
-                  defaultValue={card.storyPoints ?? ""}
-                  placeholder="pts"
-                  disabled={busy}
-                  className="h-8 w-20"
-                  onBlur={(e) => {
-                    const raw = e.target.value.trim();
-                    const next = raw === "" ? null : Number(raw);
-                    if (next === (card.storyPoints ?? null)) return;
-                    if (next !== null && (!Number.isInteger(next) || next < 0)) return;
-                    onSetPoints(card.id, next);
-                  }}
+        <DropZone
+          onDropCard={(taskId) => onMoveCard(taskId, sprint.id)}
+          disabled={!open || busy}
+          className={
+            open
+              ? "min-h-16 rounded-lg border border-dashed border-black/10 p-1"
+              : "rounded-lg p-1"
+          }
+        >
+          {sprint.tasks.length === 0 ? (
+            <p className="px-1 py-4 text-center text-sm text-slate-500">
+              No cards committed yet.
+            </p>
+          ) : byPerson ? (
+            <div className="space-y-3">
+              {people.map((person) => (
+                <div key={person.name ?? "__unassigned"}>
+                  <div className="flex items-baseline justify-between px-1 text-xs">
+                    <span className={person.name ? "font-medium" : "font-medium text-amber-700"}>
+                      {person.name ?? "Unassigned"}
+                    </span>
+                    <span className="text-slate-500 tabular-nums">
+                      {person.cards.length} cards · {person.donePoints}/{person.points} pts
+                    </span>
+                  </div>
+                  <ul className="divide-y divide-black/5">
+                    {person.cards.map((card) => (
+                      <CardRow
+                        key={card.id}
+                        card={card}
+                        projectSlug={projectSlug}
+                        busy={busy}
+                        onSetPoints={onSetPoints}
+                        action={
+                          open ? (
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              disabled={busy}
+                              onClick={() => onMoveCard(card.id, null)}
+                            >
+                              Remove
+                            </Button>
+                          ) : undefined
+                        }
+                      />
+                    ))}
+                  </ul>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <ul className="divide-y divide-black/5">
+              {sprint.tasks.map((card) => (
+                <CardRow
+                  key={card.id}
+                  card={card}
+                  projectSlug={projectSlug}
+                  busy={busy}
+                  onSetPoints={onSetPoints}
+                  action={
+                    open ? (
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        disabled={busy}
+                        onClick={() => onMoveCard(card.id, null)}
+                      >
+                        Remove
+                      </Button>
+                    ) : undefined
+                  }
                 />
-                {state !== "completed" && (
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    disabled={busy}
-                    onClick={() => onMoveCard(card.id, null)}
-                  >
-                    Remove
-                  </Button>
-                )}
-              </li>
-            ))}
-          </ul>
-        )}
+              ))}
+            </ul>
+          )}
+        </DropZone>
 
-        {state !== "completed" && backlog.length > 0 && (
+        {open && backlog.length > 0 && (
           <div className="flex items-center gap-2 border-t border-black/5 pt-3">
             <label className="text-sm text-slate-600" htmlFor={`add-${sprint.id}`}>
               Add from backlog

@@ -3,18 +3,11 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Input } from "@/components/ui/input";
+import { SprintSelect, type SprintOption } from "@/components/tasks/sprint-select";
 
-export type SprintOption = {
-  id: string;
-  name: string;
-  /** Started and not yet closed — moving a card now is a logged scope change. */
-  isActive: boolean;
-  /** Already reported on. Only ever listed because the card is already in it. */
-  isClosed: boolean;
-};
+export type { SprintOption };
 
 const ERROR_MESSAGES: Record<string, string> = {
-  SPRINT_NOT_IN_PROJECT: "That sprint belongs to another project",
   FORBIDDEN: "You do not have permission to change this card",
   NOT_FOUND: "This card no longer exists",
 };
@@ -39,14 +32,14 @@ export function SprintAssignment({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  async function save(body: { sprintId?: string | null; storyPoints?: number | null }) {
+  async function savePoints(next: number | null) {
     setBusy(true);
     setError(null);
     try {
       const res = await fetch(`/api/tasks/${taskId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
+        body: JSON.stringify({ storyPoints: next }),
       });
       if (!res.ok) {
         const data = (await res.json().catch(() => ({}))) as { error?: string };
@@ -66,26 +59,13 @@ export function SprintAssignment({
 
   return (
     <div className="space-y-2 py-1">
-      <div className="flex items-center justify-between gap-2">
-        <label htmlFor={`sprint-${taskId}`} className="text-sm text-muted-foreground">
-          Sprint
-        </label>
-        <select
-          id={`sprint-${taskId}`}
-          disabled={busy}
-          defaultValue={sprintId ?? ""}
-          className="h-8 min-w-0 flex-1 rounded-md border border-black/10 bg-white px-2 text-sm"
-          onChange={(e) => save({ sprintId: e.target.value || null })}
-        >
-          <option value="">Backlog</option>
-          {sprints.map((sprint) => (
-            <option key={sprint.id} value={sprint.id}>
-              {sprint.name}
-              {sprint.isActive ? " (running)" : sprint.isClosed ? " (closed)" : ""}
-            </option>
-          ))}
-        </select>
-      </div>
+      <SprintSelect
+        taskId={taskId}
+        sprintId={sprintId}
+        sprints={sprints}
+        label="Sprint"
+        className="w-full text-sm"
+      />
 
       <div className="flex items-center justify-between gap-2">
         <label htmlFor={`points-${taskId}`} className="text-sm text-muted-foreground">
@@ -104,7 +84,7 @@ export function SprintAssignment({
             const next = raw === "" ? null : Number(raw);
             if (next === (storyPoints ?? null)) return;
             if (next !== null && (!Number.isInteger(next) || next < 0)) return;
-            save({ storyPoints: next });
+            savePoints(next);
           }}
         />
       </div>

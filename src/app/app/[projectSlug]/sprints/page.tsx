@@ -11,6 +11,8 @@ const CARD_FIELDS = {
   title: true,
   status: true,
   storyPoints: true,
+  // Who is carrying the card — the sprint screen groups by person.
+  assignee: { select: { name: true } },
 } as const;
 
 export default async function SprintsPage({ params }: Params) {
@@ -34,11 +36,18 @@ export default async function SprintsPage({ params }: Params) {
     }),
   ]);
 
-  const toCard = (t: { id: string; title: string; status: string; storyPoints: number | null }): SprintCard => ({
+  const toCard = (t: {
+    id: string;
+    title: string;
+    status: string;
+    storyPoints: number | null;
+    assignee: { name: string } | null;
+  }): SprintCard => ({
     id: t.id,
     title: t.title,
     status: t.status as TaskStatusValue,
     storyPoints: t.storyPoints,
+    assigneeName: t.assignee?.name ?? null,
   });
 
   const initialSprints: SprintSummary[] = sprints.map((s) => ({
@@ -58,8 +67,9 @@ export default async function SprintsPage({ params }: Params) {
       <div>
         <h1 className="text-xl font-semibold tracking-tight text-slate-900">Sprints</h1>
         <p className="text-sm text-slate-600">
-          Starting a sprint freezes what was committed. Everything moved in or out after
-          that shows up on the burndown as scope change.
+          Drag a card between the backlog and a sprint to commit or drop it. Starting a
+          sprint freezes what was committed — anything moved after that shows up on the
+          burndown as scope change.
         </p>
       </div>
       <SprintsPanel

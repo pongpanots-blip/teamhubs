@@ -3,16 +3,24 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { SprintPanel } from "@/components/sprints/sprint-card";
+import { BacklogPanel } from "@/components/sprints/backlog-panel";
 import type { SprintCard, SprintSummary } from "@/components/sprints/types";
 
 const ERROR_MESSAGES: Record<string, string> = {
   FORBIDDEN: "Only a PM can manage sprints",
   END_BEFORE_START: "The sprint has to end after it starts",
-  SPRINT_ALREADY_STARTED: "This sprint has already started — its commitment is frozen",
+  SPRINT_ALREADY_STARTED:
+    "This sprint has already started — its commitment is frozen",
   SPRINT_NOT_STARTED: "Start the sprint before completing it",
   SPRINT_ALREADY_COMPLETED: "This sprint is already closed",
   SPRINT_NOT_IN_PROJECT: "That sprint belongs to another project",
@@ -38,7 +46,12 @@ export function SprintsPanel({
   const router = useRouter();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [form, setForm] = useState({ name: "", goal: "", startAt: "", endAt: "" });
+  const [form, setForm] = useState({
+    name: "",
+    goal: "",
+    startAt: "",
+    endAt: "",
+  });
 
   async function call(fn: () => Promise<Response>) {
     setBusy(true);
@@ -101,7 +114,9 @@ export function SprintsPanel({
   return (
     <div className="space-y-6">
       {error && (
-        <p className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>
+        <p className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">
+          {error}
+        </p>
       )}
 
       {canManage && (
@@ -109,8 +124,8 @@ export function SprintsPanel({
           <CardHeader>
             <CardTitle className="text-base">Plan a sprint</CardTitle>
             <CardDescription>
-              Write the goal first, then pick the cards that get you there — not the
-              other way round.
+              Write the goal first, then pick the cards that get you there — not
+              the other way round.
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -141,7 +156,9 @@ export function SprintsPanel({
                   type="date"
                   required
                   value={form.startAt}
-                  onChange={(e) => setForm({ ...form, startAt: e.target.value })}
+                  onChange={(e) =>
+                    setForm({ ...form, startAt: e.target.value })
+                  }
                 />
               </div>
               <div className="space-y-1">
@@ -164,27 +181,48 @@ export function SprintsPanel({
         </Card>
       )}
 
-      {initialSprints.length === 0 ? (
-        <p className="text-sm text-slate-500">No sprints yet.</p>
-      ) : (
-        initialSprints.map((sprint) => (
-          <SprintPanel
-            key={sprint.id}
-            sprint={sprint}
-            backlog={backlog}
-            projectSlug={projectSlug}
-            canManage={canManage}
-            busy={busy}
-            onStart={() => patchSprint(sprint.id, { action: "start" })}
-            onComplete={() => patchSprint(sprint.id, { action: "complete" })}
-            onDelete={() =>
-              call(() => fetch(`/api/sprints/${sprint.id}`, { method: "DELETE" }))
-            }
-            onMoveCard={(taskId, sprintId) => patchTask(taskId, { sprintId })}
-            onSetPoints={(taskId, storyPoints) => patchTask(taskId, { storyPoints })}
-          />
-        ))
-      )}
+      <div className="grid items-start gap-6 lg:grid-cols-[320px_1fr]">
+        <BacklogPanel
+          backlog={backlog}
+          projectSlug={projectSlug}
+          busy={busy}
+          onMoveCard={(taskId, sprintId) => patchTask(taskId, { sprintId })}
+          onSetPoints={(taskId, storyPoints) =>
+            patchTask(taskId, { storyPoints })
+          }
+        />
+        <div className="space-y-6">
+          {initialSprints.length === 0 ? (
+            <p className="text-sm text-slate-500">No sprints yet.</p>
+          ) : (
+            initialSprints.map((sprint) => (
+              <SprintPanel
+                key={sprint.id}
+                sprint={sprint}
+                backlog={backlog}
+                projectSlug={projectSlug}
+                canManage={canManage}
+                busy={busy}
+                onStart={() => patchSprint(sprint.id, { action: "start" })}
+                onComplete={() =>
+                  patchSprint(sprint.id, { action: "complete" })
+                }
+                onDelete={() =>
+                  call(() =>
+                    fetch(`/api/sprints/${sprint.id}`, { method: "DELETE" }),
+                  )
+                }
+                onMoveCard={(taskId, sprintId) =>
+                  patchTask(taskId, { sprintId })
+                }
+                onSetPoints={(taskId, storyPoints) =>
+                  patchTask(taskId, { storyPoints })
+                }
+              />
+            ))
+          )}
+        </div>
+      </div>
     </div>
   );
 }

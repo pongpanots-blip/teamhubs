@@ -123,3 +123,29 @@ export async function sprintBurndown(
     ),
   };
 }
+
+/**
+ * The sprints a card may be moved into, newest first. Closed sprints are left
+ * out — committing to one would rewrite a number that has already been
+ * reported on — except any listed in `keepIds`, so a card already sitting in a
+ * closed sprint still shows where it actually is.
+ */
+export async function sprintOptions(
+  projectId: string,
+  keepIds: string[] = [],
+): Promise<{ id: string; name: string; isActive: boolean; isClosed: boolean }[]> {
+  const sprints = await prisma.sprint.findMany({
+    where: {
+      projectId,
+      OR: [{ completedAt: null }, ...(keepIds.length ? [{ id: { in: keepIds } }] : [])],
+    },
+    orderBy: { startAt: "desc" },
+    select: { id: true, name: true, startedAt: true, completedAt: true },
+  });
+  return sprints.map((s) => ({
+    id: s.id,
+    name: s.name,
+    isActive: s.startedAt !== null && s.completedAt === null,
+    isClosed: s.completedAt !== null,
+  }));
+}

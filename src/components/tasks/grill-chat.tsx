@@ -139,10 +139,16 @@ export function GrillChat({
   const isChatting = !!draft && !draft.result;
 
   // Keep the newest bubble (and the typing indicator) in view as the thread grows.
+  // Waits a frame so the just-mounted bubble is laid out before we measure, and
+  // scrolls smoothly so the PM sees where the thread moved.
   useEffect(() => {
     const el = scrollRef.current;
-    if (el) el.scrollTop = el.scrollHeight;
-  }, [draft?.messages.length, draft?.pendingQuestion, loading]);
+    if (!el) return;
+    const id = requestAnimationFrame(() => {
+      el.scrollTo({ top: el.scrollHeight, behavior: "smooth" });
+    });
+    return () => cancelAnimationFrame(id);
+  }, [draft?.messages.length, draft?.pendingQuestion, draft?.pendingChoices, loading]);
 
   useEffect(() => {
     if (isChatting) composerRef.current?.focus();
@@ -528,14 +534,14 @@ export function GrillChat({
             ))}
             {draft.pendingQuestion ? (
               <div className="flex justify-start">
-                <div className="max-w-[78%] rounded-[14px] rounded-bl-[4px] bg-card px-3.5 py-2.5 text-[13px] leading-relaxed ring-1 ring-foreground/[0.08]">
+                <div className="max-w-[78%] animate-in rounded-[14px] rounded-bl-[4px] bg-card px-3.5 py-2.5 text-[13px] leading-relaxed fade-in slide-in-from-bottom-1 ring-1 duration-300 ring-foreground/[0.08]">
                   {draft.pendingQuestion}
                 </div>
               </div>
             ) : null}
             {loading ? (
               <div className="flex justify-start">
-                <div className="flex items-center gap-1 rounded-[14px] rounded-bl-[4px] bg-card px-3.5 py-3 ring-1 ring-foreground/[0.08]">
+                <div className="flex animate-in items-center gap-1 rounded-[14px] rounded-bl-[4px] bg-card px-3.5 py-3 fade-in ring-1 duration-300 ring-foreground/[0.08]">
                   <span className="size-1.5 animate-bounce rounded-full bg-muted-foreground [animation-delay:-0.3s]" />
                   <span className="size-1.5 animate-bounce rounded-full bg-muted-foreground [animation-delay:-0.15s]" />
                   <span className="size-1.5 animate-bounce rounded-full bg-muted-foreground" />
@@ -610,7 +616,11 @@ export function GrillChat({
                 disabled={loading || !answer.trim()}
                 onClick={() => submitAnswer(false)}
               >
-                {loading ? "…" : "ส่ง"}
+                {loading ? (
+                  <span className="size-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                ) : (
+                  "ส่ง"
+                )}
               </Button>
             </div>
             {error ? <p className="text-sm text-red-600">{error}</p> : null}

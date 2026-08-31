@@ -14,6 +14,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { SprintPanel } from "@/components/sprints/sprint-card";
 import { BacklogPanel } from "@/components/sprints/backlog-panel";
+import { LiveRegion, useLiveAnnouncer } from "@/components/a11y/live-announcer";
 import type { SprintCard, SprintSummary } from "@/components/sprints/types";
 
 const ERROR_MESSAGES: Record<string, string> = {
@@ -46,6 +47,17 @@ export function SprintsPanel({
   const router = useRouter();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { message, announce } = useLiveAnnouncer();
+
+  const allCards = [backlog, ...initialSprints.map((s) => s.tasks)].flat();
+  const sprintName = (id: string | null) =>
+    id === null ? "the backlog" : (initialSprints.find((s) => s.id === id)?.name ?? "a sprint");
+
+  function moveCard(taskId: string, sprintId: string | null) {
+    const title = allCards.find((c) => c.id === taskId)?.title ?? "Card";
+    announce(`Moved "${title}" to ${sprintName(sprintId)}`);
+    return patchTask(taskId, { sprintId });
+  }
   const [form, setForm] = useState({
     name: "",
     goal: "",
@@ -113,6 +125,7 @@ export function SprintsPanel({
 
   return (
     <div className="space-y-6">
+      <LiveRegion message={message} />
       {error && (
         <p className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">
           {error}
@@ -186,7 +199,7 @@ export function SprintsPanel({
           backlog={backlog}
           projectSlug={projectSlug}
           busy={busy}
-          onMoveCard={(taskId, sprintId) => patchTask(taskId, { sprintId })}
+          onMoveCard={moveCard}
           onSetPoints={(taskId, storyPoints) =>
             patchTask(taskId, { storyPoints })
           }

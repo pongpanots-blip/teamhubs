@@ -268,7 +268,8 @@ export function TasksBoard({
                   {columnTasks.map((t) => (
                     <div
                       key={t.id}
-                      className="rounded-[10px] bg-card px-3 py-2.5 ring-1 ring-foreground/[0.07]"
+                      className="rounded-[10px] border-l-[3px] bg-card px-3 py-2.5 ring-1 ring-foreground/[0.07]"
+                      style={{ borderLeftColor: taskStatusStyle(t.status).color }}
                     >
                       <Link
                         href={projectTask(currentProjectSlug, t.id)}

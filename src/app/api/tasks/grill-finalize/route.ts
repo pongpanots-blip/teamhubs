@@ -78,6 +78,7 @@ export async function POST(req: Request) {
             title: c.title,
             requirement: c.description,
             component: c.component,
+            parentId: parent.id,
             priority: body.priority,
             deadline: body.deadline ? new Date(body.deadline) : null,
             requirementPresent: Boolean(c.description.trim()),

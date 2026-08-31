@@ -28,6 +28,8 @@ const createSchema = z.object({
   apiReady: z.boolean().optional(),
   internalDocPaths: z.array(z.string()).optional(),
   dependencyIds: z.array(z.string()).optional(),
+  /** Set to make the new task a sub-task of an existing task in the same project. */
+  parentId: z.string().optional().nullable(),
   status: z.enum(TASK_STATUSES).optional(),
 });
 
@@ -59,6 +61,16 @@ export async function POST(req: Request) {
     const { project } = await requireProjectFromQuery(cx, req);
     const body = createSchema.parse(await req.json());
     await assertAssignable(project.id, body.assigneeId);
+
+    // A parent from another project would give the sub-task two owners; reject
+    // rather than silently dropping the link.
+    if (body.parentId) {
+      const parent = await prisma.task.findFirst({
+        where: { id: body.parentId, projectId: project.id },
+        select: { id: true },
+      });
+      if (!parent) return NextResponse.json({ error: "PARENT_NOT_FOUND" }, { status: 404 });
+    }
 
     let requirement = body.requirement ?? "";
     let businessRules = body.businessRules ?? [];
@@ -101,9 +113,18 @@ export async function POST(req: Request) {
         internalDocPaths: body.internalDocPaths ?? [],
         designLinked: Boolean(body.figmaUrl),
         status: initialStatus === "working" ? "assigned" : initialStatus,
+        parentId: body.parentId ?? null,
         createdById: user.id,
       },
     });
+
+    // Same wiring grilling uses: the parent stays blocked until its sub-tasks
+    // are done, via the existing dependency + status engine.
+    if (body.parentId) {
+      await prisma.taskDependency.create({
+        data: { dependentId: body.parentId, dependencyId: task.id, source: "manual" },
+      });
+    }
 
     if (body.dependencyIds?.length) {
       await prisma.taskDependency.createMany({

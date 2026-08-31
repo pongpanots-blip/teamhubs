@@ -11,6 +11,7 @@ import { RunContextButton } from "@/components/tasks/run-context-button";
 import { StartWorkingButton } from "@/components/tasks/start-working-button";
 import { DecisionLogForm } from "@/components/tasks/decision-log-form";
 import { AddSubTaskForm } from "@/components/tasks/add-subtask-form";
+import { SprintAssignment, type SprintOption } from "@/components/tasks/sprint-assignment";
 import {
   RegenerateHandoffButton,
   DownloadHandoffButton,
@@ -58,6 +59,24 @@ export default async function TaskDetailPage({ params }: Props) {
     },
   });
   if (!task) notFound();
+
+  // Closed sprints are not offered — committing a card to one would rewrite a
+  // number that has already been reported on. The card's own sprint is always
+  // listed though, closed or not, so the field shows where it actually sits.
+  const sprints = await prisma.sprint.findMany({
+    where: {
+      projectId: project.id,
+      OR: [{ completedAt: null }, ...(task.sprintId ? [{ id: task.sprintId }] : [])],
+    },
+    orderBy: { startAt: "desc" },
+    select: { id: true, name: true, startedAt: true, completedAt: true },
+  });
+  const sprintOptions: SprintOption[] = sprints.map((s) => ({
+    id: s.id,
+    name: s.name,
+    isActive: s.startedAt !== null && s.completedAt === null,
+    isClosed: s.completedAt !== null,
+  }));
 
   const status = task.status as TaskStatusValue;
   const priority = task.priority as TaskPriorityValue;
@@ -435,6 +454,15 @@ export default async function TaskDetailPage({ params }: Props) {
               <span className="text-sm text-muted-foreground">Status</span>
               <TaskStatusBadge status={status} />
             </div>
+          </SideCard>
+
+          <SideCard title="Sprint">
+            <SprintAssignment
+              taskId={task.id}
+              sprintId={task.sprintId}
+              storyPoints={task.storyPoints}
+              sprints={sprintOptions}
+            />
           </SideCard>
 
           <SideCard title="Dependencies">

@@ -1,5 +1,6 @@
 import { Prisma, type Task, type TaskStatus } from "@prisma/client";
 import { prisma } from "@/lib/db";
+import { recordStatusChange } from "@/lib/tasks/status-history";
 import { ClaudeTaskAnalysisSchema, type ClaudeTaskAnalysis } from "@/lib/ai/schemas";
 import { runDeterministicEngine, type EngineDependency } from "@/lib/engine";
 import { notifyTaskEvent } from "@/lib/notify/task-events";
@@ -84,6 +85,16 @@ export async function reevaluateTask(taskId: string): Promise<Reevaluation | nul
         },
       })
     : task;
+
+  if (changed) {
+    // No actor: the engine moved this card, not a person.
+    await recordStatusChange({
+      taskId: task.id,
+      from: task.status as TaskStatusValue,
+      to: output.status as TaskStatusValue,
+      changedById: null,
+    });
+  }
 
   return {
     task: updated,

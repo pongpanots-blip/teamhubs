@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/db";
+import { recordStatusChange } from "@/lib/tasks/status-history";
 import { requireMembership } from "@/lib/auth-session";
 import { requireProjectFromQuery } from "@/lib/project-scope";
 import { assertAssignable } from "@/lib/tasks/access";
@@ -116,6 +117,13 @@ export async function POST(req: Request) {
         parentId: body.parentId ?? null,
         createdById: user.id,
       },
+    });
+
+    await recordStatusChange({
+      taskId: task.id,
+      from: null,
+      to: task.status,
+      changedById: user.id,
     });
 
     // Same wiring grilling uses: the parent stays blocked until its sub-tasks

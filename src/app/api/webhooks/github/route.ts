@@ -5,6 +5,8 @@ import { prisma } from "@/lib/db";
 import { decryptJson } from "@/lib/crypto";
 import { cascadeFromTask, reevaluateTask } from "@/lib/engine/cascade";
 import { forwardCompletionDoc } from "@/lib/tasks/completion-doc";
+import { recordStatusChange } from "@/lib/tasks/status-history";
+import type { TaskStatusValue } from "@/lib/task-constants";
 
 /** Convention devs are told to put in the PR title, e.g. "[TASK-cmtg...] Add coupon API". */
 const TASK_TAG_RE = /\[TASK-([a-z0-9]+)\]/i;
@@ -103,6 +105,14 @@ export async function POST(req: Request) {
       status: task.status === "done" ? undefined : "done",
       githubPrUrl: task.githubPrUrl ?? prUrl,
     },
+  });
+
+  // No actor: the merge, not a person, closed this card.
+  await recordStatusChange({
+    taskId: task.id,
+    from: task.status as TaskStatusValue,
+    to: "done",
+    changedById: null,
   });
   await reevaluateTask(task.id);
   const cascade = await cascadeFromTask(task.id);

@@ -5,6 +5,7 @@ import { prisma } from "@/lib/db";
 import { requireMembership, requireProjectBySlug, assertRole } from "@/lib/auth-session";
 import { errorResponse } from "@/lib/api-error";
 import { TEAM_ROLES } from "@/lib/task-constants";
+import { deliverInvite } from "@/lib/notify/invite-delivery";
 
 const schema = z.object({
   email: z.string().email(),
@@ -50,10 +51,19 @@ export async function POST(req: Request) {
         expiresAt: addDays(new Date(), 14),
       },
     });
-    return NextResponse.json({
-      invite,
-      acceptUrl: `/invite/${invite.token}`,
+    const acceptPath = `/invite/${invite.token}`;
+    // Delivery is best-effort: the invite row is already committed, and the PM
+    // can always hand over the link themselves if the webhook is down.
+    const delivery = await deliverInvite({
+      email: invite.email,
+      role: invite.role,
+      acceptUrl: new URL(acceptPath, new URL(req.url).origin).toString(),
+      invitedByName: user.name,
+      teamName: membership.team.name,
+      projectName: project?.name ?? null,
     });
+
+    return NextResponse.json({ invite, acceptUrl: acceptPath, delivery });
   } catch (e) {
     return errorResponse(e);
   }

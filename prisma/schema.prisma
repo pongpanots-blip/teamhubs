@@ -166,6 +166,7 @@ model Project {
   notifications Notification[]
   contextRuns   ContextRun[]
   invites       Invite[]
+  sprints       Sprint[]
 
   @@unique([teamId, slug])
 }
@@ -265,6 +266,10 @@ model Task {
   requirementPresent Boolean        @default(false)
   readinessScore     Int            @default(0)
   readinessNotes     String         @default("")
+  /// Sprint the card is committed to. Null = not in any sprint (backlog).
+  sprintId           String?
+  /// Fibonacci-scale estimate. Null when the team sizes by card count instead.
+  storyPoints        Int?
   engineStatus       String?
   lastContextRunId   String?
   createdAt          DateTime       @default(now())
@@ -281,6 +286,8 @@ model Task {
   notifications Notification[]
   handoffDocs   TaskHandoff[]
   statusHistory TaskStatusHistory[]
+  sprint        Sprint?             @relation(fields: [sprintId], references: [id], onDelete: SetNull)
+  scopeChanges  SprintScopeChange[]
   parent        Task?               @relation("TaskSubTasks", fields: [parentId], references: [id], onDelete: SetNull)
   subTasks      Task[]              @relation("TaskSubTasks")
 
@@ -289,6 +296,7 @@ model Task {
   @@index([assigneeId])
   @@index([teamId, priority])
   @@index([projectId, status])
+  @@index([sprintId])
 }
 
 model DecisionLog {
@@ -470,4 +478,54 @@ model TaskStatusHistory {
   changedBy   User?          @relation("StatusChangeAuthor", fields: [changedById], references: [id], onDelete: SetNull)
 
   @@index([taskId, changedAt])
+}
+
+enum ScopeChangeAction {
+  added
+  removed
+}
+
+/// A fixed time-box a project commits work into. Length is meant to stay
+/// constant across sprints so the numbers can be compared at all.
+model Sprint {
+  id              String    @id @default(cuid())
+  projectId       String
+  name            String
+  /// What the sprint is for, in one sentence. Set before cards are picked.
+  goal            String    @default("")
+  /// The planned time-box — also the x-axis of the burndown.
+  startAt         DateTime
+  endAt           DateTime
+  /// Frozen at kick-off from the cards in scope at that moment. Never
+  /// recomputed: comparing it to today's scope is what exposes scope creep.
+  committedPoints Int?
+  /// Kick-off. Null while the sprint is still being planned — moving cards in
+  /// and out before this point is planning, not scope change, so it is not logged.
+  startedAt       DateTime?
+  completedAt     DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  project      Project             @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  tasks        Task[]
+  scopeChanges SprintScopeChange[]
+
+  @@index([projectId, startAt])
+}
+
+/// Every card that entered or left a *started* sprint. Append-only, and the
+/// reason the burndown can draw a scope line instead of silently re-baselining.
+model SprintScopeChange {
+  id        String            @id @default(cuid())
+  sprintId  String
+  taskId    String
+  action    ScopeChangeAction
+  /// Points the card carried at the moment it moved — frozen, since a later
+  /// re-estimate must not rewrite what the sprint looked like back then.
+  points    Int               @default(0)
+  changedAt DateTime          @default(now())
+  sprint    Sprint            @relation(fields: [sprintId], references: [id], onDelete: Cascade)
+  task      Task              @relation(fields: [taskId], references: [id], onDelete: Cascade)
+
+  @@index([sprintId, changedAt])
 }

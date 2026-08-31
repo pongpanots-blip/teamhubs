@@ -6,6 +6,8 @@ import { requireMembership } from "@/lib/auth-session";
 import { requireTaskAccess, assertAssignable } from "@/lib/tasks/access";
 import { recordStatusChange } from "@/lib/tasks/status-history";
 import { computeTaskMetrics } from "@/lib/tasks/metrics";
+import { recordSprintMove } from "@/lib/sprint/service";
+import { assertSprintInProject } from "@/lib/sprint/access";
 import { errorResponse } from "@/lib/api-error";
 import { TASK_PRIORITIES, TASK_STATUSES, type TaskStatusValue } from "@/lib/task-constants";
 import {
@@ -37,6 +39,8 @@ const updateSchema = z.object({
   apiReady: z.boolean().optional(),
   internalDocPaths: z.array(z.string()).optional(),
   dependencyIds: z.array(z.string()).optional(),
+  sprintId: z.string().nullable().optional(),
+  storyPoints: z.number().int().min(0).nullable().optional(),
 });
 
 type Params = { params: Promise<{ id: string }> };
@@ -89,6 +93,7 @@ export async function PATCH(req: Request, { params }: Params) {
 
     const body = updateSchema.parse(await req.json());
     await assertAssignable(project.id, body.assigneeId);
+    await assertSprintInProject(project.id, body.sprintId);
 
     let requirement = body.requirement;
     let businessRules = body.businessRules;
@@ -153,8 +158,21 @@ export async function PATCH(req: Request, { params }: Params) {
         githubPrUrl: body.githubPrUrl,
         apiReady: body.apiReady,
         internalDocPaths: body.internalDocPaths,
+        sprintId: body.sprintId,
+        storyPoints: body.storyPoints,
       },
     });
+
+    if (body.sprintId !== undefined && body.sprintId !== existing.sprintId) {
+      await recordSprintMove({
+        taskId: task.id,
+        from: existing.sprintId,
+        to: task.sprintId,
+        // The points the card carried as it moved — a later re-estimate must
+        // not change what the sprint's scope looked like at this moment.
+        points: task.storyPoints ?? 0,
+      });
+    }
 
     if (body.dependencyIds) {
       await prisma.taskDependency.deleteMany({ where: { dependentId: id, source: "manual" } });

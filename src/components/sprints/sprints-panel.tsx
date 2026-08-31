@@ -190,6 +190,7 @@ export function SprintsPanel({
           onSetPoints={(taskId, storyPoints) =>
             patchTask(taskId, { storyPoints })
           }
+          onSetHours={(taskId, hours) => patchTask(taskId, hours)}
         />
         <div className="space-y-6">
           {initialSprints.length === 0 ? (
@@ -218,6 +219,7 @@ export function SprintsPanel({
                 onSetPoints={(taskId, storyPoints) =>
                   patchTask(taskId, { storyPoints })
                 }
+                onSetHours={(taskId, hours) => patchTask(taskId, hours)}
               />
             ))
           )}

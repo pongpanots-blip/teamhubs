@@ -41,6 +41,9 @@ const updateSchema = z.object({
   dependencyIds: z.array(z.string()).optional(),
   sprintId: z.string().nullable().optional(),
   storyPoints: z.number().int().min(0).nullable().optional(),
+  // Hours are entered by hand, so allow halves but keep them sane.
+  estimateHours: z.number().min(0).max(1000).nullable().optional(),
+  actualHours: z.number().min(0).max(1000).nullable().optional(),
 });
 
 type Params = { params: Promise<{ id: string }> };

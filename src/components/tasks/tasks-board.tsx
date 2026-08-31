@@ -26,7 +26,7 @@ import {
 } from "@/lib/deploy-state";
 import { projectTask, projectTaskNew } from "@/lib/routes";
 import {
-  SprintSelect,
+  SprintPicker,
   type SprintOption,
 } from "@/components/tasks/sprint-select";
 
@@ -47,6 +47,8 @@ type TaskRow = {
   readinessNotes: string;
   assignee?: { name: string } | null;
   sprintId: string | null;
+  estimateHours: number | null;
+  actualHours: number | null;
   dependsOn: { dependency: { id: string; title: string; status: string } }[];
 };
 
@@ -100,7 +102,13 @@ const CHIP_FILTERS: {
 
 /** Column widths from the "IntrovertHubs UI Mockups" Task List artboard. */
 const ROW_GRID =
-  "grid grid-cols-[2fr_0.8fr_0.8fr_0.7fr_0.8fr_0.9fr_1fr_1.1fr] items-center gap-2.5";
+  "grid grid-cols-[1.9fr_0.75fr_0.7fr_0.65fr_0.7fr_0.85fr_0.6fr_1fr_1fr] items-center gap-2.5";
+
+/** "6/4h" — spent against planned. A dash until someone has sized the card. */
+function formatHours(actual: number | null, estimate: number | null): string {
+  if (actual === null && estimate === null) return "—";
+  return `${actual ?? 0}/${estimate ?? 0}h`;
+}
 
 export function TasksBoard({
   initialTasks,
@@ -295,6 +303,12 @@ export function TasksBoard({
                                 )
                               : "—"}
                           </span>
+                          {t.estimateHours !== null ||
+                          t.actualHours !== null ? (
+                            <span className="text-[11px] text-muted-foreground tabular-nums">
+                              {formatHours(t.actualHours, t.estimateHours)}
+                            </span>
+                          ) : null}
                           <span className="ml-auto flex size-5 shrink-0 items-center justify-center rounded-full bg-muted text-[10px] font-semibold text-muted-foreground">
                             {t.assignee?.name?.[0]?.toUpperCase() ?? "?"}
                           </span>
@@ -317,7 +331,7 @@ export function TasksBoard({
                           {DEPLOY_STATE_LABEL[deployState(t.status)]}
                         </span>
                       </Link>
-                      <SprintSelect
+                      <SprintPicker
                         taskId={t.id}
                         sprintId={t.sprintId}
                         sprints={sprints}
@@ -341,6 +355,7 @@ export function TasksBoard({
             <div>Deadline</div>
             <div>Readiness</div>
             <div>Deploy</div>
+            <div>Hours</div>
             <div>Sprint</div>
             <div>Status</div>
           </div>
@@ -416,8 +431,14 @@ export function TasksBoard({
                     {DEPLOY_STATE_LABEL[deploy]}
                   </span>
                 </div>
+                <div
+                  className="text-[13px] tabular-nums"
+                  title="Actual / estimated man hours"
+                >
+                  {formatHours(t.actualHours, t.estimateHours)}
+                </div>
                 <div className="min-w-0">
-                  <SprintSelect
+                  <SprintPicker
                     taskId={t.id}
                     sprintId={t.sprintId}
                     sprints={sprints}

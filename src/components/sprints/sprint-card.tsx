@@ -10,6 +10,7 @@ import {
   loadByPerson,
   sprintProgress,
   sprintState,
+  totalHours,
   totalPoints,
   type SprintCard as Card_,
   type SprintSummary,
@@ -44,6 +45,7 @@ export function SprintPanel({
   onDelete,
   onMoveCard,
   onSetPoints,
+  onSetHours,
 }: {
   sprint: SprintSummary;
   backlog: Card_[];
@@ -55,6 +57,7 @@ export function SprintPanel({
   onDelete: () => void;
   onMoveCard: (taskId: string, sprintId: string | null) => void;
   onSetPoints: (taskId: string, points: number | null) => void;
+  onSetHours: (taskId: string, hours: { estimateHours?: number | null; actualHours?: number | null }) => void;
 }) {
   // canManage gates the sprint's own lifecycle (PM only, as the API enforces).
   // Committing and sizing cards is a task edit, which any project member may
@@ -67,6 +70,7 @@ export function SprintPanel({
   // change" is just planning.
   const drift = sprint.committedPoints === null ? null : current - sprint.committedPoints;
   const people = loadByPerson(sprint.tasks);
+  const hours = totalHours(sprint.tasks);
   const open = state !== "completed";
 
   return (
@@ -113,6 +117,11 @@ export function SprintPanel({
                   ? ` · ${progress.donePoints}/${progress.totalPoints} pts`
                   : " · not sized yet"}
               </span>
+            </span>
+            <span className="text-slate-600 tabular-nums">
+              Man hours:{" "}
+              <strong className="text-slate-900">{hours.actual}</strong>
+              <span className="text-slate-500"> / {hours.estimate}h planned</span>
             </span>
             <span className="text-slate-600">
               Committed:{" "}
@@ -172,7 +181,8 @@ export function SprintPanel({
                       {person.name ?? "Unassigned"}
                     </span>
                     <span className="text-slate-500 tabular-nums">
-                      {person.cards.length} cards · {person.donePoints}/{person.points} pts
+                      {person.cards.length} cards · {person.donePoints}/{person.points} pts ·{" "}
+                      {person.hours.actual}/{person.hours.estimate}h
                     </span>
                   </div>
                   <ul className="divide-y divide-black/5">
@@ -183,6 +193,7 @@ export function SprintPanel({
                         projectSlug={projectSlug}
                         busy={busy}
                         onSetPoints={onSetPoints}
+                        onSetHours={onSetHours}
                         action={
                           open ? (
                             <Button
@@ -210,6 +221,7 @@ export function SprintPanel({
                   projectSlug={projectSlug}
                   busy={busy}
                   onSetPoints={onSetPoints}
+                  onSetHours={onSetHours}
                   action={
                     open ? (
                       <Button

@@ -2,7 +2,7 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { CardRow, DropZone } from "@/components/sprints/card-row";
-import { totalPoints, type SprintCard } from "@/components/sprints/types";
+import { totalHours, totalPoints, type SprintCard } from "@/components/sprints/types";
 
 /**
  * The uncommitted pile, and the drop target for pulling a card back out of a
@@ -14,12 +14,14 @@ export function BacklogPanel({
   busy,
   onMoveCard,
   onSetPoints,
+  onSetHours,
 }: {
   backlog: SprintCard[];
   projectSlug: string;
   busy: boolean;
   onMoveCard: (taskId: string, sprintId: string | null) => void;
   onSetPoints: (taskId: string, points: number | null) => void;
+  onSetHours: (taskId: string, hours: { estimateHours?: number | null; actualHours?: number | null }) => void;
 }) {
   return (
     <Card className="lg:sticky lg:top-4">
@@ -27,7 +29,7 @@ export function BacklogPanel({
         <CardTitle className="text-base">
           Backlog
           <span className="ml-2 text-sm font-normal text-slate-500 tabular-nums">
-            {backlog.length} cards · {totalPoints(backlog)} pts
+            {backlog.length} cards · {totalPoints(backlog)} pts · {totalHours(backlog).estimate}h
           </span>
         </CardTitle>
         <CardDescription>Drag a card into a sprint to commit it.</CardDescription>
@@ -51,6 +53,7 @@ export function BacklogPanel({
                   projectSlug={projectSlug}
                   busy={busy}
                   onSetPoints={onSetPoints}
+                  onSetHours={onSetHours}
                 />
               ))}
             </ul>

@@ -2,6 +2,13 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 export type SprintOption = {
   id: string;
@@ -18,30 +25,33 @@ const ERROR_MESSAGES: Record<string, string> = {
   NOT_FOUND: "This card no longer exists",
 };
 
+const BACKLOG = "__backlog";
+
 /**
- * Move one card between the backlog and a sprint. Lives on every surface that
- * lists cards — planning is a decision a PM makes while looking at the board,
- * not one worth a detour through the card's own page.
+ * Move one card between the backlog and a sprint: the current sprint is
+ * readable at a glance on the pill, and picking another is one click on a
+ * short list. Lives on every surface that lists cards — planning is a decision
+ * a PM makes while looking at the board, not one worth a detour through the
+ * card's own page.
  */
-export function SprintSelect({
+export function SprintPicker({
   taskId,
   sprintId,
   sprints,
   className = "",
-  label,
 }: {
   taskId: string;
   sprintId: string | null;
   sprints: SprintOption[];
   className?: string;
-  /** Visible label; falls back to an aria-label when the row has its own header. */
-  label?: string;
 }) {
   const router = useRouter();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const current = sprints.find((s) => s.id === sprintId) ?? null;
 
   async function save(next: string | null) {
+    if (next === sprintId) return;
     setBusy(true);
     setError(null);
     try {
@@ -64,43 +74,47 @@ export function SprintSelect({
     }
   }
 
-  const select = (
-    <select
-      id={`sprint-${taskId}`}
-      aria-label={label ? undefined : `Sprint for this card`}
-      disabled={busy}
-      value={sprintId ?? ""}
-      className={`h-8 min-w-0 rounded-md border border-black/10 bg-white px-2 text-xs ${className}`}
-      onChange={(e) => save(e.target.value || null)}
-    >
-      <option value="">Backlog</option>
-      {sprints.map((sprint) => (
-        <option key={sprint.id} value={sprint.id}>
-          {sprint.name}
-          {sprint.isActive ? " (running)" : sprint.isClosed ? " (closed)" : ""}
-        </option>
-      ))}
-    </select>
-  );
-
-  if (!label) {
-    return (
-      <>
-        {select}
-        {error && <p className="text-xs text-red-600">{error}</p>}
-      </>
-    );
-  }
-
   return (
-    <div className="flex items-center justify-between gap-2">
-      <label htmlFor={`sprint-${taskId}`} className="text-sm text-muted-foreground">
-        {label}
-      </label>
-      <div className="flex min-w-0 flex-1 flex-col items-end gap-1">
-        {select}
-        {error && <p className="text-xs text-red-600">{error}</p>}
-      </div>
+    <div className={`min-w-0 ${className}`}>
+      <DropdownMenu>
+        <DropdownMenuTrigger
+          disabled={busy}
+          aria-label="Sprint for this card"
+          className={`inline-flex h-7 max-w-full items-center gap-1 rounded-full border px-2.5 text-xs disabled:opacity-50 ${
+            current
+              ? "border-transparent bg-foreground/[0.06] font-medium"
+              : "border-dashed border-black/15 text-muted-foreground"
+          }`}
+        >
+          <span className="truncate">{current?.name ?? "Backlog"}</span>
+          {current?.isActive && (
+            <span aria-hidden className="size-1.5 shrink-0 rounded-full bg-emerald-500" />
+          )}
+          <span aria-hidden className="shrink-0 text-[9px] opacity-60">
+            ▾
+          </span>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="start" className="min-w-44">
+          <DropdownMenuRadioGroup
+            value={sprintId ?? BACKLOG}
+            onValueChange={(value) => save(value === BACKLOG ? null : value)}
+          >
+            <DropdownMenuRadioItem value={BACKLOG}>Backlog</DropdownMenuRadioItem>
+            {sprints.map((sprint) => (
+              <DropdownMenuRadioItem key={sprint.id} value={sprint.id}>
+                <span className="truncate">{sprint.name}</span>
+                {sprint.isActive && (
+                  <span className="ml-1 text-[10px] text-emerald-600">running</span>
+                )}
+                {sprint.isClosed && (
+                  <span className="ml-1 text-[10px] text-muted-foreground">closed</span>
+                )}
+              </DropdownMenuRadioItem>
+            ))}
+          </DropdownMenuRadioGroup>
+        </DropdownMenuContent>
+      </DropdownMenu>
+      {error && <p className="mt-1 text-xs text-red-600">{error}</p>}
     </div>
   );
 }

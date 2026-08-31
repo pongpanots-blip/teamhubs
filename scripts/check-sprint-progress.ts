@@ -3,6 +3,7 @@ import {
   daysLeft,
   loadByPerson,
   sprintProgress,
+  totalHours,
   type SprintCard,
 } from "../src/components/sprints/types";
 
@@ -18,6 +19,8 @@ const card = (over: Partial<SprintCard> = {}): SprintCard => ({
   title: "card",
   status: "ready",
   storyPoints: null,
+  estimateHours: null,
+  actualHours: null,
   assigneeName: null,
   ...over,
 });
@@ -71,6 +74,26 @@ check("load is grouped per person with unassigned last", () => {
   const mia = groups.find((g) => g.name === "Mia")!;
   assert.equal(mia.points, 8);
   assert.equal(mia.donePoints, 3);
+});
+
+check("man hours add up separately from points", () => {
+  const totals = totalHours([
+    card({ estimateHours: 4, actualHours: 6 }),
+    card({ estimateHours: 2.5, actualHours: null }),
+    card(),
+  ]);
+  assert.equal(totals.estimate, 6.5);
+  // A card nobody logged time on contributes nothing rather than its estimate.
+  assert.equal(totals.actual, 6);
+});
+
+check("per-person load carries that person's hours", () => {
+  const [kai] = loadByPerson([
+    card({ assigneeName: "Kai", estimateHours: 3, actualHours: 5 }),
+    card({ assigneeName: "Kai", estimateHours: 1, actualHours: null }),
+  ]);
+  assert.equal(kai.hours.estimate, 4);
+  assert.equal(kai.hours.actual, 5);
 });
 
 console.log(`\nall ${passed} checks passed`);

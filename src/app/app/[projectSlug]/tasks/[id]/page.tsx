@@ -449,6 +449,8 @@ export default async function TaskDetailPage({ params }: Props) {
               taskId={task.id}
               sprintId={task.sprintId}
               storyPoints={task.storyPoints}
+              estimateHours={task.estimateHours}
+              actualHours={task.actualHours}
               sprints={options}
             />
           </SideCard>

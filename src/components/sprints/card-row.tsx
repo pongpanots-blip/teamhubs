@@ -19,12 +19,14 @@ export function CardRow({
   projectSlug,
   busy,
   onSetPoints,
+  onSetHours,
   action,
 }: {
   card: SprintCard;
   projectSlug: string;
   busy: boolean;
   onSetPoints: (taskId: string, points: number | null) => void;
+  onSetHours: (taskId: string, hours: { estimateHours?: number | null; actualHours?: number | null }) => void;
   /** Keyboard-reachable equivalent of dropping this card somewhere else. */
   action?: React.ReactNode;
 }) {
@@ -52,24 +54,68 @@ export function CardRow({
         </span>
       </div>
       <TaskStatusBadge status={card.status} />
-      <Input
-        type="number"
-        min={0}
-        aria-label={`Story points for ${card.title}`}
-        defaultValue={card.storyPoints ?? ""}
+      <NumberCell
+        label={`Story points for ${card.title}`}
+        value={card.storyPoints}
         placeholder="pts"
-        disabled={busy}
-        className="h-8 w-16"
-        onBlur={(e) => {
-          const raw = e.target.value.trim();
-          const next = raw === "" ? null : Number(raw);
-          if (next === (card.storyPoints ?? null)) return;
-          if (next !== null && (!Number.isInteger(next) || next < 0)) return;
-          onSetPoints(card.id, next);
-        }}
+        busy={busy}
+        integer
+        onSave={(next) => onSetPoints(card.id, next)}
+      />
+      <NumberCell
+        label={`Estimated hours for ${card.title}`}
+        value={card.estimateHours}
+        placeholder="est h"
+        busy={busy}
+        onSave={(next) => onSetHours(card.id, { estimateHours: next })}
+      />
+      <NumberCell
+        label={`Actual hours for ${card.title}`}
+        value={card.actualHours}
+        placeholder="act h"
+        busy={busy}
+        onSave={(next) => onSetHours(card.id, { actualHours: next })}
       />
       {action}
     </li>
+  );
+}
+
+/** One sizing box. Saves on blur, and only when the value actually changed. */
+function NumberCell({
+  label,
+  value,
+  placeholder,
+  busy,
+  integer = false,
+  onSave,
+}: {
+  label: string;
+  value: number | null;
+  placeholder: string;
+  busy: boolean;
+  integer?: boolean;
+  onSave: (next: number | null) => void;
+}) {
+  return (
+    <Input
+      type="number"
+      min={0}
+      step={integer ? 1 : 0.5}
+      aria-label={label}
+      defaultValue={value ?? ""}
+      placeholder={placeholder}
+      disabled={busy}
+      className="h-8 w-16"
+      onBlur={(e) => {
+        const raw = e.target.value.trim();
+        const next = raw === "" ? null : Number(raw);
+        if (next === (value ?? null)) return;
+        if (next !== null && (Number.isNaN(next) || next < 0)) return;
+        if (next !== null && integer && !Number.isInteger(next)) return;
+        onSave(next);
+      }}
+    />
   );
 }
 

@@ -11,6 +11,8 @@ const CARD_FIELDS = {
   title: true,
   status: true,
   storyPoints: true,
+  estimateHours: true,
+  actualHours: true,
   // Who is carrying the card — the sprint screen groups by person.
   assignee: { select: { name: true } },
 } as const;
@@ -41,12 +43,16 @@ export default async function SprintsPage({ params }: Params) {
     title: string;
     status: string;
     storyPoints: number | null;
+    estimateHours: number | null;
+    actualHours: number | null;
     assignee: { name: string } | null;
   }): SprintCard => ({
     id: t.id,
     title: t.title,
     status: t.status as TaskStatusValue,
     storyPoints: t.storyPoints,
+    estimateHours: t.estimateHours,
+    actualHours: t.actualHours,
     assigneeName: t.assignee?.name ?? null,
   });
 

@@ -5,6 +5,8 @@ export type SprintCard = {
   title: string;
   status: TaskStatusValue;
   storyPoints: number | null;
+  estimateHours: number | null;
+  actualHours: number | null;
   assigneeName: string | null;
 };
 
@@ -74,12 +76,26 @@ export function daysLeft(endAt: string, now: Date = new Date()): number {
   return Math.ceil((end - now.getTime()) / 86_400_000);
 }
 
+export type HoursTotals = { estimate: number; actual: number };
+
+/** Man hours across a set of cards — what was planned, what it has cost. */
+export function totalHours(cards: SprintCard[]): HoursTotals {
+  return cards.reduce(
+    (sum, card) => ({
+      estimate: sum.estimate + (card.estimateHours ?? 0),
+      actual: sum.actual + (card.actualHours ?? 0),
+    }),
+    { estimate: 0, actual: 0 },
+  );
+}
+
 export type PersonLoad = {
   /** null groups every unassigned card together. */
   name: string | null;
   cards: SprintCard[];
   points: number;
   donePoints: number;
+  hours: HoursTotals;
 };
 
 /**
@@ -101,6 +117,7 @@ export function loadByPerson(cards: SprintCard[]): PersonLoad[] {
       cards: group,
       points: totalPoints(group),
       donePoints: totalPoints(group.filter((c) => c.status === "done")),
+      hours: totalHours(group),
     }))
     .sort((a, b) => {
       // Unassigned last — it is a gap to fill, not a person's workload.

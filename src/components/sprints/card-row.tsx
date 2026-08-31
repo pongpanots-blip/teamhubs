@@ -62,7 +62,8 @@ export function CardRow({
         <NumberCell
           label={`Story points for ${card.title}`}
           value={card.storyPoints}
-          placeholder="pts"
+          placeholder="points"
+          hint="Story points"
           busy={busy}
           integer
           onSave={(next) => onSetPoints(card.id, next)}
@@ -70,14 +71,16 @@ export function CardRow({
         <NumberCell
           label={`Estimated hours for ${card.title}`}
           value={card.estimateHours}
-          placeholder="est h"
+          placeholder="est hrs"
+          hint="Estimated hours"
           busy={busy}
           onSave={(next) => onSetHours(card.id, { estimateHours: next })}
         />
         <NumberCell
           label={`Actual hours for ${card.title}`}
           value={card.actualHours}
-          placeholder="act h"
+          placeholder="act hrs"
+          hint="Actual hours"
           busy={busy}
           onSave={(next) => onSetHours(card.id, { actualHours: next })}
         />
@@ -90,13 +93,17 @@ export function CardRow({
 /** One sizing box. Saves on blur, and only when the value actually changed. */
 function NumberCell({
   label,
+  hint,
   value,
   placeholder,
   busy,
   integer = false,
   onSave,
 }: {
+  /** Full sentence for screen readers, card title included. */
   label: string;
+  /** Short name shown on hover, so the abbreviated placeholder is decodable. */
+  hint: string;
   value: number | null;
   placeholder: string;
   busy: boolean;
@@ -109,10 +116,11 @@ function NumberCell({
       min={0}
       step={integer ? 1 : 0.5}
       aria-label={label}
+      title={hint}
       defaultValue={value ?? ""}
       placeholder={placeholder}
       disabled={busy}
-      className="h-8 w-16 shrink-0"
+      className="h-8 w-20 shrink-0"
       onBlur={(e) => {
         const raw = e.target.value.trim();
         const next = raw === "" ? null : Number(raw);

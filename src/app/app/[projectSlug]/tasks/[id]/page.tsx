@@ -49,15 +49,22 @@ export default async function TaskDetailPage({ params }: Props) {
       },
       contextRuns: { orderBy: { createdAt: "desc" }, take: 3 },
       handoffDocs: { orderBy: { role: "asc" } },
-      parent: { select: { id: true, title: true } },
-      subTasks: { include: { assignee: true }, orderBy: { createdAt: "asc" } },
+      // businessRules: a sub-task has none of its own — it inherits the parent's.
+      parent: { select: { id: true, title: true, businessRules: true } },
+      subTasks: {
+        include: { assignee: true, handoffDocs: { orderBy: { role: "asc" } } },
+        orderBy: { createdAt: "asc" },
+      },
     },
   });
   if (!task) notFound();
 
   const status = task.status as TaskStatusValue;
   const priority = task.priority as TaskPriorityValue;
-  const businessRules = parseBusinessRules(task.businessRules);
+  // Business rules belong to the parent requirement — a sub-task inherits and
+  // displays its parent's rules rather than showing an empty card.
+  const parentTask = task.parent;
+  const businessRules = parseBusinessRules(parentTask?.businessRules ?? task.businessRules);
   const prMatch = task.githubPrUrl?.match(/\/pull\/(\d+)/);
 
   const latestRunOutput = task.contextRuns[0]?.engineOutput as {
@@ -130,26 +137,37 @@ export default async function TaskDetailPage({ params }: Props) {
               <AddSubTaskForm parentId={task.id} projectSlug={project.slug} />
             </div>
             <div className="flex flex-col gap-2">
-              {subTasks.map((sub) => (
-                <Link
-                  key={sub.id}
-                  href={projectTask(project.slug, sub.id)}
-                  className="flex flex-wrap items-center gap-2 rounded-[10px] bg-card p-3 text-sm ring-1 ring-foreground/[0.06] hover:bg-muted/40"
-                >
-                  {sub.component ? (
-                    <Badge variant="secondary" className="capitalize">
-                      {sub.component}
-                    </Badge>
-                  ) : null}
-                  <span className="font-medium">{sub.title}</span>
-                  <span className="text-xs text-muted-foreground">
-                    — {sub.assignee?.name ?? "Unassigned"}
-                  </span>
-                  <span className="ml-auto">
+              {subTasks.map((sub) => {
+                const doc = sub.handoffDocs[0];
+                return (
+                  <div
+                    key={sub.id}
+                    className="flex flex-wrap items-center gap-2 rounded-[10px] bg-card p-3 text-sm ring-1 ring-foreground/[0.06]"
+                  >
+                    <Link
+                      href={projectTask(project.slug, sub.id)}
+                      className="flex min-w-0 flex-1 flex-wrap items-center gap-2 hover:underline"
+                    >
+                      {sub.component ? (
+                        <Badge variant="secondary" className="capitalize">
+                          {sub.component}
+                        </Badge>
+                      ) : null}
+                      <span className="font-medium">{sub.title}</span>
+                      <span className="text-xs text-muted-foreground">
+                        — {sub.assignee?.name ?? "Unassigned"}
+                      </span>
+                    </Link>
                     <TaskStatusBadge status={sub.status as TaskStatusValue} />
-                  </span>
-                </Link>
-              ))}
+                    {doc ? (
+                      <DownloadHandoffButton
+                        fileName={`${sub.component ?? "sub"}-${sub.id}.md`}
+                        content={doc.content}
+                      />
+                    ) : null}
+                  </div>
+                );
+              })}
               {subTasks.length === 0 ? (
                 <p className="text-xs" style={{ color: "oklch(0.5 0.1 300)" }}>
                   No sub-tasks yet.
@@ -187,6 +205,14 @@ export default async function TaskDetailPage({ params }: Props) {
               <CardTitle className="text-base">Business Rules</CardTitle>
             </CardHeader>
             <CardContent>
+              {parentTask ? (
+                <p className="mb-2 text-xs text-muted-foreground">
+                  Inherited from the parent task{" "}
+                  <Link className="underline" href={projectTask(project.slug, parentTask.id)}>
+                    {parentTask.title}
+                  </Link>
+                </p>
+              ) : null}
               {businessRules.length === 0 ? (
                 <p className="text-sm text-muted-foreground">No rules extracted yet.</p>
               ) : (

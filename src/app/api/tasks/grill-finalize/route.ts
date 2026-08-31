@@ -15,6 +15,8 @@ const schema = z.object({
   acceptanceCriteria: z.string().default(""),
   businessRules: z.array(BusinessRuleSchema).default([]),
   priority: z.enum(["p0", "p1", "p2", "p3"]).default("p2"),
+  /** ISO date the PM committed to during grilling; null when open-ended. */
+  deadline: z.string().date().nullable().default(null),
   /** Sub-tasks the PM confirmed after reviewing the AI's proposed breakdown. */
   components: z
     .array(
@@ -58,6 +60,7 @@ export async function POST(req: Request) {
           businessRules: body.businessRules as Prisma.InputJsonValue,
           acceptanceCriteria: body.acceptanceCriteria,
           priority: body.priority,
+          deadline: body.deadline ? new Date(body.deadline) : null,
           requirementPresent: true,
           rulesPresent: rulesPresent(body.businessRules),
           acPresent: Boolean(body.acceptanceCriteria.trim()),
@@ -77,6 +80,7 @@ export async function POST(req: Request) {
             component: c.component,
             parentId: parent.id,
             priority: body.priority,
+            deadline: body.deadline ? new Date(body.deadline) : null,
             requirementPresent: Boolean(c.description.trim()),
             assigneeId: c.assigneeId ?? null,
             status: c.assigneeId ? "assigned" : "not_ready",

@@ -197,6 +197,19 @@ export function GrillChat({
       return;
     }
 
+    // Show the PM's answer on the right straight away — tapping a choice should
+    // land in the transcript like a typed message, not appear only once the
+    // model replies.
+    persist({
+      ...draft,
+      messages,
+      pendingQuestion: null,
+      pendingChoices: null,
+      pendingRecommendation: null,
+      updatedAt: nowMs(),
+    });
+    setAnswer("");
+
     const res = await fetch("/api/tasks/grill", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -205,10 +218,12 @@ export function GrillChat({
     const data = await res.json();
     setLoading(false);
     if (!res.ok) {
+      // Put the question back so the PM can retry the same answer.
+      persist({ ...draft, updatedAt: nowMs() });
+      setAnswer(text);
       setError(data.error ?? "Failed");
       return;
     }
-    setAnswer("");
     const label = messages[0]?.content.slice(0, 60) || draft.label;
     if (data.done) {
       const result = data.result as GrillResult;
@@ -252,6 +267,8 @@ export function GrillChat({
         requirement: draft.result.requirement,
         acceptanceCriteria: draft.result.acceptanceCriteria,
         businessRules: draft.result.businessRules,
+        priority: draft.result.priority,
+        deadline: draft.result.deadline || null,
         components: components
           .filter((c) => c.included)
           .map((c) => ({
@@ -387,6 +404,14 @@ export function GrillChat({
                 AC: {draft.result.acceptanceCriteria}
               </p>
             ) : null}
+            <div className="mt-2 flex flex-wrap gap-1.5">
+              <Badge variant="secondary" className="text-[11px]">
+                {draft.result.priority.toUpperCase()}
+              </Badge>
+              <Badge variant="secondary" className="text-[11px]">
+                {draft.result.deadline ? `ครบกำหนด ${draft.result.deadline}` : "ไม่มีกำหนดส่ง"}
+              </Badge>
+            </div>
             {draft.result.businessRules.length ? (
               <div className="mt-1">
                 {draft.result.businessRules.map((r, i) => (

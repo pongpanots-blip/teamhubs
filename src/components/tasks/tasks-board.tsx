@@ -124,7 +124,7 @@ export function TasksBoard({
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-[22px] font-semibold tracking-tight">Tasks</h1>
-        <Button render={<Link href={projectTaskNew(currentProjectSlug)} />}>+ New task</Button>
+        <Button nativeButton={false} render={<Link href={projectTaskNew(currentProjectSlug)} />}>+ New task</Button>
       </div>
 
       <div className="flex flex-wrap items-center gap-2">

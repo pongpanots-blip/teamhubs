@@ -10,6 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { RunContextButton } from "@/components/tasks/run-context-button";
 import { StartWorkingButton } from "@/components/tasks/start-working-button";
 import { DecisionLogForm } from "@/components/tasks/decision-log-form";
+import { AddSubTaskForm } from "@/components/tasks/add-subtask-form";
 import {
   RegenerateHandoffButton,
   DownloadHandoffButton,
@@ -48,6 +49,8 @@ export default async function TaskDetailPage({ params }: Props) {
       },
       contextRuns: { orderBy: { createdAt: "desc" }, take: 3 },
       handoffDocs: { orderBy: { role: "asc" } },
+      parent: { select: { id: true, title: true } },
+      subTasks: { include: { assignee: true }, orderBy: { createdAt: "asc" } },
     },
   });
   if (!task) notFound();
@@ -63,9 +66,11 @@ export default async function TaskDetailPage({ params }: Props) {
   } | null;
   const missingContextItems = buildMissingContextItems(task, latestRunOutput);
 
-  /** Sub-tasks created from a grilling session carry a component; plain dependencies don't. */
-  const subTaskDeps = task.dependsOn.filter((d) => d.dependency.component != null);
-  const otherDeps = task.dependsOn.filter((d) => d.dependency.component == null);
+  const subTasks = task.subTasks;
+  // Every sub-task is also a dependency (it blocks the parent) — list it once,
+  // in the sub-tasks section, not again under Dependencies.
+  const subTaskIds = new Set(subTasks.map((s) => s.id));
+  const otherDeps = task.dependsOn.filter((d) => !subTaskIds.has(d.dependency.id));
 
   const completionDocs = task.handoffDocs.filter((d) => d.role.startsWith("completion:"));
   const genericHandoffDocs = task.handoffDocs.filter((d) => !d.role.startsWith("completion:"));
@@ -74,16 +79,25 @@ export default async function TaskDetailPage({ params }: Props) {
     <div>
       <div className="mb-5 flex flex-wrap items-start justify-between gap-3">
         <div>
-          <Link href={projectTasks(project.slug)} className="text-sm text-muted-foreground hover:underline">
-            ← Tasks
-          </Link>
+          {task.parent ? (
+            <Link
+              href={projectTask(project.slug, task.parent.id)}
+              className="text-sm text-muted-foreground hover:underline"
+            >
+              ← {task.parent.title}
+            </Link>
+          ) : (
+            <Link href={projectTasks(project.slug)} className="text-sm text-muted-foreground hover:underline">
+              ← Tasks
+            </Link>
+          )}
           <h1 className="mt-1.5 text-[26px] font-semibold tracking-tight">{task.title}</h1>
-          {subTaskDeps.length > 0 ? (
+          {subTasks.length > 0 ? (
             <span
               className="mt-2.5 inline-flex h-[22px] items-center gap-1.5 rounded-full px-2.5 text-[11px] font-medium"
               style={{ backgroundColor: "var(--violet-bg)", color: "var(--violet)" }}
             >
-              ✶ Grilled → {subTaskDeps.length} sub-tasks
+              ✶ {subTasks.length} sub-tasks
             </span>
           ) : null}
         </div>
@@ -99,41 +113,50 @@ export default async function TaskDetailPage({ params }: Props) {
         <div className="min-w-0 space-y-4">
           <MissingContextPanel taskId={task.id} items={missingContextItems} />
 
-          {subTaskDeps.length > 0 ? (
-            <div
-              className="rounded-[14px] p-4"
-              style={{ backgroundColor: "var(--violet-bg)", boxShadow: "0 0 0 1px oklch(0.52 0.14 300 / 0.25)" }}
-            >
-              <div className="mb-3">
+          <div
+            className="rounded-[14px] p-4"
+            style={{ backgroundColor: "var(--violet-bg)", boxShadow: "0 0 0 1px oklch(0.52 0.14 300 / 0.25)" }}
+          >
+            <div className="mb-3 flex flex-wrap items-start justify-between gap-2">
+              <div>
                 <h2 className="text-sm font-medium" style={{ color: "oklch(0.42 0.14 300)" }}>
-                  Sub-tasks ({subTaskDeps.length})
+                  Sub-tasks ({subTasks.length})
                 </h2>
                 <p className="mt-0.5 text-xs" style={{ color: "oklch(0.5 0.1 300)" }}>
-                  Split from grilling — this task is the UI slice of a bigger request.
+                  Each sub-task is a task of its own — it has its own page, owner and status, and
+                  blocks this one until it is done.
                 </p>
               </div>
-              <div className="flex flex-col gap-2">
-                {subTaskDeps.map((d) => (
-                  <Link
-                    key={d.id}
-                    href={projectTask(project.slug, d.dependency.id)}
-                    className="flex flex-wrap items-center gap-2 rounded-[10px] bg-card p-3 text-sm ring-1 ring-foreground/[0.06] hover:bg-muted/40"
-                  >
-                    <Badge variant="secondary" className="capitalize">
-                      {d.dependency.component}
-                    </Badge>
-                    <span className="font-medium">{d.dependency.title}</span>
-                    <span className="text-xs text-muted-foreground">
-                      — {d.dependency.assignee?.name ?? "Unassigned"}
-                    </span>
-                    <span className="ml-auto">
-                      <TaskStatusBadge status={d.dependency.status as TaskStatusValue} />
-                    </span>
-                  </Link>
-                ))}
-              </div>
+              <AddSubTaskForm parentId={task.id} projectSlug={project.slug} />
             </div>
-          ) : null}
+            <div className="flex flex-col gap-2">
+              {subTasks.map((sub) => (
+                <Link
+                  key={sub.id}
+                  href={projectTask(project.slug, sub.id)}
+                  className="flex flex-wrap items-center gap-2 rounded-[10px] bg-card p-3 text-sm ring-1 ring-foreground/[0.06] hover:bg-muted/40"
+                >
+                  {sub.component ? (
+                    <Badge variant="secondary" className="capitalize">
+                      {sub.component}
+                    </Badge>
+                  ) : null}
+                  <span className="font-medium">{sub.title}</span>
+                  <span className="text-xs text-muted-foreground">
+                    — {sub.assignee?.name ?? "Unassigned"}
+                  </span>
+                  <span className="ml-auto">
+                    <TaskStatusBadge status={sub.status as TaskStatusValue} />
+                  </span>
+                </Link>
+              ))}
+              {subTasks.length === 0 ? (
+                <p className="text-xs" style={{ color: "oklch(0.5 0.1 300)" }}>
+                  No sub-tasks yet.
+                </p>
+              ) : null}
+            </div>
+          </div>
 
           <Card>
             <CardHeader>

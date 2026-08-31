@@ -37,46 +37,52 @@ export function CardRow({
         e.dataTransfer.setData(CARD_DRAG_TYPE, card.id);
         e.dataTransfer.effectAllowed = "move";
       }}
-      className="flex cursor-grab items-center gap-2 rounded-md px-1 py-2 active:cursor-grabbing hover:bg-black/[0.02]"
+      /* Wraps because the backlog column is a fixed 320px: the sizing boxes drop
+         to their own line there, and stay inline in the wider sprint panel. */
+      className="flex flex-wrap items-center gap-x-2 gap-y-1.5 rounded-md px-1 py-2 hover:bg-foreground/[0.02] cursor-grab active:cursor-grabbing"
     >
-      <span aria-hidden className="text-xs text-slate-400 select-none">
+      <span aria-hidden className="shrink-0 text-xs text-muted-foreground/70 select-none">
         ⠿
       </span>
-      <div className="min-w-0 flex-1">
+      <div className="min-w-0 flex-1 basis-40">
         <Link
           href={projectTask(projectSlug, card.id)}
           className="block truncate text-sm hover:underline"
         >
           {card.title}
         </Link>
-        <span className="text-xs text-slate-500">
+        {/* truncate too — an untruncated name overflowed the collapsed column
+            and painted on top of the status badge. */}
+        <span className="block truncate text-xs text-muted-foreground">
           {card.assigneeName ?? "Unassigned"}
         </span>
       </div>
       <TaskStatusBadge status={card.status} />
-      <NumberCell
-        label={`Story points for ${card.title}`}
-        value={card.storyPoints}
-        placeholder="pts"
-        busy={busy}
-        integer
-        onSave={(next) => onSetPoints(card.id, next)}
-      />
-      <NumberCell
-        label={`Estimated hours for ${card.title}`}
-        value={card.estimateHours}
-        placeholder="est h"
-        busy={busy}
-        onSave={(next) => onSetHours(card.id, { estimateHours: next })}
-      />
-      <NumberCell
-        label={`Actual hours for ${card.title}`}
-        value={card.actualHours}
-        placeholder="act h"
-        busy={busy}
-        onSave={(next) => onSetHours(card.id, { actualHours: next })}
-      />
-      {action}
+      <div className="ml-auto flex shrink-0 items-center gap-2">
+        <NumberCell
+          label={`Story points for ${card.title}`}
+          value={card.storyPoints}
+          placeholder="pts"
+          busy={busy}
+          integer
+          onSave={(next) => onSetPoints(card.id, next)}
+        />
+        <NumberCell
+          label={`Estimated hours for ${card.title}`}
+          value={card.estimateHours}
+          placeholder="est h"
+          busy={busy}
+          onSave={(next) => onSetHours(card.id, { estimateHours: next })}
+        />
+        <NumberCell
+          label={`Actual hours for ${card.title}`}
+          value={card.actualHours}
+          placeholder="act h"
+          busy={busy}
+          onSave={(next) => onSetHours(card.id, { actualHours: next })}
+        />
+        {action}
+      </div>
     </li>
   );
 }
@@ -106,7 +112,7 @@ function NumberCell({
       defaultValue={value ?? ""}
       placeholder={placeholder}
       disabled={busy}
-      className="h-8 w-16"
+      className="h-8 w-16 shrink-0"
       onBlur={(e) => {
         const raw = e.target.value.trim();
         const next = raw === "" ? null : Number(raw);

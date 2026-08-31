@@ -28,15 +28,15 @@ export function OverviewWorkList({ tasks }: { tasks: OverviewTask[] }) {
   });
 
   return (
-    <Card className="border-black/5 bg-white/80">
+    <Card className="border-border bg-card/80">
       <CardHeader>
-        <CardTitle className="text-base font-semibold text-slate-900">
+        <CardTitle className="font-semibold text-foreground">
           My Work · all projects
         </CardTitle>
       </CardHeader>
       <CardContent>
         {ordered.length === 0 ? (
-          <p className="py-4 text-center text-sm text-slate-500">Nothing assigned to you.</p>
+          <p className="py-4 text-center text-sm text-muted-foreground">Nothing assigned to you.</p>
         ) : (
           <ul className="divide-y divide-black/5">
             {ordered.map((task) => (
@@ -48,8 +48,8 @@ export function OverviewWorkList({ tasks }: { tasks: OverviewTask[] }) {
                 >
                   {task.title}
                 </Link>
-                <span className="text-xs text-slate-400">{task.projectSlug}</span>
-                <span className="text-xs text-slate-500">{TASK_STATUS_LABEL[task.status]}</span>
+                <span className="text-xs text-muted-foreground/70">{task.projectSlug}</span>
+                <span className="text-xs text-muted-foreground">{TASK_STATUS_LABEL[task.status]}</span>
               </li>
             ))}
           </ul>

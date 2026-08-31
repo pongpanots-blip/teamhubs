@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 
 export function OnboardingForm() {
   const router = useRouter();
@@ -34,11 +34,7 @@ export function OnboardingForm() {
   }
 
   return (
-    <Card className="w-full max-w-md border-black/5 shadow-sm">
-      <CardHeader>
-        <CardTitle>Create your team</CardTitle>
-        <CardDescription>You will be the PM. Invite UI and Devs next.</CardDescription>
-      </CardHeader>
+    <Card className="w-full border-border shadow-sm">
       <CardContent>
         <form onSubmit={onSubmit} className="space-y-4">
           <div className="space-y-2">
@@ -71,7 +67,7 @@ export function OnboardingForm() {
               Auto-generated from the team name — editable.
             </p>
           </div>
-          {error ? <p className="text-sm text-red-600">{error}</p> : null}
+          {error ? <p className="text-sm text-destructive">{error}</p> : null}
           <Button type="submit" className="w-full" disabled={loading}>
             {loading ? "Creating…" : "Create team"}
           </Button>

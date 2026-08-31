@@ -21,11 +21,11 @@ type Notification = {
 const POLL_MS = 30_000;
 
 const TYPE_BORDER_COLOR: Record<string, string> = {
-  task_unblocked: "oklch(0.55 0.13 150)",
-  task_blocked: "oklch(0.62 0.15 70)",
-  task_assigned: "oklch(0.55 0.14 240)",
+  task_unblocked: "var(--st-done)",
+  task_blocked: "var(--st-working)",
+  task_assigned: "var(--st-ready)",
   figma_ready: "oklch(0.6 0.18 350)",
-  missing_context: "oklch(0.577 0.245 27.325)",
+  missing_context: "var(--destructive)",
 };
 const DEFAULT_BORDER_COLOR = "var(--border)";
 
@@ -76,7 +76,7 @@ export function NotificationBell() {
         <Bell className="size-[17px]" strokeWidth={1.8} />
         {unread > 0 ? (
           <span
-            className="absolute -top-px -right-px flex h-[15px] min-w-[15px] items-center justify-center rounded-full px-[3px] text-[9.5px] font-semibold text-white"
+            className="absolute -top-px -right-px flex h-[15px] min-w-[15px] items-center justify-center rounded-full px-[3px] text-micro font-semibold text-background"
             style={{ backgroundColor: "oklch(0.55 0.22 27)" }}
           >
             {unread > 9 ? "9+" : unread}
@@ -87,13 +87,13 @@ export function NotificationBell() {
       {open ? (
         <div className="absolute top-10 right-0 z-20 w-80 rounded-xl bg-card p-1.5 shadow-[0_0_0_1px_rgb(0_0_0_/_0.08),0_10px_30px_rgb(0_0_0_/_0.1)]">
           <div className="flex items-center justify-between px-2 py-1.5">
-            <span className="text-[11px] font-semibold tracking-wide text-muted-foreground uppercase">
+            <span className="text-meta font-semibold tracking-wide text-muted-foreground uppercase">
               Notifications
             </span>
             {unread > 0 ? (
               <button
                 type="button"
-                className="text-[11px] text-muted-foreground hover:underline"
+                className="text-meta text-muted-foreground hover:underline"
                 onClick={() => void markAllRead()}
               >
                 Mark all read
@@ -110,12 +110,12 @@ export function NotificationBell() {
                     className="rounded-lg border-l-[3px] px-2.5 py-2 text-sm hover:bg-foreground/5"
                     style={{ borderColor: TYPE_BORDER_COLOR[n.type] ?? DEFAULT_BORDER_COLOR }}
                   >
-                    <p className={`text-[13px] font-medium ${n.readAt ? "text-muted-foreground" : "text-foreground"}`}>
+                    <p className={`text-body font-medium ${n.readAt ? "text-muted-foreground" : "text-foreground"}`}>
                       {n.title}
                     </p>
                     <p className="mt-0.5 text-xs text-muted-foreground">{n.body}</p>
                     {n.projectName ? (
-                      <p className="mt-0.5 text-[11px]" style={{ color: "oklch(0.7 0 0)" }}>
+                      <p className="mt-0.5 text-meta" style={{ color: "oklch(0.7 0 0)" }}>
                         {n.projectName}
                       </p>
                     ) : null}

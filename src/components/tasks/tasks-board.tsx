@@ -31,8 +31,8 @@ import {
 } from "@/components/tasks/sprint-select";
 
 const PRIORITY_DOT_COLOR: Record<TaskPriorityValue, string> = {
-  p0: "oklch(0.577 0.245 27.325)",
-  p1: "oklch(0.62 0.15 70)",
+  p0: "var(--destructive)",
+  p1: "var(--st-working)",
   p2: "oklch(0.55 0.05 240)",
   p3: "var(--muted-foreground)",
 };
@@ -84,7 +84,7 @@ const CHIP_FILTERS: {
     status: "not_ready",
     label: "⚠ Missing context",
     tint: {
-      color: "oklch(0.5 0.13 70)",
+      color: "var(--st-working-strong)",
       borderColor: "oklch(0.62 0.15 70 / 0.4)",
       backgroundColor: "oklch(0.62 0.15 70 / 0.08)",
     },
@@ -160,7 +160,7 @@ export function TasksBoard({
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-[22px] font-semibold tracking-tight">Tasks</h1>
+        <h1 className="text-title font-semibold tracking-tight">Tasks</h1>
         <Button
           nativeButton={false}
           render={<Link href={projectTaskNew(currentProjectSlug)} />}
@@ -253,7 +253,7 @@ export function TasksBoard({
                   <span className="text-xs font-semibold tracking-wide text-foreground uppercase">
                     {TASK_STATUS_COLUMN_LABEL[s]}
                   </span>
-                  <span className="ml-auto text-[11px] text-muted-foreground">
+                  <span className="ml-auto text-meta text-muted-foreground">
                     {columnTasks.length}
                   </span>
                 </div>
@@ -268,7 +268,8 @@ export function TasksBoard({
                   {columnTasks.map((t) => (
                     <div
                       key={t.id}
-                      className="rounded-[10px] bg-card px-3 py-2.5 ring-1 ring-foreground/[0.07]"
+                      className="rounded-[10px] border-l-[3px] bg-card px-3 py-2.5 ring-1 ring-foreground/[0.07]"
+                      style={{ borderLeftColor: taskStatusStyle(t.status).color }}
                     >
                       <Link
                         href={projectTask(currentProjectSlug, t.id)}
@@ -276,7 +277,7 @@ export function TasksBoard({
                       >
                         {t.dependsOn.length > 0 ? (
                           <span
-                            className="mb-1.5 inline-flex h-[17px] items-center rounded-full px-1.5 text-[10px] font-medium"
+                            className="mb-1.5 inline-flex h-[17px] items-center rounded-full px-1.5 text-micro font-medium"
                             style={{
                               backgroundColor: "oklch(0.52 0.14 300 / 0.1)",
                               color: "oklch(0.46 0.14 300)",
@@ -285,7 +286,7 @@ export function TasksBoard({
                             🔍 part of {t.dependsOn.length} sub-tasks
                           </span>
                         ) : null}
-                        <p className="mb-2 text-[12.5px] font-medium leading-snug">
+                        <p className="mb-2 text-body font-medium leading-snug">
                           {t.title}
                         </p>
                         <div className="flex items-center gap-2">
@@ -295,7 +296,7 @@ export function TasksBoard({
                               backgroundColor: PRIORITY_DOT_COLOR[t.priority],
                             }}
                           />
-                          <span className="text-[11px] text-muted-foreground">
+                          <span className="text-meta text-muted-foreground">
                             {t.deadline
                               ? new Date(t.deadline).toLocaleDateString(
                                   "en-US",
@@ -305,11 +306,11 @@ export function TasksBoard({
                           </span>
                           {t.estimateHours !== null ||
                           t.actualHours !== null ? (
-                            <span className="text-[11px] text-muted-foreground tabular-nums">
+                            <span className="text-meta text-muted-foreground tabular-nums">
                               {formatHours(t.actualHours, t.estimateHours)}
                             </span>
                           ) : null}
-                          <span className="ml-auto flex size-5 shrink-0 items-center justify-center rounded-full bg-muted text-[10px] font-semibold text-muted-foreground">
+                          <span className="ml-auto flex size-5 shrink-0 items-center justify-center rounded-full bg-muted text-micro font-semibold text-muted-foreground">
                             {t.assignee?.name?.[0]?.toUpperCase() ?? "?"}
                           </span>
                         </div>
@@ -320,7 +321,7 @@ export function TasksBoard({
                           />
                         </div>
                         <span
-                          className="mt-[7px] inline-flex h-[18px] items-center gap-1 rounded-full px-[7px] text-[10.5px] font-medium"
+                          className="mt-[7px] inline-flex h-[18px] items-center gap-1 rounded-full px-[7px] text-micro font-medium"
                           style={{
                             backgroundColor:
                               DEPLOY_STATE_STYLE[deployState(t.status)].bg,
@@ -347,7 +348,7 @@ export function TasksBoard({
       ) : (
         <div className="overflow-hidden rounded-[14px] bg-card ring-1 ring-foreground/[0.08]">
           <div
-            className={`${ROW_GRID} border-b border-border px-5 py-3 text-[11px] tracking-[0.05em] text-muted-foreground uppercase`}
+            className={`${ROW_GRID} border-b border-border px-5 py-3 text-meta tracking-[0.05em] text-muted-foreground uppercase`}
           >
             <div>Task</div>
             <div>Owner</div>
@@ -370,7 +371,7 @@ export function TasksBoard({
                 <div className="min-w-0">
                   <Link
                     href={projectTask(currentProjectSlug, t.id)}
-                    className="text-[13px] font-medium hover:underline"
+                    className="text-body font-medium hover:underline"
                   >
                     {t.title}
                   </Link>
@@ -379,7 +380,7 @@ export function TasksBoard({
                   </div>
                   {t.dependsOn.length > 0 ? (
                     <span
-                      className="mt-1 inline-flex h-[18px] items-center gap-1 rounded-full px-[7px] text-[10.5px] font-medium"
+                      className="mt-1 inline-flex h-[18px] items-center gap-1 rounded-full px-[7px] text-micro font-medium"
                       style={{
                         backgroundColor: "oklch(0.52 0.14 300 / 0.1)",
                         color: "oklch(0.46 0.14 300)",
@@ -389,19 +390,19 @@ export function TasksBoard({
                     </span>
                   ) : null}
                 </div>
-                <div className="truncate text-[13px]">
+                <div className="truncate text-body">
                   {t.assignee?.name ?? (
                     <span className="text-muted-foreground">Unassigned</span>
                   )}
                 </div>
-                <div className="flex items-center text-[13px]">
+                <div className="flex items-center text-body">
                   <span
                     className="mr-1.5 size-[7px] shrink-0 rounded-full"
                     style={{ backgroundColor: PRIORITY_DOT_COLOR[t.priority] }}
                   />
                   {TASK_PRIORITY_SHORT_LABEL[t.priority]}
                 </div>
-                <div className="text-[13px]">
+                <div className="text-body">
                   {t.deadline
                     ? new Date(t.deadline).toLocaleDateString("en-US", {
                         month: "short",
@@ -422,7 +423,7 @@ export function TasksBoard({
                 </div>
                 <div>
                   <span
-                    className="inline-flex h-5 items-center gap-1 rounded-full px-2 text-[11px] font-medium whitespace-nowrap"
+                    className="inline-flex h-5 items-center gap-1 rounded-full px-2 text-meta font-medium whitespace-nowrap"
                     style={{
                       backgroundColor: deployStyle.bg,
                       color: deployStyle.color,
@@ -432,7 +433,7 @@ export function TasksBoard({
                   </span>
                 </div>
                 <div
-                  className="text-[13px] tabular-nums"
+                  className="text-body tabular-nums"
                   title="Actual / estimated man hours"
                 >
                   {formatHours(t.actualHours, t.estimateHours)}

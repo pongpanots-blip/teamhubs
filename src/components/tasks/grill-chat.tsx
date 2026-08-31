@@ -313,8 +313,8 @@ export function GrillChat({
       <div className="flex-none pb-4">
         <div className="mx-auto flex w-full max-w-[680px] items-start justify-between gap-4">
           <div>
-            <h1 className="text-[22px] font-semibold tracking-tight">{heading}</h1>
-            <p className="mt-1 text-[13px] text-muted-foreground">{subtitle}</p>
+            <h1 className="text-title font-semibold tracking-tight">{heading}</h1>
+            <p className="mt-1 text-body text-muted-foreground">{subtitle}</p>
           </div>
           {draft ? (
             <span className="inline-flex h-[30px] shrink-0 items-center gap-1.5 rounded-full border border-border bg-card px-3 text-xs font-medium">
@@ -396,25 +396,25 @@ export function GrillChat({
               เริ่มคุยใหม่
             </Button>
           </div>
-          {error ? <p className="text-sm text-red-600">{error}</p> : null}
+          {error ? <p className="text-sm text-destructive">{error}</p> : null}
         </div>
       ) : draft.result ? (
         <div className="mx-auto w-full max-w-[680px] space-y-4 pb-2">
           <div className="rounded-[14px] bg-card p-4 ring-1 ring-foreground/[0.08]">
             <div className="text-sm font-semibold">{draft.result.titleHint}</div>
-            <p className="mt-1.5 text-[13px] leading-relaxed text-muted-foreground">
+            <p className="mt-1.5 text-body leading-relaxed text-muted-foreground">
               {draft.result.requirement}
             </p>
             {draft.result.acceptanceCriteria ? (
-              <p className="mt-1.5 text-[13px] leading-relaxed text-muted-foreground">
+              <p className="mt-1.5 text-body leading-relaxed text-muted-foreground">
                 AC: {draft.result.acceptanceCriteria}
               </p>
             ) : null}
             <div className="mt-2 flex flex-wrap gap-1.5">
-              <Badge variant="secondary" className="text-[11px]">
+              <Badge variant="secondary" className="text-meta">
                 {draft.result.priority.toUpperCase()}
               </Badge>
-              <Badge variant="secondary" className="text-[11px]">
+              <Badge variant="secondary" className="text-meta">
                 {draft.result.deadline ? `ครบกำหนด ${draft.result.deadline}` : "ไม่มีกำหนดส่ง"}
               </Badge>
             </div>
@@ -423,7 +423,7 @@ export function GrillChat({
                 {draft.result.businessRules.map((r, i) => (
                   <div
                     key={r.key}
-                    className={`flex justify-between gap-2 py-1.5 text-[13px] ${i > 0 ? "border-t border-border" : ""}`}
+                    className={`flex justify-between gap-2 py-1.5 text-body ${i > 0 ? "border-t border-border" : ""}`}
                   >
                     <span className="text-muted-foreground">{r.label}</span>
                     <span className="font-medium">
@@ -446,7 +446,7 @@ export function GrillChat({
             {components.map((c, i) => (
               <div key={`${c.component}-${i}`} className="rounded-xl border border-border bg-card p-3">
                 <div className="mb-2 flex items-center gap-2">
-                  <label className="flex items-center gap-2 text-[13px] font-medium">
+                  <label className="flex items-center gap-2 text-body font-medium">
                     <input
                       type="checkbox"
                       className="size-4 rounded border-border"
@@ -507,14 +507,14 @@ export function GrillChat({
               {creating ? "กำลังสร้าง…" : "สร้าง Task"}
             </Button>
           </div>
-          {error ? <p className="text-sm text-red-600">{error}</p> : null}
+          {error ? <p className="text-sm text-destructive">{error}</p> : null}
         </div>
       ) : (
         <div className="mx-auto flex w-full max-w-[680px] min-h-0 flex-1 flex-col">
           <div ref={scrollRef} className="flex-1 space-y-3 overflow-y-auto py-2">
             {draft.messages.length === 0 && !draft.pendingQuestion ? (
               <div className="flex justify-start">
-                <div className="max-w-[78%] rounded-[14px] rounded-bl-[4px] bg-card px-3.5 py-2.5 text-[13px] leading-relaxed ring-1 ring-foreground/[0.08]">
+                <div className="max-w-[78%] rounded-[14px] rounded-bl-[4px] bg-card px-3.5 py-2.5 text-body leading-relaxed ring-1 ring-foreground/[0.08]">
                   เล่าให้ฟังหน่อยว่าอยากได้ feature อะไร แล้วเดี๋ยวผมซักถามต่อทีละข้อจนได้ requirement ที่ชัดพอจะสร้าง task
                 </div>
               </div>
@@ -524,8 +524,8 @@ export function GrillChat({
                 <div
                   className={
                     m.role === "user"
-                      ? "max-w-[78%] rounded-[14px] rounded-br-[4px] bg-primary px-3.5 py-2.5 text-[13px] leading-relaxed text-primary-foreground"
-                      : "max-w-[78%] rounded-[14px] rounded-bl-[4px] bg-card px-3.5 py-2.5 text-[13px] leading-relaxed ring-1 ring-foreground/[0.08]"
+                      ? "max-w-[78%] rounded-[14px] rounded-br-[4px] bg-primary px-3.5 py-2.5 text-body leading-relaxed text-primary-foreground"
+                      : "max-w-[78%] rounded-[14px] rounded-bl-[4px] bg-card px-3.5 py-2.5 text-body leading-relaxed ring-1 ring-foreground/[0.08]"
                   }
                 >
                   {m.content}
@@ -534,7 +534,7 @@ export function GrillChat({
             ))}
             {draft.pendingQuestion ? (
               <div className="flex justify-start">
-                <div className="max-w-[78%] animate-in rounded-[14px] rounded-bl-[4px] bg-card px-3.5 py-2.5 text-[13px] leading-relaxed fade-in slide-in-from-bottom-1 ring-1 duration-300 ring-foreground/[0.08]">
+                <div className="max-w-[78%] animate-in rounded-[14px] rounded-bl-[4px] bg-card px-3.5 py-2.5 text-body leading-relaxed fade-in slide-in-from-bottom-1 ring-1 duration-300 ring-foreground/[0.08]">
                   {draft.pendingQuestion}
                 </div>
               </div>
@@ -577,7 +577,7 @@ export function GrillChat({
                 >
                   {choice}
                   {choice === recommendation.matchedChoice ? (
-                    <Badge variant="secondary" className="h-4 px-1.5 text-[10px]">
+                    <Badge variant="secondary" className="h-4 px-1.5 text-micro">
                       แนะนำ
                     </Badge>
                   ) : null}
@@ -589,6 +589,7 @@ export function GrillChat({
           <div className="flex-none space-y-2.5 pt-3">
             <Textarea
               ref={composerRef}
+              aria-label="Your answer"
               rows={2}
               className="min-h-16 rounded-[14px] bg-card"
               value={answer}
@@ -623,7 +624,7 @@ export function GrillChat({
                 )}
               </Button>
             </div>
-            {error ? <p className="text-sm text-red-600">{error}</p> : null}
+            {error ? <p className="text-sm text-destructive">{error}</p> : null}
           </div>
         </div>
       )}

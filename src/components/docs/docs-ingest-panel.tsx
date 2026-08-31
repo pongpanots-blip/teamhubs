@@ -83,8 +83,8 @@ export function DocsIngestPanel({
     <div className="space-y-4">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <h1 className="text-[22px] font-semibold tracking-tight">Docs / RAG</h1>
-          <p className="mt-1 text-[13px] text-muted-foreground">
+          <h1 className="text-title font-semibold tracking-tight">Docs / RAG</h1>
+          <p className="mt-1 text-body text-muted-foreground">
             Your team&apos;s knowledge base. Only the most relevant chunks are ever sent to Claude.
           </p>
         </div>
@@ -131,11 +131,11 @@ export function DocsIngestPanel({
         </div>
       </div>
 
-      {message ? <p className="text-[13px]" style={{ color: "var(--st-done)" }}>{message}</p> : null}
-      {error ? <p className="text-[13px] text-destructive">{error}</p> : null}
+      {message ? <p className="text-body" style={{ color: "var(--st-done)" }}>{message}</p> : null}
+      {error ? <p className="text-body text-destructive">{error}</p> : null}
 
       <div className="rounded-[14px] bg-card/80 p-[18px] ring-1 ring-foreground/5">
-        <h2 className="text-[15px] font-semibold">Indexed docs</h2>
+        <h2 className="text-section font-semibold">Indexed docs</h2>
         <p className="mt-1 mb-3.5 text-xs text-muted-foreground">
           Chunks stored in PostgreSQL + pgvector, scoped to this project
         </p>
@@ -149,19 +149,19 @@ export function DocsIngestPanel({
             {docs.map((doc, i) => (
               <div
                 key={doc.path}
-                className={`flex items-center justify-between gap-3 py-2.5 text-[13px] ${i > 0 ? "border-t border-border" : ""}`}
+                className={`flex items-center justify-between gap-3 py-2.5 text-body ${i > 0 ? "border-t border-border" : ""}`}
               >
                 <div className="min-w-0">
                   <p className="truncate font-medium">{doc.path}</p>
                   {doc.title ? (
-                    <p className="truncate text-[11px] text-muted-foreground">{doc.title}</p>
+                    <p className="truncate text-meta text-muted-foreground">{doc.title}</p>
                   ) : null}
                 </div>
                 <div className="flex shrink-0 items-center gap-3 text-xs text-muted-foreground">
                   <span>{doc.chunks} chunks</span>
                   <span>{Math.max(1, Math.round(doc.sizeBytes / 1024))} KB</span>
                   {doc.indexedAt ? null : (
-                    <span className="text-[11px]" style={{ color: "oklch(0.62 0.15 70)" }}>
+                    <span className="text-meta" style={{ color: "var(--st-working)" }}>
                       not indexed
                     </span>
                   )}

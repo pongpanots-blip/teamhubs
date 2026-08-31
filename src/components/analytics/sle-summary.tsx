@@ -19,7 +19,7 @@ export function SleSummary({ sle, windowDays }: { sle: ServiceLevel; windowDays:
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-base">Service level</CardTitle>
+        <CardTitle>Service level</CardTitle>
         <CardDescription>
           {sle.sampleSize === 0
             ? `No cards finished in the last ${windowDays} days.`
@@ -29,11 +29,11 @@ export function SleSummary({ sle, windowDays }: { sle: ServiceLevel; windowDays:
           {sle.sampleSize > 0 && " Durations are working time — weekends excluded."}
         </CardDescription>
       </CardHeader>
-      <CardContent className="grid grid-cols-3 gap-4">
+      <CardContent className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         {tiers.map((tier) => (
           <div key={tier.label}>
-            <p className="text-xs text-slate-500">{tier.label} finish within</p>
-            <p className="mt-1 text-2xl font-semibold tabular-nums text-slate-900">
+            <p className="text-xs text-muted-foreground">{tier.label} finish within</p>
+            <p className="mt-1 text-2xl font-semibold tabular-nums text-foreground">
               {formatDuration(tier.value)}
             </p>
           </div>

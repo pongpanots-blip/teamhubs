@@ -41,7 +41,7 @@ export function ThroughputChart({ weeks }: { weeks: ThroughputWeek[] }) {
                 x={center}
                 y={PLOT.height - 8}
                 textAnchor="middle"
-                className="text-[10px]"
+                className="text-micro"
                 fill="var(--muted-foreground)"
               >
                 {shortDate(week.weekStart)}

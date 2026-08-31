@@ -25,7 +25,7 @@ export function AgingWipTable({
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-base">Aging work in progress</CardTitle>
+        <CardTitle>Aging work in progress</CardTitle>
         <CardDescription>
           {sleMs === null
             ? "No service level yet — finish a few cards and a threshold appears here."
@@ -34,7 +34,7 @@ export function AgingWipTable({
       </CardHeader>
       <CardContent>
         {cards.length === 0 ? (
-          <p className="py-6 text-center text-sm text-slate-500">Nothing in flight right now.</p>
+          <p className="py-6 text-center text-sm text-muted-foreground">Nothing in flight right now.</p>
         ) : (
           <Table>
             <TableHeader>
@@ -60,7 +60,7 @@ export function AgingWipTable({
                   </TableCell>
                   <TableCell
                     className={`text-right tabular-nums ${
-                      card.breachesSle ? "font-semibold text-red-600" : "text-slate-600"
+                      card.breachesSle ? "font-semibold text-destructive" : "text-muted-foreground"
                     }`}
                   >
                     {formatDuration(card.wipAgeMs)}

@@ -2,6 +2,9 @@
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
 
+/* App is light-only. This keeps the `dark:` utilities left in the vendored
+   ui/ primitives scoped to a .dark class that is never applied — drop this
+   line and they would activate off the OS preference instead. */
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
@@ -27,6 +30,10 @@
   --color-input: var(--input);
   --color-border: var(--border);
   --color-destructive: var(--destructive);
+  --color-destructive-bg: var(--destructive-bg);
+  --color-success: var(--st-done);
+  --color-warning: var(--st-working);
+  --color-warning-strong: var(--st-working-strong);
   --color-accent-foreground: var(--accent-foreground);
   --color-accent: var(--accent);
   --color-muted-foreground: var(--muted-foreground);
@@ -46,6 +53,16 @@
   --radius-2xl: calc(var(--radius) * 1.8);
   --radius-3xl: calc(var(--radius) * 2.2);
   --radius-4xl: calc(var(--radius) * 2.6);
+
+  /* Type scale. This app runs finer than Tailwind's default rungs, so these sit
+     alongside text-xs/sm/base rather than replacing them. Values are the sizes
+     the UI already used as one-off arbitrary values, snapped to whole pixels. */
+  --text-micro: 0.625rem; /* 10px — counters, timestamps */
+  --text-meta: 0.6875rem; /* 11px — uppercase micro-heads */
+  --text-body: 0.8125rem; /* 13px — dense body copy */
+  --text-section: 0.9375rem; /* 15px — section heads (h2) */
+  --text-title: 1.375rem; /* 22px — page titles (h1) */
+  --text-figure: 1.75rem; /* 28px — large counters */
 }
 
 :root {
@@ -74,6 +91,12 @@
   --chart-4: oklch(0.371 0 0);
   --chart-5: oklch(0.269 0 0);
   --radius: 0.78125rem;
+  --gutter: clamp(1rem, 4vw, 2rem);
+
+  /* Canvas behind the signed-in app. Public pages (landing, auth, invite) run a
+     solid background instead. Left in sRGB hex — converting to OKLCH would
+     shift the ramp, and this is one decorative surface, not a palette token. */
+  --canvas-app: radial-gradient(ellipse at top, #e8eef5 0%, #f7f5f1 45%, #f3efe8 100%);
   --sidebar: oklch(0.985 0 0);
   --sidebar-foreground: oklch(0.145 0 0);
   --sidebar-primary: oklch(0.205 0 0);
@@ -91,6 +114,8 @@
   --st-assigned-bg: oklch(0.52 0.14 300 / 0.12);
   --st-working: oklch(0.62 0.15 70);
   --st-working-bg: oklch(0.62 0.15 70 / 0.14);
+  /* Readable on --st-working-bg; the plain --st-working is too light for text. */
+  --st-working-strong: oklch(0.5 0.13 70);
   --st-blocked: oklch(0.577 0.245 27.325);
   --st-blocked-bg: oklch(0.577 0.245 27.325 / 0.1);
   --st-review: oklch(0.55 0.11 200);
@@ -101,41 +126,6 @@
   --violet-bg: oklch(0.52 0.14 300 / 0.07);
 }
 
-.dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.704 0.191 22.216);
-  --destructive-bg: oklch(0.704 0.191 22.216 / 0.15);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.556 0 0);
-}
-
 @layer base {
   * {
     @apply border-border outline-ring/50;
@@ -143,7 +133,61 @@
   body {
     @apply bg-background text-foreground;
   }
+  html,
+  body {
+    /* clip, not hidden: preserves position:sticky/fixed on descendants */
+    overflow-x: clip;
+  }
   html {
     @apply font-sans;
+  }
+}
+
+/* Busy indicators are information, not decoration — under reduced motion they
+   keep signalling without travelling. */
+@keyframes reduced-motion-pulse {
+  0%,
+  100% {
+    opacity: 0.35;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  /* Spatial motion collapses to a short fade. transition-property is narrowed to
+     the non-moving properties, so hover/active feedback survives while slides,
+     scales and the focus ring stop animating. */
+  *,
+  *::before,
+  *::after {
+    animation-duration: 150ms !important;
+    animation-delay: 0ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 150ms !important;
+    transition-property: opacity, color, background-color, border-color !important;
+    scroll-behavior: auto !important;
+  }
+
+  .animate-spin,
+  .animate-bounce {
+    animation: reduced-motion-pulse 1.6s ease-in-out infinite !important;
+  }
+}
+
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) and (min-width: 40rem) {
+    @keyframes hm-stage-in {
+      from {
+        opacity: 0;
+        transform: translateX(-1.25rem);
+      }
+    }
+    .hm-stage {
+      animation: hm-stage-in linear both;
+      animation-timeline: view();
+      animation-range: entry 5% entry 45%;
+    }
   }
 }

@@ -31,8 +31,8 @@ export default async function AnalyticsPage({ params }: Params) {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-xl font-semibold tracking-tight text-slate-900">Analytics</h1>
-        <p className="text-sm text-slate-600">
+        <h1 className="text-title font-semibold tracking-tight text-foreground">Analytics</h1>
+        <p className="text-sm text-muted-foreground">
           Flow metrics for {project.name}, derived from every recorded status change.
         </p>
       </div>

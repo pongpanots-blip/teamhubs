@@ -3,24 +3,19 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Input } from "@/components/ui/input";
+import { SprintPicker, type SprintOption } from "@/components/tasks/sprint-select";
 
-export type SprintOption = {
-  id: string;
-  name: string;
-  /** Started and not yet closed — moving a card now is a logged scope change. */
-  isActive: boolean;
-  /** Already reported on. Only ever listed because the card is already in it. */
-  isClosed: boolean;
-};
+export type { SprintOption };
 
 const ERROR_MESSAGES: Record<string, string> = {
-  SPRINT_NOT_IN_PROJECT: "That sprint belongs to another project",
   FORBIDDEN: "You do not have permission to change this card",
   NOT_FOUND: "This card no longer exists",
 };
 
+type Sizing = { storyPoints: number | null; estimateHours: number | null; actualHours: number | null };
+
 /**
- * Sprint membership and size, editable from the card itself — the two fields
+ * Sprint membership and sizing, editable from the card itself — the fields
  * every flow number downstream depends on, so they belong where the card is
  * being worked on and not only on the planning screen.
  */
@@ -28,18 +23,19 @@ export function SprintAssignment({
   taskId,
   sprintId,
   storyPoints,
+  estimateHours,
+  actualHours,
   sprints,
 }: {
   taskId: string;
   sprintId: string | null;
-  storyPoints: number | null;
   sprints: SprintOption[];
-}) {
+} & Sizing) {
   const router = useRouter();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  async function save(body: { sprintId?: string | null; storyPoints?: number | null }) {
+  async function save(body: Partial<Sizing>) {
     setBusy(true);
     setError(null);
     try {
@@ -67,47 +63,32 @@ export function SprintAssignment({
   return (
     <div className="space-y-2 py-1">
       <div className="flex items-center justify-between gap-2">
-        <label htmlFor={`sprint-${taskId}`} className="text-sm text-muted-foreground">
-          Sprint
-        </label>
-        <select
-          id={`sprint-${taskId}`}
-          disabled={busy}
-          defaultValue={sprintId ?? ""}
-          className="h-8 min-w-0 flex-1 rounded-md border border-black/10 bg-white px-2 text-sm"
-          onChange={(e) => save({ sprintId: e.target.value || null })}
-        >
-          <option value="">Backlog</option>
-          {sprints.map((sprint) => (
-            <option key={sprint.id} value={sprint.id}>
-              {sprint.name}
-              {sprint.isActive ? " (running)" : sprint.isClosed ? " (closed)" : ""}
-            </option>
-          ))}
-        </select>
+        <span className="text-sm text-muted-foreground">Sprint</span>
+        <SprintPicker taskId={taskId} sprintId={sprintId} sprints={sprints} />
       </div>
 
-      <div className="flex items-center justify-between gap-2">
-        <label htmlFor={`points-${taskId}`} className="text-sm text-muted-foreground">
-          Story points
-        </label>
-        <Input
-          id={`points-${taskId}`}
-          type="number"
-          min={0}
-          disabled={busy}
-          defaultValue={storyPoints ?? ""}
-          placeholder="—"
-          className="h-8 w-24"
-          onBlur={(e) => {
-            const raw = e.target.value.trim();
-            const next = raw === "" ? null : Number(raw);
-            if (next === (storyPoints ?? null)) return;
-            if (next !== null && (!Number.isInteger(next) || next < 0)) return;
-            save({ storyPoints: next });
-          }}
-        />
-      </div>
+      <NumberField
+        id={`points-${taskId}`}
+        label="Story points"
+        value={storyPoints}
+        busy={busy}
+        integer
+        onSave={(next) => save({ storyPoints: next })}
+      />
+      <NumberField
+        id={`estimate-${taskId}`}
+        label="Estimate (h)"
+        value={estimateHours}
+        busy={busy}
+        onSave={(next) => save({ estimateHours: next })}
+      />
+      <NumberField
+        id={`actual-${taskId}`}
+        label="Actual (h)"
+        value={actualHours}
+        busy={busy}
+        onSave={(next) => save({ actualHours: next })}
+      />
 
       {current?.isActive && (
         <p className="text-xs text-muted-foreground">
@@ -116,6 +97,48 @@ export function SprintAssignment({
         </p>
       )}
       {error && <p className="text-xs text-red-600">{error}</p>}
+    </div>
+  );
+}
+
+function NumberField({
+  id,
+  label,
+  value,
+  busy,
+  integer = false,
+  onSave,
+}: {
+  id: string;
+  label: string;
+  value: number | null;
+  busy: boolean;
+  integer?: boolean;
+  onSave: (next: number | null) => void;
+}) {
+  return (
+    <div className="flex items-center justify-between gap-2">
+      <label htmlFor={id} className="text-sm text-muted-foreground">
+        {label}
+      </label>
+      <Input
+        id={id}
+        type="number"
+        min={0}
+        step={integer ? 1 : 0.5}
+        disabled={busy}
+        defaultValue={value ?? ""}
+        placeholder="—"
+        className="h-8 w-24"
+        onBlur={(e) => {
+          const raw = e.target.value.trim();
+          const next = raw === "" ? null : Number(raw);
+          if (next === (value ?? null)) return;
+          if (next !== null && (Number.isNaN(next) || next < 0)) return;
+          if (next !== null && integer && !Number.isInteger(next)) return;
+          onSave(next);
+        }}
+      />
     </div>
   );
 }

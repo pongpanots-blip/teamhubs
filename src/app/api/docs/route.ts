@@ -52,7 +52,7 @@ export async function POST(req: Request) {
     const cx = await requireMembership();
     const { membership } = cx;
     const { project, role } = await requireProjectFromQuery(cx, req);
-    assertRole(role, ["pm", "ui", "backend", "mobile", "ai"]);
+    assertRole(role, ["pm", "ui", "website", "backend", "mobile", "ai"]);
 
     const form = await req.formData();
     const files = form.getAll("files").filter((f): f is File => f instanceof File);
@@ -76,7 +76,7 @@ export async function DELETE(req: Request) {
   try {
     const cx = await requireMembership();
     const { project, role } = await requireProjectFromQuery(cx, req);
-    assertRole(role, ["pm", "ui", "backend", "mobile", "ai"]);
+    assertRole(role, ["pm", "ui", "website", "backend", "mobile", "ai"]);
     const docPath = new URL(req.url).searchParams.get("path");
     if (!docPath) throw new DocError("MISSING_PATH");
     await deleteTeamDoc(project.id, docPath);

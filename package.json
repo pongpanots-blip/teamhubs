@@ -18,6 +18,7 @@
     "check:business-time": "tsx scripts/check-business-time.ts",
     "check:task-metrics": "tsx scripts/check-task-metrics.ts",
     "check:burndown": "tsx scripts/check-burndown.ts",
+    "check:sprint-progress": "tsx scripts/check-sprint-progress.ts",
     "check:analytics": "tsx scripts/check-analytics.ts",
     "snapshot:flow": "tsx scripts/snapshot-flow.ts"
   },

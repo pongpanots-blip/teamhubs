@@ -63,7 +63,9 @@ function integrationToText(own: GrillHandoffComponent, siblings: GrillHandoffCom
   }
 
   const backend = siblings.find((s) => s.component === "backend");
-  const consumers = siblings.filter((s) => s.component === "ui" || s.component === "mobile");
+  const consumers = siblings.filter(
+    (s) => s.component === "ui" || s.component === "website" || s.component === "mobile",
+  );
   const lines: string[] = [];
 
   if (own.component === "backend") {
@@ -77,7 +79,10 @@ function integrationToText(own: GrillHandoffComponent, siblings: GrillHandoffCom
     lines.push(
       "**You don't need to wait on anyone.** Nothing else in this requirement blocks you — start now.",
     );
-  } else if ((own.component === "ui" || own.component === "mobile") && backend) {
+  } else if (
+    (own.component === "ui" || own.component === "website" || own.component === "mobile") &&
+    backend
+  ) {
     lines.push(
       `**You don't need to wait for ${TASK_COMPONENT_LABEL["backend"]} to be done.** Start building with mocked/sample data matching the expected response shape now, then swap in the real API once ${backend.assigneeName ?? "the backend dev"} shares the contract for "${backend.title}".`,
     );

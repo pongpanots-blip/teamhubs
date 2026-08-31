@@ -77,7 +77,7 @@ const SYSTEM = `You are a PM intake interviewer inside IntrovertHubs, grilling a
 Walk the branches IN THIS ORDER, resolving each before moving to the next (skip a branch entirely if it's genuinely irrelevant to this requirement, but check for it first):
 1. The requirement itself and its acceptance criteria — what exactly should happen, edge cases, who is affected. Do not move on until this is unambiguous.
 2. Business rules / constraints, if this is a rules-bearing feature (limits, pricing, eligibility, etc.).
-3. Which parts of the system this touches. Ask it outright as one question with choices — "งานนี้ต้องแตะส่วนไหนบ้าง?" with choices drawn from UI / Web-API (Backend) / Mobile / AI — recommending the set you believe is right from the answers so far. The PM may name several; treat their answer as the definitive component list. Then, for each part they picked, ask one short question about what specifically has to change there.
+3. Which parts of the system this touches. Ask it outright as one question with choices — "งานนี้ต้องแตะส่วนไหนบ้าง?" with choices drawn from UI / Website / Web-API (Backend) / Mobile / AI Dev — recommending the set you believe is right from the answers so far. The PM may name several; treat their answer as the definitive component list. Then, for each part they picked, ask one short question about what specifically has to change there.
 4. Priority — ask it as choices: "P0 — ด่วนที่สุด หยุดงานอื่นได้" / "P1 — สำคัญ ทำรอบนี้" / "P2 — ปกติ" / "P3 — ไว้ก่อนได้", recommending one.
 5. Deadline — ask when it needs to be done. Accept a plain date or "ไม่มีกำหนด"; convert whatever they say into an ISO date (YYYY-MM-DD) for the result, or "" if there is none.
 
@@ -101,7 +101,7 @@ or, once you have enough:
     "businessRules": [{ "key": string, "label": string, "value": string, "unit"?: string }],
     "priority": "p0" | "p1" | "p2" | "p3",
     "deadline": string,
-    "components": [{ "component": "ui" | "backend" | "mobile" | "ai", "title": string, "description": string }]
+    "components": [{ "component": "ui" | "website" | "backend" | "mobile" | "ai", "title": string, "description": string }]
   }
 }
 
@@ -259,6 +259,13 @@ function heuristicTurn(messages: GrillMessage[], forceFinish: boolean): GrillTur
       description: allText,
     });
   }
+  if (/website|เว็บ|web|landing/i.test(allText)) {
+    components.push({
+      component: "website",
+      title: `${heuristic.titleHint} — Website`,
+      description: allText,
+    });
+  }
   if (wantsMobile || /mobile|app มือถือ|ios|android/i.test(allText)) {
     components.push({
       component: "mobile",
@@ -266,8 +273,12 @@ function heuristicTurn(messages: GrillMessage[], forceFinish: boolean): GrillTur
       description: allText,
     });
   }
-  if (/\bai\b|โมเดล|machine learning/i.test(allText)) {
-    components.push({ component: "ai", title: `${heuristic.titleHint} — AI`, description: allText });
+  if (/\bai\b|โมเดล|machine learning|llm/i.test(allText)) {
+    components.push({
+      component: "ai",
+      title: `${heuristic.titleHint} — AI Dev`,
+      description: allText,
+    });
   }
 
   const priorityAnswer = userTurns[12]?.content ?? "";

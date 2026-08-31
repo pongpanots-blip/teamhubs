@@ -23,7 +23,7 @@ export async function POST(req: Request) {
   try {
     const cx = await requireMembership();
     const { project, role } = await requireProjectFromQuery(cx, req);
-    assertRole(role, ["pm", "backend", "mobile", "ai"]);
+    assertRole(role, ["pm", "website", "backend", "mobile", "ai"]);
     const token = `figpi_${randomBytes(24).toString("hex")}`;
     await prisma.project.update({
       where: { id: project.id },

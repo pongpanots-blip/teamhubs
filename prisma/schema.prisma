@@ -12,6 +12,7 @@ datasource db {
 enum TeamRole {
   pm
   ui
+  website
   backend
   mobile
   ai
@@ -22,6 +23,7 @@ enum TeamRole {
  */
 enum TaskComponent {
   ui
+  website
   backend
   mobile
   ai
@@ -271,6 +273,11 @@ model Task {
   sprintId           String?
   /// Fibonacci-scale estimate. Null when the team sizes by card count instead.
   storyPoints        Int?
+  /// Man hours the card was estimated at. Kept alongside storyPoints: points
+  /// drive velocity, hours answer "can this person fit it in the sprint".
+  estimateHours      Float?
+  /// Man hours actually spent, entered by whoever did the work.
+  actualHours        Float?
   engineStatus       String?
   lastContextRunId   String?
   createdAt          DateTime       @default(now())

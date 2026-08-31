@@ -14,6 +14,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { inviteResultMessage } from "@/lib/notify/invite-result";
 import { TEAM_ROLES, TEAM_ROLE_LABEL } from "@/lib/task-constants";
 import { projectSettings } from "@/lib/routes";
 
@@ -59,7 +60,7 @@ export function TeamSettingsPanels({
       setInviteMsg(data.error ?? "Failed");
       return;
     }
-    setInviteMsg(`Invite created: ${data.acceptUrl}`);
+    setInviteMsg(inviteResultMessage(data.acceptUrl, data.delivery));
     setEmail("");
     router.refresh();
   }

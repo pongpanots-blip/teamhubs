@@ -17,7 +17,21 @@ export default async function TeamSettingsPage() {
     }),
     prisma.membership.findMany({
       where: { teamId: membership.teamId },
-      include: { user: { select: { id: true, name: true, email: true } } },
+      include: {
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            // Every project this person can open, so the access matrix renders
+            // in one query instead of one per cell.
+            projectMemberships: {
+              where: { project: { teamId: membership.teamId } },
+              select: { projectId: true, role: true },
+            },
+          },
+        },
+      },
     }),
   ]);
 
@@ -33,12 +47,15 @@ export default async function TeamSettingsPage() {
           status: i.status,
           projectName: i.project?.name ?? null,
         }))}
-        projects={projects.map((p) => ({ slug: p.slug, name: p.name }))}
+        projects={projects.map((p) => ({ id: p.id, slug: p.slug, name: p.name }))}
         teamMembers={teamMembers.map((m) => ({
           id: m.user.id,
           name: m.user.name,
           email: m.user.email,
-          role: m.role,
+          teamRole: m.role,
+          projectRoles: Object.fromEntries(
+            m.user.projectMemberships.map((pm) => [pm.projectId, pm.role]),
+          ),
         }))}
       />
     </AppShell>

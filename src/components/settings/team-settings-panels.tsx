@@ -17,6 +17,11 @@ import {
 import { inviteResultMessage } from "@/lib/notify/invite-result";
 import { TEAM_ROLES, TEAM_ROLE_LABEL } from "@/lib/task-constants";
 import { projectSettings } from "@/lib/routes";
+import {
+  MemberProjectMatrix,
+  type MatrixMember,
+  type MatrixProject,
+} from "@/components/settings/member-project-matrix";
 
 /**
  * Settings that belong to the whole team: who is in it, and what projects it
@@ -37,8 +42,8 @@ export function TeamSettingsPanels({
     status: string;
     projectName: string | null;
   }[];
-  projects: { slug: string; name: string }[];
-  teamMembers: { id: string; name: string; email: string; role: string }[];
+  projects: MatrixProject[];
+  teamMembers: MatrixMember[];
 }) {
   const router = useRouter();
   const [email, setEmail] = useState("");
@@ -149,10 +154,17 @@ export function TeamSettingsPanels({
               key={m.id}
               className={`py-2 text-[13px] ${idx > 0 ? "border-t border-border" : ""}`}
             >
-              {m.name} · {m.email} · {m.role}
+              {m.name} · {m.email} · {m.teamRole}
             </div>
           ))}
         </div>
+      </SettingsCard>
+
+      <SettingsCard
+        title="Project access"
+        description="ใครเข้า project ไหนได้บ้าง และเข้าด้วย role อะไร — เปลี่ยนได้ในตารางนี้เลย ไม่ต้องไล่เปิดทีละ project"
+      >
+        <MemberProjectMatrix members={teamMembers} projects={projects} />
       </SettingsCard>
 
       <SettingsCard

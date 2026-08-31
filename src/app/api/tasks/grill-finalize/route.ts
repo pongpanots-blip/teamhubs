@@ -8,6 +8,8 @@ import { errorResponse } from "@/lib/api-error";
 import { BusinessRuleSchema, rulesPresent } from "@/lib/business-rules";
 import { TASK_COMPONENTS, TASK_COMPONENT_LABEL } from "@/lib/task-constants";
 import { buildGrillHandoffDoc } from "@/lib/ai/grill-handoff";
+import { notifyTaskEvent } from "@/lib/notify/task-events";
+import { projectTask } from "@/lib/routes";
 
 const schema = z.object({
   titleHint: z.string().min(1),
@@ -150,6 +152,26 @@ export async function POST(req: Request) {
 
       return { parent, subTasks };
     });
+
+    // Announced after the transaction commits — chat should never see a task
+    // that a rolled-back write means does not exist.
+    await notifyTaskEvent(
+      {
+        kind: "created",
+        title: result.parent.title,
+        subTaskCount: result.subTasks.length,
+        priority: result.parent.priority,
+        deadline: result.parent.deadline,
+      },
+      {
+        projectName: project.name,
+        actorName: user.name,
+        url: new URL(
+          projectTask(project.slug, result.parent.id),
+          new URL(req.url).origin,
+        ).toString(),
+      },
+    );
 
     return NextResponse.json(result, { status: 201 });
   } catch (e) {

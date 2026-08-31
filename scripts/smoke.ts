@@ -5,6 +5,7 @@ import { importRepoDocsForTeam } from "../src/lib/context/ingest";
 import { runContextPipeline } from "../src/lib/context/pipeline";
 import { cascadeFromTask } from "../src/lib/engine/cascade";
 import { extractBusinessRulesHeuristic } from "../src/lib/ai/extract-rules";
+import { recordStatusChange } from "../src/lib/tasks/status-history";
 
 async function main() {
   const intent =
@@ -69,6 +70,14 @@ async function main() {
       status: "assigned",
     },
   });
+  // Opening row, exactly as POST /api/tasks writes one — without it the card
+  // has no history and every flow metric reads null.
+  await recordStatusChange({
+    taskId: task.id,
+    from: null,
+    to: task.status,
+    changedById: signUp.user.id,
+  });
 
   // Different coupon shape — no schema change
   const other = extractBusinessRulesHeuristic(
@@ -112,6 +121,12 @@ async function main() {
       status: "working",
     },
   });
+  await recordStatusChange({
+    taskId: couponApi.id,
+    from: null,
+    to: couponApi.status,
+    changedById: signUp.user.id,
+  });
   await prisma.taskDependency.create({
     data: { dependentId: task.id, dependencyId: couponApi.id, source: "manual" },
   });
@@ -136,8 +151,16 @@ async function main() {
     throw new Error("Blocked task must name the dependency owner");
   }
 
-  // Dependency completes → cascade re-evaluates the dependent with NO Claude call
+  // Dependency completes → cascade re-evaluates the dependent with NO Claude call.
+  // Logged like the app does: a direct status write would leave a hole in the
+  // history every flow metric is derived from.
   await prisma.task.update({ where: { id: couponApi.id }, data: { status: "done" } });
+  await recordStatusChange({
+    taskId: couponApi.id,
+    from: "working",
+    to: "done",
+    changedById: null,
+  });
   const cascade = await cascadeFromTask(couponApi.id);
   console.log(
     "cascade:",

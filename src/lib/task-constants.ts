@@ -53,33 +53,36 @@ export function isActiveWork(status: TaskStatusValue): boolean {
   return status === "working" || status === "review";
 }
 
-export const TEAM_ROLES = ["pm", "ui", "backend", "mobile", "ai"] as const;
+export const TEAM_ROLES = ["pm", "ui", "website", "backend", "mobile", "ai"] as const;
 export type TeamRoleValue = (typeof TEAM_ROLES)[number];
 
 export const TEAM_ROLE_LABEL: Record<TeamRoleValue, string> = {
   pm: "PM",
   ui: "UI",
+  website: "Website",
   backend: "Backend",
   mobile: "Mobile",
-  ai: "AI",
+  ai: "AI Dev",
 };
 
 /** Any engineering role — everyone except the PM. */
-export const ENGINEERING_ROLES: TeamRoleValue[] = ["ui", "backend", "mobile", "ai"];
+export const ENGINEERING_ROLES: TeamRoleValue[] = ["ui", "website", "backend", "mobile", "ai"];
 
-export const TASK_COMPONENTS = ["ui", "backend", "mobile", "ai"] as const;
+export const TASK_COMPONENTS = ["ui", "website", "backend", "mobile", "ai"] as const;
 export type TaskComponentValue = (typeof TASK_COMPONENTS)[number];
 
 export const TASK_COMPONENT_LABEL: Record<TaskComponentValue, string> = {
   ui: "UI",
+  website: "Website",
   backend: "Backend / API",
   mobile: "Mobile",
-  ai: "AI",
+  ai: "AI Dev",
 };
 
 /** A sub-task's component maps 1:1 to the TeamRole that should own it. */
 export const COMPONENT_TO_ROLE: Record<TaskComponentValue, TeamRoleValue> = {
   ui: "ui",
+  website: "website",
   backend: "backend",
   mobile: "mobile",
   ai: "ai",

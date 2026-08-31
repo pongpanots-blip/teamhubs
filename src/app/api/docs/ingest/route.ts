@@ -13,7 +13,7 @@ export async function POST(req: Request) {
     const cx = await requireMembership();
     const { membership } = cx;
     const { project, role } = await requireProjectFromQuery(cx, req);
-    assertRole(role, ["pm", "ui", "backend", "mobile", "ai"]);
+    assertRole(role, ["pm", "ui", "website", "backend", "mobile", "ai"]);
     const source = new URL(req.url).searchParams.get("source");
     const result =
       source === "repo"

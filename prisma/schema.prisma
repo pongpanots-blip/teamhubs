@@ -12,6 +12,7 @@ datasource db {
 enum TeamRole {
   pm
   ui
+  website
   backend
   mobile
   ai
@@ -22,6 +23,7 @@ enum TeamRole {
  */
 enum TaskComponent {
   ui
+  website
   backend
   mobile
   ai

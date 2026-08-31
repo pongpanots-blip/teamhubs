@@ -45,7 +45,7 @@ export function CycleTimeScatter({
   return (
     <ChartCard
       title="Cycle time"
-      description={`Each dot is a finished card. Lines are the ${sle.sampleSize}-card service level — 85% came in under ${formatDuration(sle.p85)}.`}
+      description={`Each dot is a finished card, measured in working time. Lines are the ${sle.sampleSize}-card service level — 85% came in under ${formatDuration(sle.p85)}.`}
       empty={points.length === 0 ? "No cards finished in this window yet." : undefined}
     >
       <line

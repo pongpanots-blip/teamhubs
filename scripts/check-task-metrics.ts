@@ -7,7 +7,9 @@ import type { TaskStatusValue } from "../src/lib/task-constants";
 
 const HOUR = 3600_000;
 const DAY = 24 * HOUR;
-const T0 = new Date("2026-08-01T09:00:00.000Z");
+// A Monday, 09:00 Bangkok (the default business offset) — so plain hour maths
+// in these cases stays inside the working week unless a case says otherwise.
+const T0 = new Date("2026-08-03T02:00:00.000Z");
 
 function at(hours: number): Date {
   return new Date(T0.getTime() + hours * HOUR);
@@ -126,9 +128,48 @@ function assertEqual(actual: unknown, expected: unknown, label: string) {
     },
     at(24 + 7 * 24),
   );
-  assertEqual(m.wipAgeMs, 7 * DAY, "WIP age counts from first active");
+  assertEqual(m.wipAgeMs, 5 * DAY, "WIP age counts working days only (7 calendar → 5)");
   assertEqual(m.cycleTimeMs, null, "unfinished card has no cycle time");
   assertEqual(m.flowEfficiency, null, "no cycle time → no flow efficiency");
+}
+
+// Weekends are not effort. A card picked up Friday afternoon and finished
+// Monday morning took hours, not three days.
+{
+  const friday3pm = new Date("2026-08-07T08:00:00.000Z"); // Fri 15:00 Bangkok
+  const mondayNoon = new Date("2026-08-10T05:00:00.000Z"); // Mon 12:00 Bangkok
+  const m = computeTaskMetrics(
+    {
+      createdAt: friday3pm,
+      history: [
+        { fromStatus: null, toStatus: "working", changedAt: friday3pm },
+        { fromStatus: "working", toStatus: "done", changedAt: mondayNoon },
+      ],
+    },
+    mondayNoon,
+  );
+  // 15:00 Fri → midnight = 9h, plus midnight → 12:00 Mon = 12h.
+  assertEqual(m.cycleTimeMs, 21 * HOUR, "the weekend is dropped from cycle time");
+  assertEqual(m.leadTimeMs, 21 * HOUR, "and from lead time");
+}
+
+// A card that only ever sat over a weekend did no working time — which is not
+// the same statement as "never finished".
+{
+  const saturday = new Date("2026-08-08T03:00:00.000Z"); // Sat 10:00 Bangkok
+  const sunday = new Date("2026-08-09T03:00:00.000Z"); // Sun 10:00 Bangkok
+  const m = computeTaskMetrics(
+    {
+      createdAt: saturday,
+      history: [
+        { fromStatus: null, toStatus: "working", changedAt: saturday },
+        { fromStatus: "working", toStatus: "done", changedAt: sunday },
+      ],
+    },
+    sunday,
+  );
+  assertEqual(m.cycleTimeMs, 0, "a weekend-only span is zero working time");
+  assertEqual(m.flowEfficiency, null, "and yields no flow efficiency to divide");
 }
 
 // Category + rank mapping — the assumptions every metric above rests on.

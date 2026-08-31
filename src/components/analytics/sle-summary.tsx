@@ -26,6 +26,7 @@ export function SleSummary({ sle, windowDays }: { sle: ServiceLevel; windowDays:
             : sle.sampleSize < MIN_MEANINGFUL_SAMPLE
               ? `Based on only ${sle.sampleSize} finished card(s) — treat as a hint, not a commitment.`
               : `From ${sle.sampleSize} cards finished in the last ${windowDays} days.`}
+          {sle.sampleSize > 0 && " Durations are working time — weekends excluded."}
         </CardDescription>
       </CardHeader>
       <CardContent className="grid grid-cols-3 gap-4">

@@ -38,8 +38,17 @@ pnpm smoke
 | `pnpm db:migrate` | Prisma migrate |
 | `pnpm docs:ingest` | CLI ingest for a team (see script) |
 | `pnpm smoke` | End-to-end smoke without UI |
+| `pnpm check:business-time` | Weekend-aware duration maths |
 | `pnpm snapshot:flow` | One-off board census for the CFD (the daily job does this on a schedule) |
 | `docker compose up --build` | Full stack (db + web) |
+
+## Working time
+
+Every flow duration — cycle time, lead time, WIP age, time in status, and the
+service level built from them — counts working time only. Weekends are removed
+whole; nights are not, since cutting those would need per-person hours the app
+does not have. `BUSINESS_UTC_OFFSET_MINUTES` (default 420, UTC+7) decides where
+a weekend starts, so a Friday evening in Bangkok is not filed as a Saturday.
 
 ## Daily flow snapshot
 

@@ -30,9 +30,22 @@ export function BurndownChart({
   return (
     <ChartCard
       title={`Burndown — ${sprintName}`}
-      description="Solid is work left, dashed is the plan, and the grey line is total scope. Grey rising means work was added after kick-off."
+      description="Solid is work left, dashed is the plan, and the grey line is total scope. Grey rising means work was added after kick-off; shaded columns are weekends, where the plan sits still."
       empty={days.length === 0 ? "This sprint has no time-box to plot." : undefined}
     >
+      {days.map((day, i) =>
+        day.isWeekend ? (
+          <rect
+            key={day.date}
+            x={xAt(i, days.length) - 4}
+            y={PLOT.padTop}
+            width={8}
+            height={innerHeight}
+            fill="var(--muted)"
+            fillOpacity={0.7}
+          />
+        ) : null,
+      )}
       <line
         x1={PLOT.padLeft}
         y1={PLOT.padTop + innerHeight}

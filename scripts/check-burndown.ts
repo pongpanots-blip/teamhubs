@@ -32,7 +32,9 @@ function base(over: Partial<BurndownInput> = {}): BurndownInput {
   assertEqual(days.length, 5, "5-day box → 5 rows");
   assertEqual(days[0].date, "2026-09-01", "first row is the start day");
   assertEqual(days[4].date, "2026-09-05", "last row is the end day");
-  assertEqual(days[0].idealPoints, 20, "ideal line starts at the commitment");
+  // Values are end-of-day, so the ideal has already spent one of the four
+  // working days in the box (Sep 5 is a Saturday) by the end of day 1.
+  assertEqual(days[0].idealPoints, 15, "ideal line has spent one working day");
   assertEqual(days[4].idealPoints, 0, "ideal line ends at zero");
 }
 
@@ -87,6 +89,27 @@ function base(over: Partial<BurndownInput> = {}): BurndownInput {
     day(4),
   );
   assertEqual(days[2].scopePoints, 20, "an even trade leaves scope flat");
+}
+
+// The plan does not burn down over a weekend.
+{
+  const days = computeBurndown(
+    {
+      startAt: new Date("2026-09-03T00:00:00.000Z"), // Thursday
+      endAt: new Date("2026-09-08T00:00:00.000Z"), // the following Tuesday
+      committedPoints: 12,
+      tasks: [],
+      scopeChanges: [],
+    },
+    new Date("2026-09-08T12:00:00.000Z"),
+  );
+  assertEqual(days.length, 6, "Thu→Tue is six calendar days");
+  assertEqual(days[2].isWeekend, true, "Saturday is flagged");
+  assertEqual(days[3].isWeekend, true, "Sunday is flagged");
+  assertEqual(days[2].idealPoints, days[1].idealPoints, "the plan sits still on Saturday");
+  assertEqual(days[3].idealPoints, days[1].idealPoints, "and on Sunday");
+  assertEqual(days[4].idealPoints < days[3].idealPoints, true, "and resumes on Monday");
+  assertEqual(days[5].idealPoints, 0, "reaching zero on the last working day");
 }
 
 // Days that have not happened yet are left blank, not drawn flat.

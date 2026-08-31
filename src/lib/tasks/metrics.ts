@@ -1,3 +1,4 @@
+import { businessMs } from "@/lib/business-time";
 import {
   STATUS_CATEGORY,
   TASK_STATUSES,
@@ -39,19 +40,19 @@ type Segment = {
   end: Date;
 };
 
-/** Overlap of a segment with [from, to], in ms. */
+/** Working-time overlap of a segment with [from, to], in ms. */
 function overlapMs(segment: Segment, from: Date, to: Date): number {
   const start = Math.max(segment.start.getTime(), from.getTime());
   const end = Math.min(segment.end.getTime(), to.getTime());
-  return Math.max(0, end - start);
+  return end <= start ? 0 : businessMs(new Date(start), new Date(end));
 }
 
 /**
  * Derive every card-level flow metric from the transition log.
  *
  * Pure: `now` is injected so the same history always yields the same numbers.
- * All durations are wall-clock — business hours are not applied, so a card
- * sitting over a weekend reads as two extra days.
+ * Every duration is working time — weekends are removed (see businessMs), so a
+ * card left over a Saturday does not read as two days of effort.
  */
 export function computeTaskMetrics(
   input: { createdAt: Date; history: HistoryEntry[] },
@@ -87,8 +88,7 @@ export function computeTaskMetrics(
   }));
 
   for (const segment of segments) {
-    timeInStatusMs[segment.status] +=
-      segment.end.getTime() - segment.start.getTime();
+    timeInStatusMs[segment.status] += businessMs(segment.start, segment.end);
   }
 
   const current = history[history.length - 1].toStatus;
@@ -101,9 +101,11 @@ export function computeTaskMetrics(
   // to the finish that stuck, not the first one.
   const doneAt = isDone ? history[history.length - 1].changedAt : null;
 
+  // Zero rather than null when the whole span fell on a weekend: no working
+  // time passed, which is a different statement from "never finished".
   const cycleTimeMs =
     firstActiveAt && doneAt && doneAt > firstActiveAt
-      ? doneAt.getTime() - firstActiveAt.getTime()
+      ? businessMs(firstActiveAt, doneAt)
       : null;
 
   const activeMsInCycle =
@@ -114,14 +116,13 @@ export function computeTaskMetrics(
       : 0;
 
   return {
-    leadTimeMs: doneAt ? doneAt.getTime() - input.createdAt.getTime() : null,
+    leadTimeMs: doneAt ? businessMs(input.createdAt, doneAt) : null,
     cycleTimeMs,
     timeInStatusMs,
     blockedTimeMs: timeInStatusMs.blocked,
     waitingTimeMs: timeInStatusMs.blocked + timeInStatusMs.review,
     flowEfficiency: cycleTimeMs ? activeMsInCycle / cycleTimeMs : null,
-    wipAgeMs:
-      !isDone && firstActiveAt ? now.getTime() - firstActiveAt.getTime() : null,
+    wipAgeMs: !isDone && firstActiveAt ? businessMs(firstActiveAt, now) : null,
     reworkCount: history.filter(
       (e) => e.fromStatus && isRework(e.fromStatus, e.toStatus),
     ).length,

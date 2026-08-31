@@ -1,3 +1,5 @@
+import { businessDaysBetween, isWeekend } from "@/lib/business-time";
+
 export type BurndownTask = {
   points: number;
   /** When the card last entered `done`. Null while unfinished. */
@@ -17,8 +19,11 @@ export type BurndownDay = {
   scopePoints: number;
   /** Scope minus finished work. Null for days that have not happened yet. */
   remainingPoints: number | null;
-  /** Straight line from the commitment down to zero, for comparison only. */
+  /** Straight line from the commitment down to zero, for comparison only.
+   *  Flat across weekends — a plan that burns down on a Sunday is not a plan. */
   idealPoints: number;
+  /** True on Saturdays and Sundays, so the chart can mark them. */
+  isWeekend: boolean;
   /** Same two lines by card count, for teams that right-size instead of estimating. */
   scopeCount: number;
   remainingCount: number | null;
@@ -77,8 +82,13 @@ export function computeBurndown(
         86_400_000,
     ) + 1;
 
+  const workingDays = businessDaysBetween(input.startAt, input.endAt);
+  let workingDaysElapsed = 0;
+
   for (let i = 0; i < totalDays; i++) {
     const dayStart = new Date(input.startAt.getTime() + i * 86_400_000);
+    const weekend = isWeekend(dayStart);
+    if (!weekend) workingDaysElapsed++;
     const cursor = endOfUtcDay(dayStart);
     const upTo = (d: Date) => d.getTime() <= cursor.getTime();
 
@@ -101,9 +111,12 @@ export function computeBurndown(
         ? null
         : Math.max(0, scopePoints - finished.reduce((s, t) => s + t.points, 0)),
       remainingCount: isFuture ? null : Math.max(0, scopeCount - finished.length),
+      isWeekend: weekend,
+      // Spent against working days, not calendar days: the line should sit
+      // still over a weekend rather than accusing the team of falling behind.
       idealPoints:
-        totalDays > 1
-          ? committedPoints * (1 - i / (totalDays - 1))
+        workingDays > 0
+          ? committedPoints * (1 - workingDaysElapsed / workingDays)
           : 0,
     });
   }

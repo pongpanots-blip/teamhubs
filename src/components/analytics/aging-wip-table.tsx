@@ -29,7 +29,7 @@ export function AgingWipTable({
         <CardDescription>
           {sleMs === null
             ? "No service level yet — finish a few cards and a threshold appears here."
-            : `${breached} of ${cards.length} in-flight card(s) have already outlived the ${formatDuration(sleMs)} that 85% come in under.`}
+            : `${breached} of ${cards.length} in-flight card(s) have already outlived the ${formatDuration(sleMs)} of working time that 85% come in under.`}
         </CardDescription>
       </CardHeader>
       <CardContent>

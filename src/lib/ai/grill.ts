@@ -85,8 +85,10 @@ or, once you have enough:
 
 Rules:
 - Ask short, concrete questions. One at a time. Never a numbered list of multiple questions.
+- Never ask the PM for engineering artifacts by name (e.g. "acceptance criteria คืออะไร", "business rules มีอะไรบ้าง", "edge case คืออะไร"). The PM often does not think in those terms. Ask in plain product language about what the user should be able to do, or propose a draft yourself and ask them to confirm or correct it.
 - ALWAYS include "recommendation": your own best-guess answer to the question, in the same language as the question, with the reasoning folded in briefly (e.g. "10% — matches the standard tier discount already used elsewhere"). Never skip this, even for open-ended questions — recommend your best guess and let the PM override it.
 - Whenever a question has a natural small set of likely answers (yes/no, a pick from a short list, a common default), include "choices": 2-5 short options the PM can tap instead of typing, and set "recommendation" to the exact string of the choice you recommend. The PM can still type a custom answer, so choices are a helpful shortcut, not a hard constraint — never invent choices for a question that is genuinely open-ended (e.g. "what should the discount amount be?"); for those, "recommendation" is still required but is free text.
+- If the PM says they don't know / aren't sure / "แล้วแต่คุณ", never re-ask that question and never stall. Adopt your own "recommendation" as the answer, state it back in one short line as the assumed answer, and immediately move on to the next branch. Then keep narrowing with easier questions — prefer yes/no or short "choices" the PM can just tap, and let the finalized requirement carry your assumptions.
 - Never re-ask a question you already have the answer to, directly or indirectly, from earlier in the conversation.
 - Do not invent a fixed business-rules schema — only include rules this specific requirement needs.
 - "components" is the actual breakdown of sub-tasks to create — omit a component entirely if this requirement doesn't touch it.
@@ -106,6 +108,9 @@ function parseTurn(rawText: string): GrillTurn {
   return turn;
 }
 
+/** Answers that mean "I don't know" — treated as no answer, not as content. */
+const DONT_KNOW_RE = /^(ไม่รู้|ยังไม่รู้|ไม่แน่ใจ|ไม่ทราบ|แล้วแต่|ไม่มี|skip|idk|dunno|don'?t know|not sure)\b/i;
+
 /** Offline heuristic used only when GEMINI_API_KEY is unset (dev / smoke tests). */
 function heuristicTurn(messages: GrillMessage[], forceFinish: boolean): GrillTurn {
   const userTurns = messages.filter((m) => m.role === "user");
@@ -113,7 +118,10 @@ function heuristicTurn(messages: GrillMessage[], forceFinish: boolean): GrillTur
   const allText = userTurns.map((m) => m.content).join(" ");
 
   const FIXED_QUESTIONS: { question: string; choices?: string[] }[] = [
-    { question: "Acceptance criteria คืออะไรบ้าง? (ทำอะไรแล้วถือว่าเสร็จ)" },
+    {
+      question:
+        "ถ้าฟีเจอร์นี้เสร็จแล้ว ผู้ใช้จะทำอะไรได้บ้าง? เล่าสั้น ๆ ตามที่นึกออกพอ เดี๋ยวเราสรุปเป็นเช็กลิสต์ให้เอง",
+    },
     { question: "มีผลกับหน้าจอ/ดีไซน์ (UI) ไหม?", choices: ["มี", "ไม่มี"] },
     { question: "ต้องมี API/Backend เพิ่มไหม?", choices: ["ต้องมี", "ไม่ต้องมี"] },
   ];
@@ -123,7 +131,10 @@ function heuristicTurn(messages: GrillMessage[], forceFinish: boolean): GrillTur
   }
 
   const heuristic = extractBusinessRulesHeuristic(firstIntent);
-  const acceptanceCriteria = userTurns[1]?.content ?? "";
+  const acAnswer = userTurns[1]?.content ?? "";
+  const acceptanceCriteria = DONT_KNOW_RE.test(acAnswer.trim())
+    ? `(PM ยังไม่ระบุ — ตั้งต้นจาก intent) ${firstIntent}`.trim()
+    : acAnswer;
   const components: GrillResult["components"] = [];
   if (/ui|หน้า|design|figma/i.test(allText)) {
     components.push({ component: "ui", title: `${heuristic.titleHint} — UI`, description: allText });

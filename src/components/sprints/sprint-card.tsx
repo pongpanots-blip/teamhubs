@@ -48,6 +48,9 @@ export function SprintPanel({
   onMoveCard: (taskId: string, sprintId: string | null) => void;
   onSetPoints: (taskId: string, points: number | null) => void;
 }) {
+  // canManage gates the sprint's own lifecycle (PM only, as the API enforces).
+  // Committing and sizing cards is a task edit, which any project member may
+  // make — gating it here would hide an action the API happily accepts.
   const state = sprintState(sprint);
   const current = totalPoints(sprint.tasks);
   // Only meaningful once the commitment is frozen — before kick-off, "scope
@@ -125,7 +128,7 @@ export function SprintPanel({
                   aria-label={`Story points for ${card.title}`}
                   defaultValue={card.storyPoints ?? ""}
                   placeholder="pts"
-                  disabled={!canManage || busy}
+                  disabled={busy}
                   className="h-8 w-20"
                   onBlur={(e) => {
                     const raw = e.target.value.trim();
@@ -135,7 +138,7 @@ export function SprintPanel({
                     onSetPoints(card.id, next);
                   }}
                 />
-                {canManage && state !== "completed" && (
+                {state !== "completed" && (
                   <Button
                     size="sm"
                     variant="ghost"
@@ -150,7 +153,7 @@ export function SprintPanel({
           </ul>
         )}
 
-        {canManage && state !== "completed" && backlog.length > 0 && (
+        {state !== "completed" && backlog.length > 0 && (
           <div className="flex items-center gap-2 border-t border-black/5 pt-3">
             <label className="text-sm text-slate-600" htmlFor={`add-${sprint.id}`}>
               Add from backlog

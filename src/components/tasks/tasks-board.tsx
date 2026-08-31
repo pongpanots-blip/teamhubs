@@ -188,15 +188,18 @@ export function TasksBoard({
     if (!forceFinish && !text) return;
     setError(null);
     setLoading(true);
-    const messages: GrillMessage[] = draft.pendingQuestion
-      ? [
-          ...draft.messages,
-          { role: "assistant", content: draft.pendingQuestion },
-          { role: "user", content: text },
-        ]
-      : draft.messages.length
-        ? [...draft.messages, { role: "user", content: text }]
-        : [{ role: "user", content: text }];
+    const withPendingQuestion: GrillMessage[] = draft.pendingQuestion
+      ? [...draft.messages, { role: "assistant", content: draft.pendingQuestion }]
+      : draft.messages;
+    // Force-finish with nothing typed: don't send an empty user message —
+    // the forceFinish flag alone tells the API to wrap up with what it has.
+    const messages: GrillMessage[] = text
+      ? [...withPendingQuestion, { role: "user", content: text }]
+      : withPendingQuestion;
+    if (messages.length === 0) {
+      setLoading(false);
+      return;
+    }
 
     const res = await fetch("/api/tasks/grill", {
       method: "POST",

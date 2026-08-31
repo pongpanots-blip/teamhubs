@@ -20,6 +20,17 @@ export const TASK_STATUS_LABEL: Record<TaskStatusValue, string> = {
   done: "DONE",
 };
 
+/** Board column headings — the mockup spells these out instead of using the enum. */
+export const TASK_STATUS_COLUMN_LABEL: Record<TaskStatusValue, string> = {
+  not_ready: "Not ready",
+  ready: "Ready",
+  assigned: "Assigned",
+  working: "Working",
+  blocked: "Blocked",
+  review: "Review",
+  done: "Done",
+};
+
 export const TASK_PRIORITIES = ["p0", "p1", "p2", "p3"] as const;
 export type TaskPriorityValue = (typeof TASK_PRIORITIES)[number];
 

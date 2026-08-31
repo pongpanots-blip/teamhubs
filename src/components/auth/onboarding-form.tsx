@@ -67,6 +67,9 @@ export function OnboardingForm() {
               pattern="^[a-z0-9-]+$"
               required
             />
+            <p className="text-xs text-muted-foreground">
+              Auto-generated from the team name — editable.
+            </p>
           </div>
           {error ? <p className="text-sm text-red-600">{error}</p> : null}
           <Button type="submit" className="w-full" disabled={loading}>

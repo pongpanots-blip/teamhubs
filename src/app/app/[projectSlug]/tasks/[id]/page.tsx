@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { RunContextButton } from "@/components/tasks/run-context-button";
+import { StartWorkingButton } from "@/components/tasks/start-working-button";
 import { DecisionLogForm } from "@/components/tasks/decision-log-form";
 import {
   RegenerateHandoffButton,
@@ -86,7 +87,12 @@ export default async function TaskDetailPage({ params }: Props) {
             </span>
           ) : null}
         </div>
-        <RunContextButton taskId={task.id} />
+        <div className="flex items-start gap-2">
+          {status === "ready" || status === "assigned" ? (
+            <StartWorkingButton taskId={task.id} />
+          ) : null}
+          <RunContextButton taskId={task.id} />
+        </div>
       </div>
 
       <div className="grid items-start gap-6 lg:grid-cols-[1fr_320px]">

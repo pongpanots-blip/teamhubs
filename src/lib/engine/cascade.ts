@@ -2,6 +2,8 @@ import { Prisma, type Task, type TaskStatus } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import { ClaudeTaskAnalysisSchema, type ClaudeTaskAnalysis } from "@/lib/ai/schemas";
 import { runDeterministicEngine, type EngineDependency } from "@/lib/engine";
+import { notifyTaskEvent } from "@/lib/notify/task-events";
+import type { TaskStatusValue } from "@/lib/task-constants";
 
 /** Guards against a dependency cycle turning the cascade into an infinite walk. */
 const MAX_CASCADE_DEPTH = 10;
@@ -131,11 +133,25 @@ export async function cascadeFromTask(taskId: string): Promise<Reevaluation[]> {
 /** Tell the owner when the engine moves their task in or out of BLOCKED. */
 async function notifyStatusChange(result: Reevaluation) {
   const { task, previousStatus, status, waitingFor } = result;
-  if (!task.assigneeId) return;
 
   const becameBlocked = status === "blocked" && previousStatus !== "blocked";
   const becameUnblocked = previousStatus === "blocked" && status !== "blocked";
   if (!becameBlocked && !becameUnblocked) return;
+
+  // Chat gets it either way — a blocked task with no owner is exactly the kind
+  // of thing the team needs to see.
+  const project = await prisma.project.findUnique({
+    where: { id: task.projectId },
+    select: { name: true },
+  });
+  await notifyTaskEvent(
+    becameBlocked
+      ? { kind: "blocked", title: task.title, waitingFor: waitingFor || "รอ dependency ที่ยังไม่เสร็จ" }
+      : { kind: "unblocked", title: task.title, status: status as TaskStatusValue },
+    { projectName: project?.name ?? "—" },
+  );
+
+  if (!task.assigneeId) return;
 
   await prisma.notification.create({
     data: {

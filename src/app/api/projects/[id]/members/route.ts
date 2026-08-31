@@ -13,6 +13,37 @@ const schema = z.object({
  * PM assigns a team member into a project with a role — separate from the
  * team-wide invite flow, since a user's role can differ per project.
  */
+/** Removing project access — the counterpart to POST, for the team-wide matrix. */
+export async function DELETE(req: Request, { params }: { params: Promise<{ id: string }> }) {
+  try {
+    const { membership } = await requireMembership();
+    assertRole(membership.role, ["pm"]);
+    const { id: projectId } = await params;
+    const { userId } = z.object({ userId: z.string().min(1) }).parse(await req.json());
+
+    const project = await prisma.project.findFirst({
+      where: { id: projectId, teamId: membership.teamId },
+    });
+    if (!project) {
+      return NextResponse.json({ error: "PROJECT_NOT_FOUND" }, { status: 404 });
+    }
+
+    // Tasks assigned to them in this project would become unreachable for them
+    // — hand those back rather than leaving silent orphans.
+    const [, unassigned] = await prisma.$transaction([
+      prisma.projectMembership.deleteMany({ where: { projectId, userId } }),
+      prisma.task.updateMany({
+        where: { projectId, assigneeId: userId },
+        data: { assigneeId: null },
+      }),
+    ]);
+    return NextResponse.json({ ok: true, unassignedTasks: unassigned.count });
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : "ERROR";
+    return NextResponse.json({ error: msg }, { status: msg === "FORBIDDEN" ? 403 : 400 });
+  }
+}
+
 export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { membership } = await requireMembership();

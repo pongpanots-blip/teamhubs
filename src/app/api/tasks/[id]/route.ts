@@ -5,13 +5,15 @@ import { prisma } from "@/lib/db";
 import { requireMembership } from "@/lib/auth-session";
 import { requireTaskAccess, assertAssignable } from "@/lib/tasks/access";
 import { errorResponse } from "@/lib/api-error";
-import { TASK_PRIORITIES, TASK_STATUSES } from "@/lib/task-constants";
+import { TASK_PRIORITIES, TASK_STATUSES, type TaskStatusValue } from "@/lib/task-constants";
 import {
   BusinessRuleSchema,
   parseBusinessRules,
   rulesPresent,
 } from "@/lib/business-rules";
 import { extractDynamicRequirement } from "@/lib/ai/extract-rules";
+import { notifyTaskEvent } from "@/lib/notify/task-events";
+import { projectTask } from "@/lib/routes";
 import { cascadeFromTask } from "@/lib/engine/cascade";
 import { httpUrlSchema } from "@/lib/url-schema";
 
@@ -155,6 +157,22 @@ export async function PATCH(req: Request, { params }: Params) {
           skipDuplicates: true,
         });
       }
+    }
+
+    if (task.status !== existing.status) {
+      await notifyTaskEvent(
+        {
+          kind: "status",
+          title: task.title,
+          from: existing.status as TaskStatusValue,
+          to: task.status as TaskStatusValue,
+        },
+        {
+          projectName: project.name,
+          actorName: cx.user.name,
+          url: new URL(projectTask(project.slug, task.id), new URL(req.url).origin).toString(),
+        },
+      );
     }
 
     // A status change (API done) or a rewired graph can unblock other people's

@@ -53,11 +53,15 @@ type TaskRow = {
   dependsOn: { dependency: { id: string; title: string; status: string } }[];
 };
 
-type Member = { id: string; name: string; role: string };
+type Member = { id: string; name: string; role: string; projectSlug: string };
+type ProjectOption = { slug: string; name: string };
 
 type Draft = {
   id: string;
   label: string;
+  /** Locked at creation — the task is always created in this project, regardless of what the header switches to later. */
+  projectSlug: string;
+  projectName: string;
   messages: GrillMessage[];
   pendingQuestion: string | null;
   pendingChoices: string[] | null;
@@ -105,10 +109,12 @@ function nowMs(): number {
   return Date.now();
 }
 
-function newDraft(): Draft {
+function newDraft(project: ProjectOption): Draft {
   return {
     id: crypto.randomUUID(),
     label: "New requirement",
+    projectSlug: project.slug,
+    projectName: project.name,
     messages: [],
     pendingQuestion: null,
     pendingChoices: null,
@@ -120,14 +126,19 @@ function newDraft(): Draft {
 export function TasksBoard({
   initialTasks,
   members,
+  projects,
+  currentProjectSlug,
 }: {
   initialTasks: TaskRow[];
   members: Member[];
+  projects: ProjectOption[];
+  currentProjectSlug: string;
 }) {
   const router = useRouter();
   const [tasks, setTasks] = useState(initialTasks);
   const [open, setOpen] = useState(false);
   const [drafts, setDrafts] = useState<Draft[]>([]);
+  const [draftFilter, setDraftFilter] = useState("all");
   const [draft, setDraft] = useState<Draft | null>(null);
   const [answer, setAnswer] = useState("");
   const [loading, setLoading] = useState(false);
@@ -135,6 +146,15 @@ export function TasksBoard({
   const [creating, setCreating] = useState(false);
   const [runningId, setRunningId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const currentProject = projects.find((p) => p.slug === currentProjectSlug) ?? {
+    slug: currentProjectSlug,
+    name: currentProjectSlug,
+  };
+
+  const visibleDrafts = useMemo(
+    () => (draftFilter === "all" ? drafts : drafts.filter((d) => d.projectSlug === draftFilter)),
+    [drafts, draftFilter],
+  );
 
   const sorted = useMemo(
     () =>
@@ -263,6 +283,7 @@ export function TasksBoard({
             assigneeId: c.assigneeId,
           })),
         transcript,
+        projectSlug: draft.projectSlug,
       }),
     });
     const data = await res.json();
@@ -329,15 +350,32 @@ export function TasksBoard({
           <DialogTrigger render={<Button />}>New from intent</DialogTrigger>
           <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
             <DialogHeader>
-              <DialogTitle>{draft ? draft.label : "Dynamic requirement"}</DialogTitle>
+              <DialogTitle>
+                {draft ? `${draft.label} — ${draft.projectName}` : "Dynamic requirement"}
+              </DialogTitle>
             </DialogHeader>
 
             {!draft ? (
               <div className="space-y-3">
                 {drafts.length > 0 ? (
                   <div className="space-y-2">
-                    <Label>คุยค้างไว้</Label>
-                    {drafts.map((d) => (
+                    <div className="flex items-center justify-between gap-2">
+                      <Label>คุยค้างไว้</Label>
+                      <Select value={draftFilter} onValueChange={(v) => v && setDraftFilter(v)}>
+                        <SelectTrigger className="h-7 w-auto text-xs">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">ทุก project</SelectItem>
+                          {projects.map((p) => (
+                            <SelectItem key={p.slug} value={p.slug}>
+                              {p.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    {visibleDrafts.map((d) => (
                       <div
                         key={d.id}
                         className="flex items-center justify-between gap-2 rounded-lg border border-black/10 bg-slate-50 p-2 text-sm"
@@ -347,7 +385,7 @@ export function TasksBoard({
                           className="min-w-0 flex-1 truncate text-left hover:underline"
                           onClick={() => openDraft(d)}
                         >
-                          {d.label}
+                          <span className="text-slate-400">[{d.projectName}]</span> {d.label}
                           {d.result ? " · พร้อมสร้าง" : ""}
                         </button>
                         <Button
@@ -359,10 +397,13 @@ export function TasksBoard({
                         </Button>
                       </div>
                     ))}
+                    {visibleDrafts.length === 0 ? (
+                      <p className="text-xs text-slate-500">ไม่มีบทสนทนาค้างไว้ใน project นี้</p>
+                    ) : null}
                   </div>
                 ) : null}
-                <Button className="w-full" onClick={() => openDraft(newDraft())}>
-                  เริ่มคุยใหม่
+                <Button className="w-full" onClick={() => openDraft(newDraft(currentProject))}>
+                  เริ่มคุยใหม่ ({currentProject.name})
                 </Button>
               </div>
             ) : draft.result ? (
@@ -434,7 +475,11 @@ export function TasksBoard({
                             </SelectTrigger>
                             <SelectContent>
                               {members
-                                .filter((m) => m.role === COMPONENT_TO_ROLE[c.component])
+                                .filter(
+                                  (m) =>
+                                    m.projectSlug === draft.projectSlug &&
+                                    m.role === COMPONENT_TO_ROLE[c.component],
+                                )
                                 .map((m) => (
                                   <SelectItem key={m.id} value={m.id}>
                                     {m.name}

@@ -31,5 +31,21 @@ services:
       db:
         condition: service_healthy
 
+  # Daily census of every board, so the Cumulative Flow Diagram is a lookup
+  # rather than a replay of the whole transition log. Replaceable by any
+  # scheduler that can POST to /api/cron/snapshot with the same bearer token.
+  snapshot:
+    image: curlimages/curl:8.11.1
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      SNAPSHOT_URL: http://web:3000/api/cron/snapshot
+    volumes:
+      - ./docker/snapshot-cron.sh:/snapshot-cron.sh:ro
+    entrypoint: ["/bin/sh", "/snapshot-cron.sh"]
+    depends_on:
+      - web
+
 volumes:
   teamhub_pgdata:

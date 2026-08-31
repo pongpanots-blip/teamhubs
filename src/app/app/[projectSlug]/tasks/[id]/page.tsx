@@ -520,14 +520,14 @@ function buildMissingContextItems(
     items.push({
       key: "rules",
       label: "Business rules missing",
-      question: "Business rules ของงานนี้คืออะไรบ้าง?",
+      question: "มีตัวเลขหรือเงื่อนไขอะไรที่ต้องยึดไหม เช่น จำนวน วัน หรือเปอร์เซ็นต์?",
     });
   }
   if (!task.acPresent) {
     items.push({
       key: "ac",
       label: "Acceptance criteria missing",
-      question: "Acceptance criteria ของงานนี้คืออะไร?",
+      question: "ถ้างานนี้เสร็จแล้ว ผู้ใช้จะทำอะไรได้บ้าง? เล่าสั้น ๆ พอ",
     });
   }
 

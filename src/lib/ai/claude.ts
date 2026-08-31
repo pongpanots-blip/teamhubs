@@ -123,8 +123,10 @@ export async function analyzeTaskWithClaude(input: {
       ],
       conflicts: [],
       questionsForPm: [
-        ...(!hasAc ? ["Acceptance criteria คืออะไรบ้าง?"] : []),
-        ...(!hasRules ? ["Business rules มีข้อจำกัดอะไรเพิ่มไหม?"] : []),
+        ...(!hasAc
+          ? ["ถ้างานนี้เสร็จแล้ว ผู้ใช้จะทำอะไรได้บ้าง? เล่าสั้น ๆ พอ"]
+          : []),
+        ...(!hasRules ? ["มีตัวเลขหรือเงื่อนไขอะไรที่ต้องยึดไหม เช่น จำนวน วัน หรือเปอร์เซ็นต์?"] : []),
       ],
       relatedDocInsights: (slimPack.docs ?? []).slice(0, 3).map((d) => ({
         sourcePath: d.sourcePath,

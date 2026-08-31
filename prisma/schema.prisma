@@ -237,6 +237,8 @@ model Task {
   deadline           DateTime?
   /// Set only on a component sub-task created from a grilling session; null on the parent task
   component          TaskComponent?
+  /// Parent task when this row is a sub-task; null for a top-level task
+  parentId           String?
   /// Owner — assigned person; Assigned ≠ Working
   assigneeId         String?
   createdById        String
@@ -277,7 +279,10 @@ model Task {
   decisions     DecisionLog[]
   notifications Notification[]
   handoffDocs   TaskHandoff[]
+  parent        Task?            @relation("TaskSubTasks", fields: [parentId], references: [id], onDelete: SetNull)
+  subTasks      Task[]           @relation("TaskSubTasks")
 
+  @@index([parentId])
   @@index([teamId, status])
   @@index([assigneeId])
   @@index([teamId, priority])

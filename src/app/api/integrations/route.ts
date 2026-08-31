@@ -1,7 +1,9 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/db";
-import { requireMembership, requireProjectMembership, assertRole } from "@/lib/auth-session";
+import { requireMembership, assertRole } from "@/lib/auth-session";
+import { requireProjectFromQuery } from "@/lib/project-scope";
+import { errorResponse } from "@/lib/api-error";
 import { encryptJson } from "@/lib/crypto";
 
 const schema = z.object({
@@ -9,18 +11,17 @@ const schema = z.object({
   payload: z.record(z.string(), z.string()),
 });
 
-export async function GET() {
+export async function GET(req: Request) {
   try {
     const cx = await requireMembership();
-    const { project } = await requireProjectMembership(cx);
+    const { project } = await requireProjectFromQuery(cx, req);
     const rows = await prisma.integrationCredential.findMany({
       where: { projectId: project.id },
       select: { provider: true, updatedAt: true },
     });
     return NextResponse.json({ providers: rows });
   } catch (e) {
-    const msg = e instanceof Error ? e.message : "ERROR";
-    return NextResponse.json({ error: msg }, { status: 400 });
+    return errorResponse(e);
   }
 }
 
@@ -28,8 +29,8 @@ export async function PUT(req: Request) {
   try {
     const cx = await requireMembership();
     const { membership } = cx;
-    const { project, projectMembership } = await requireProjectMembership(cx);
-    assertRole(projectMembership.role, ["pm", "backend", "mobile", "ai"]);
+    const { project, role } = await requireProjectFromQuery(cx, req);
+    assertRole(role, ["pm", "backend", "mobile", "ai"]);
     const body = schema.parse(await req.json());
     const row = await prisma.integrationCredential.upsert({
       where: {
@@ -50,7 +51,6 @@ export async function PUT(req: Request) {
     });
     return NextResponse.json({ provider: row.provider, updatedAt: row.updatedAt });
   } catch (e) {
-    const msg = e instanceof Error ? e.message : "ERROR";
-    return NextResponse.json({ error: msg }, { status: 400 });
+    return errorResponse(e);
   }
 }

@@ -21,7 +21,7 @@ export default function InviteAcceptPage() {
       setMsg(data.error ?? "Failed");
       return;
     }
-    router.push("/app");
+    router.push(data.projectSlug ? `/app/${data.projectSlug}` : "/app");
   }
 
   return (

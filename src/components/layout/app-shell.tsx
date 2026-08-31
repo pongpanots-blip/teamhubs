@@ -5,13 +5,14 @@ import { authClient } from "@/lib/auth-client";
 import { Button } from "@/components/ui/button";
 import { NotificationBell } from "@/components/notifications/notification-bell";
 import { ProjectSwitcher } from "@/components/layout/project-switcher";
-
-const links = [
-  { href: "/app", label: "Overview" },
-  { href: "/app/tasks", label: "Tasks" },
-  { href: "/app/docs", label: "Docs / RAG" },
-  { href: "/app/settings", label: "Settings" },
-];
+import {
+  OVERVIEW,
+  TEAM_SETTINGS,
+  projectDocs,
+  projectHome,
+  projectSettings,
+  projectTasks,
+} from "@/lib/routes";
 
 export function AppShell({
   children,
@@ -24,14 +25,28 @@ export function AppShell({
   teamName?: string;
   role?: string;
   projects?: { slug: string; name: string }[];
+  /** Absent on team-level pages (overview, team settings) — they show no project nav. */
   currentProjectSlug?: string;
 }) {
+  const links = currentProjectSlug
+    ? [
+        { href: OVERVIEW, label: "All projects" },
+        { href: projectHome(currentProjectSlug), label: "Overview" },
+        { href: projectTasks(currentProjectSlug), label: "Tasks" },
+        { href: projectDocs(currentProjectSlug), label: "Docs / RAG" },
+        { href: projectSettings(currentProjectSlug), label: "Settings" },
+      ]
+    : [
+        { href: OVERVIEW, label: "All projects" },
+        ...(role === "pm" ? [{ href: TEAM_SETTINGS, label: "Team settings" }] : []),
+      ];
+
   return (
     <div className="min-h-screen bg-[radial-gradient(ellipse_at_top,_#e8eef5_0%,_#f7f5f1_45%,_#f3efe8_100%)]">
       <header className="border-b border-black/5 bg-white/70 backdrop-blur">
         <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3">
           <div className="flex items-center gap-6">
-            <Link href="/app" className="font-semibold tracking-tight text-slate-900">
+            <Link href={OVERVIEW} className="font-semibold tracking-tight text-slate-900">
               IntrovertHubs
             </Link>
             <nav className="hidden items-center gap-1 sm:flex">

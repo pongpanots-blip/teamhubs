@@ -1,9 +1,9 @@
-import { notFound, redirect } from "next/navigation";
+import { notFound } from "next/navigation";
 import Link from "next/link";
 import { format } from "date-fns";
-import { getSession } from "@/lib/auth-session";
 import { prisma } from "@/lib/db";
-import { AppShell } from "@/components/layout/app-shell";
+import { requireProjectPage } from "@/lib/page-context";
+import { projectTask, projectTasks } from "@/lib/routes";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -39,20 +39,16 @@ const STATUS_BADGE_VARIANT: Record<
   done: "secondary",
 };
 
-type Props = { params: Promise<{ id: string }> };
+type Props = { params: Promise<{ projectSlug: string; id: string }> };
 
 export default async function TaskDetailPage({ params }: Props) {
-  const session = await getSession();
-  if (!session?.user) redirect("/login");
-  const membership = await prisma.membership.findFirst({
-    where: { userId: session.user.id },
-    include: { team: true },
-  });
-  if (!membership) redirect("/onboarding");
+  const { projectSlug, id } = await params;
+  const { project } = await requireProjectPage(projectSlug);
 
-  const { id } = await params;
+  // Scoped by project, not team — a task id from another project must read as
+  // "not here", the same as one that does not exist.
   const task = await prisma.task.findFirst({
-    where: { id, teamId: membership.teamId },
+    where: { id, projectId: project.id },
     include: {
       assignee: true,
       dependsOn: {
@@ -87,11 +83,10 @@ export default async function TaskDetailPage({ params }: Props) {
   const genericHandoffDocs = task.handoffDocs.filter((d) => !d.role.startsWith("completion:"));
 
   return (
-    <AppShell teamName={membership.team.name} role={membership.role}>
-      <div className="space-y-6">
+    <div className="space-y-6">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
-            <Link href="/app/tasks" className="text-sm text-muted-foreground hover:underline">
+            <Link href={projectTasks(project.slug)} className="text-sm text-muted-foreground hover:underline">
               ← Tasks
             </Link>
             <h1 className="mt-2 text-3xl font-semibold tracking-tight">{task.title}</h1>
@@ -170,7 +165,7 @@ export default async function TaskDetailPage({ params }: Props) {
                 {subTaskDeps.map((d) => (
                   <li key={d.id}>
                     <Link
-                      href={`/app/tasks/${d.dependency.id}`}
+                      href={projectTask(project.slug, d.dependency.id)}
                       className="flex flex-wrap items-center gap-2 rounded-lg border border-border p-2 hover:bg-muted/50"
                     >
                       <Badge variant="outline">{d.dependency.component}</Badge>
@@ -486,7 +481,6 @@ export default async function TaskDetailPage({ params }: Props) {
           </CardContent>
         </Card>
       </div>
-    </AppShell>
   );
 }
 

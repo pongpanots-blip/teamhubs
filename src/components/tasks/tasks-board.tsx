@@ -37,6 +37,7 @@ import {
   type TaskStatusValue,
   TASK_STATUS_LABEL,
 } from "@/lib/task-constants";
+import { projectTask } from "@/lib/routes";
 import type { BusinessRule } from "@/lib/business-rules";
 import type { GrillMessage, GrillResult } from "@/lib/ai/grill";
 
@@ -167,7 +168,7 @@ export function TasksBoard({
   );
 
   async function refresh() {
-    const res = await fetch("/api/tasks");
+    const res = await fetch(`/api/tasks?project=${encodeURIComponent(currentProjectSlug)}`);
     const data = await res.json();
     if (res.ok) setTasks(data.tasks);
     router.refresh();
@@ -620,7 +621,7 @@ export function TasksBoard({
               return (
                 <TableRow key={t.id}>
                   <TableCell>
-                    <Link href={`/app/tasks/${t.id}`} className="font-medium hover:underline">
+                    <Link href={projectTask(currentProjectSlug, t.id)} className="font-medium hover:underline">
                       {t.title}
                     </Link>
                     <div className="text-xs text-slate-500">

@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/db";
 import { requireMembership } from "@/lib/auth-session";
+import { requireTaskAccess } from "@/lib/tasks/access";
+import { errorResponse } from "@/lib/api-error";
 
 const schema = z.object({
   decision: z.string().min(1),
@@ -12,13 +14,9 @@ type Params = { params: Promise<{ id: string }> };
 
 export async function GET(_req: Request, { params }: Params) {
   try {
-    const { membership } = await requireMembership();
+    const cx = await requireMembership();
     const { id } = await params;
-    const task = await prisma.task.findFirst({
-      where: { id, teamId: membership.teamId },
-      select: { id: true },
-    });
-    if (!task) return NextResponse.json({ error: "NOT_FOUND" }, { status: 404 });
+    await requireTaskAccess(cx, id);
 
     const decisions = await prisma.decisionLog.findMany({
       where: { taskId: id },
@@ -27,26 +25,21 @@ export async function GET(_req: Request, { params }: Params) {
     });
     return NextResponse.json({ decisions });
   } catch (e) {
-    const msg = e instanceof Error ? e.message : "ERROR";
-    return NextResponse.json({ error: msg }, { status: 400 });
+    return errorResponse(e);
   }
 }
 
 export async function POST(req: Request, { params }: Params) {
   try {
-    const { user, membership } = await requireMembership();
+    const cx = await requireMembership();
     const { id } = await params;
-    const task = await prisma.task.findFirst({
-      where: { id, teamId: membership.teamId },
-      select: { id: true },
-    });
-    if (!task) return NextResponse.json({ error: "NOT_FOUND" }, { status: 404 });
+    await requireTaskAccess(cx, id);
 
     const body = schema.parse(await req.json());
     const decision = await prisma.decisionLog.create({
       data: {
         taskId: id,
-        authorId: user.id,
+        authorId: cx.user.id,
         decision: body.decision,
         rationale: body.rationale ?? "",
       },
@@ -54,7 +47,6 @@ export async function POST(req: Request, { params }: Params) {
     });
     return NextResponse.json({ decision }, { status: 201 });
   } catch (e) {
-    const msg = e instanceof Error ? e.message : "ERROR";
-    return NextResponse.json({ error: msg }, { status: 400 });
+    return errorResponse(e);
   }
 }

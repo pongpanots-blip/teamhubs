@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { requireMembership } from "@/lib/auth-session";
+import { requireTaskAccess } from "@/lib/tasks/access";
+import { errorResponse } from "@/lib/api-error";
 import { syncHandoffDocs } from "@/lib/context/pipeline";
 import { lastAnalysisFor } from "@/lib/engine/cascade";
 import { runDeterministicEngine } from "@/lib/engine";
@@ -8,10 +10,13 @@ import { runDeterministicEngine } from "@/lib/engine";
 type Params = { params: Promise<{ id: string }> };
 
 export async function GET(_req: Request, { params }: Params) {
-  const { membership } = await requireMembership();
+  const cx = await requireMembership();
   const { id } = await params;
-  const task = await prisma.task.findFirst({ where: { id, teamId: membership.teamId } });
-  if (!task) return NextResponse.json({ error: "NOT_FOUND" }, { status: 404 });
+  try {
+    await requireTaskAccess(cx, id);
+  } catch (e) {
+    return errorResponse(e);
+  }
 
   const docs = await prisma.taskHandoff.findMany({
     where: { taskId: id },
@@ -23,10 +28,10 @@ export async function GET(_req: Request, { params }: Params) {
 /** Regenerate handoff docs from the last analysis, without re-running the full RAG+Claude pipeline. */
 export async function POST(_req: Request, { params }: Params) {
   try {
-    const { membership } = await requireMembership();
+    const cx = await requireMembership();
     const { id } = await params;
-    const task = await prisma.task.findFirst({ where: { id, teamId: membership.teamId } });
-    if (!task) return NextResponse.json({ error: "NOT_FOUND" }, { status: 404 });
+    await requireTaskAccess(cx, id);
+    const task = await prisma.task.findUniqueOrThrow({ where: { id } });
 
     const [analysis, deps, siblings] = await Promise.all([
       lastAnalysisFor(task.id),
@@ -35,7 +40,7 @@ export async function POST(_req: Request, { params }: Params) {
         include: { dependency: { include: { assignee: { select: { id: true, name: true } } } } },
       }),
       prisma.task.findMany({
-        where: { teamId: task.teamId, id: { not: task.id } },
+        where: { projectId: task.projectId, id: { not: task.id } },
         select: { id: true, title: true, status: true },
       }),
     ]);

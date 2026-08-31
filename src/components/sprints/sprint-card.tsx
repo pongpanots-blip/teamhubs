@@ -77,7 +77,7 @@ export function SprintPanel({
     <Card>
       <CardHeader>
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <CardTitle className="text-base">{sprint.name}</CardTitle>
+          <CardTitle>{sprint.name}</CardTitle>
           <div className="flex items-center gap-2">
             <Badge variant={state === "active" ? "default" : "secondary"}>
               {STATE_LABEL[state]}
@@ -109,27 +109,27 @@ export function SprintPanel({
       <CardContent className="space-y-4">
         <div className="space-y-1.5">
           <div className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-1 text-sm">
-            <span className="font-medium text-slate-900">
+            <span className="font-medium text-foreground">
               {progress.percent}% done
-              <span className="ml-2 font-normal text-slate-600 tabular-nums">
+              <span className="ml-2 font-normal text-muted-foreground tabular-nums">
                 {progress.doneCards}/{progress.totalCards} cards
                 {progress.totalPoints > 0
                   ? ` · ${progress.donePoints}/${progress.totalPoints} pts`
                   : " · not sized yet"}
               </span>
             </span>
-            <span className="text-slate-600 tabular-nums">
+            <span className="text-muted-foreground tabular-nums">
               Man hours:{" "}
-              <strong className="text-slate-900">{hours.actual}</strong>
-              <span className="text-slate-500"> / {hours.estimate}h planned</span>
+              <strong className="text-foreground">{hours.actual}</strong>
+              <span className="text-muted-foreground"> / {hours.estimate}h planned</span>
             </span>
-            <span className="text-slate-600">
+            <span className="text-muted-foreground">
               Committed:{" "}
-              <strong className="tabular-nums text-slate-900">
+              <strong className="tabular-nums text-foreground">
                 {sprint.committedPoints ?? "—"}
               </strong>
               {drift !== null && drift !== 0 && (
-                <span className={drift > 0 ? " text-red-600" : " text-slate-600"}>
+                <span className={drift > 0 ? " text-destructive" : " text-muted-foreground"}>
                   {drift > 0 ? ` +${drift} added` : ` ${drift} traded out`}
                 </span>
               )}
@@ -144,7 +144,7 @@ export function SprintPanel({
         </div>
 
         <div className="flex items-center justify-between gap-2">
-          <span className="text-xs text-slate-500">
+          <span className="text-xs text-muted-foreground">
             {open ? "Drop a card here to commit it" : "Closed — the commitment is final"}
           </span>
           {sprint.tasks.length > 0 && (
@@ -164,12 +164,12 @@ export function SprintPanel({
           disabled={!open || busy}
           className={
             open
-              ? "min-h-16 rounded-lg border border-dashed border-black/10 p-1"
+              ? "min-h-16 rounded-lg border border-dashed border-border p-1"
               : "rounded-lg p-1"
           }
         >
           {sprint.tasks.length === 0 ? (
-            <p className="px-1 py-4 text-center text-sm text-slate-500">
+            <p className="px-1 py-4 text-center text-sm text-muted-foreground">
               No cards committed yet.
             </p>
           ) : byPerson ? (
@@ -177,10 +177,10 @@ export function SprintPanel({
               {people.map((person) => (
                 <div key={person.name ?? "__unassigned"}>
                   <div className="flex items-baseline justify-between px-1 text-xs">
-                    <span className={person.name ? "font-medium" : "font-medium text-amber-700"}>
+                    <span className={person.name ? "font-medium" : "font-medium text-warning-strong"}>
                       {person.name ?? "Unassigned"}
                     </span>
-                    <span className="text-slate-500 tabular-nums">
+                    <span className="text-muted-foreground tabular-nums">
                       {person.cards.length} cards · {person.donePoints}/{person.points} pts ·{" "}
                       {person.hours.actual}/{person.hours.estimate}h
                     </span>
@@ -241,15 +241,15 @@ export function SprintPanel({
         </DropZone>
 
         {open && backlog.length > 0 && (
-          <div className="flex items-center gap-2 border-t border-black/5 pt-3">
-            <label className="text-sm text-slate-600" htmlFor={`add-${sprint.id}`}>
+          <div className="flex items-center gap-2 border-t border-border pt-3">
+            <label className="text-sm text-muted-foreground" htmlFor={`add-${sprint.id}`}>
               Add from backlog
             </label>
             <select
               id={`add-${sprint.id}`}
               disabled={busy}
               defaultValue=""
-              className="h-9 flex-1 rounded-md border border-black/10 bg-white px-2 text-sm"
+              className="h-9 flex-1 rounded-md border border-border bg-card px-2 text-sm"
               onChange={(e) => {
                 if (!e.target.value) return;
                 onMoveCard(e.target.value, sprint.id);

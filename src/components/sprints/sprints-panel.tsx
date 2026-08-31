@@ -114,7 +114,7 @@ export function SprintsPanel({
   return (
     <div className="space-y-6">
       {error && (
-        <p className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">
+        <p className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">
           {error}
         </p>
       )}
@@ -122,7 +122,7 @@ export function SprintsPanel({
       {canManage && (
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">Plan a sprint</CardTitle>
+            <CardTitle>Plan a sprint</CardTitle>
             <CardDescription>
               Write the goal first, then pick the cards that get you there — not
               the other way round.
@@ -194,7 +194,7 @@ export function SprintsPanel({
         />
         <div className="space-y-6">
           {initialSprints.length === 0 ? (
-            <p className="text-sm text-slate-500">No sprints yet.</p>
+            <p className="text-sm text-muted-foreground">No sprints yet.</p>
           ) : (
             initialSprints.map((sprint) => (
               <SprintPanel

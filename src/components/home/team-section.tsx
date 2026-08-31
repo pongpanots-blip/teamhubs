@@ -19,7 +19,7 @@ export function TeamSection({
 }) {
   return (
     <section>
-      <h2 className="mb-3 text-[15px] font-semibold">Team</h2>
+      <h2 className="mb-3 text-section font-semibold">Team</h2>
       {members.length === 0 ? (
         <p className="py-4 text-center text-sm text-muted-foreground">No team members yet.</p>
       ) : (
@@ -35,8 +35,8 @@ export function TeamSection({
                   {member.name[0]?.toUpperCase() ?? "?"}
                 </div>
                 <div className="min-w-0">
-                  <div className="text-[13px] font-medium">{member.name}</div>
-                  <div className="text-[10px] font-medium tracking-wide text-muted-foreground uppercase">
+                  <div className="text-body font-medium">{member.name}</div>
+                  <div className="text-micro font-medium tracking-wide text-muted-foreground uppercase">
                     {member.role}
                   </div>
                 </div>

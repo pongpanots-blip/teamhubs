@@ -27,7 +27,7 @@ export function RunContextButton({ taskId }: { taskId: string }) {
       <Button onClick={run} disabled={loading}>
         {loading ? "Running…" : "Run context"}
       </Button>
-      {error ? <p className="text-xs text-red-600">{error}</p> : null}
+      {error ? <p className="text-xs text-destructive">{error}</p> : null}
     </div>
   );
 }

@@ -26,9 +26,9 @@ export function BacklogPanel({
   return (
     <Card className="lg:sticky lg:top-4">
       <CardHeader>
-        <CardTitle className="text-base">
+        <CardTitle>
           Backlog
-          <span className="ml-2 text-sm font-normal text-slate-500 tabular-nums">
+          <span className="ml-2 text-sm font-normal text-muted-foreground tabular-nums">
             {backlog.length} cards · {totalPoints(backlog)} pts · {totalHours(backlog).estimate}h
           </span>
         </CardTitle>
@@ -38,10 +38,10 @@ export function BacklogPanel({
         <DropZone
           onDropCard={(taskId) => onMoveCard(taskId, null)}
           disabled={busy}
-          className="min-h-24 rounded-lg border border-dashed border-black/10 p-1"
+          className="min-h-24 rounded-lg border border-dashed border-border p-1"
         >
           {backlog.length === 0 ? (
-            <p className="px-1 py-6 text-center text-sm text-slate-500">
+            <p className="px-1 py-6 text-center text-sm text-muted-foreground">
               Nothing waiting — every open card is in a sprint.
             </p>
           ) : (

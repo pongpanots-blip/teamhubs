@@ -90,8 +90,8 @@ export function TeamSettingsPanels({
   return (
     <div className="mx-auto max-w-[800px] space-y-5">
       <div>
-        <h1 className="text-[22px] font-semibold tracking-tight">{teamName} settings</h1>
-        <p className="mt-1.5 text-[13px] leading-relaxed text-muted-foreground">
+        <h1 className="text-title font-semibold tracking-tight">{teamName} settings</h1>
+        <p className="mt-1.5 text-body leading-relaxed text-muted-foreground">
           Team members and projects. Integrations and per-project roles live in each project&apos;s
           own settings.
         </p>
@@ -134,14 +134,14 @@ export function TeamSettingsPanels({
           {invites.map((i, idx) => (
             <div
               key={i.id}
-              className={`flex items-center justify-between gap-2 py-2 text-[13px] ${idx > 0 ? "border-t border-border" : ""}`}
+              className={`flex items-center justify-between gap-2 py-2 text-body ${idx > 0 ? "border-t border-border" : ""}`}
             >
               <span>
                 {i.email} · {i.role}
                 {i.projectName ? ` → ${i.projectName}` : ""}{" "}
                 <span className="text-muted-foreground">· {i.status}</span>
               </span>
-              <span className="font-mono text-[11px] text-muted-foreground">
+              <span className="font-mono text-meta text-muted-foreground">
                 /invite/{i.token.slice(0, 6)}…
               </span>
             </div>
@@ -152,7 +152,7 @@ export function TeamSettingsPanels({
           {teamMembers.map((m, idx) => (
             <div
               key={m.id}
-              className={`py-2 text-[13px] ${idx > 0 ? "border-t border-border" : ""}`}
+              className={`py-2 text-body ${idx > 0 ? "border-t border-border" : ""}`}
             >
               {m.name} · {m.email} · {m.teamRole}
             </div>
@@ -196,7 +196,7 @@ export function TeamSettingsPanels({
             <Link
               key={p.slug}
               href={projectSettings(p.slug)}
-              className={`flex items-center justify-between gap-2 py-2 text-[13px] hover:underline ${idx > 0 ? "border-t border-border" : ""}`}
+              className={`flex items-center justify-between gap-2 py-2 text-body hover:underline ${idx > 0 ? "border-t border-border" : ""}`}
             >
               {p.name} <span className="text-muted-foreground">/{p.slug}</span>
             </Link>

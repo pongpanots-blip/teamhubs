@@ -56,6 +56,7 @@ export function AddSubTaskForm({
   return (
     <form onSubmit={onSubmit} className="w-full space-y-2 rounded-[10px] bg-card p-3 ring-1 ring-foreground/[0.06]">
       <Input
+        aria-label="Sub-task title"
         value={title}
         onChange={(e) => setTitle(e.target.value)}
         placeholder="Sub-task title"
@@ -63,12 +64,13 @@ export function AddSubTaskForm({
         autoFocus
       />
       <Textarea
+        aria-label="Sub-task description"
         value={description}
         onChange={(e) => setDescription(e.target.value)}
         placeholder="What is this sub-task about? (optional)"
         rows={2}
       />
-      {error ? <p className="text-xs text-red-600">{error}</p> : null}
+      {error ? <p className="text-xs text-destructive">{error}</p> : null}
       <div className="flex gap-2">
         <Button type="submit" size="sm" disabled={loading || !title.trim()}>
           {loading ? "Creating…" : "Create sub-task"}

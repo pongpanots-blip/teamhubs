@@ -75,14 +75,14 @@ export function BurndownChart({
       />
       {days.length > 0 && (
         <>
-          <text x={PLOT.padLeft} y={PLOT.height - 8} className="text-[10px]" fill="var(--muted-foreground)">
+          <text x={PLOT.padLeft} y={PLOT.height - 8} className="text-micro" fill="var(--muted-foreground)">
             {shortDate(days[0].date)}
           </text>
           <text
             x={xAt(days.length - 1, days.length)}
             y={PLOT.height - 8}
             textAnchor="end"
-            className="text-[10px]"
+            className="text-micro"
             fill="var(--muted-foreground)"
           >
             {shortDate(days[days.length - 1].date)}

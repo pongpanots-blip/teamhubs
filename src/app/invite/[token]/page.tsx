@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { AuthShell } from "@/components/auth/auth-shell";
 
 export default function InviteAcceptPage() {
   const params = useParams<{ token: string }>();
@@ -25,19 +25,22 @@ export default function InviteAcceptPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-[radial-gradient(ellipse_at_top,_#e8eef5_0%,_#f7f5f1_45%,_#f3efe8_100%)] px-4">
-      <Card className="w-full max-w-md border-black/5">
-        <CardHeader>
-          <CardTitle>Join team</CardTitle>
-          <CardDescription>Accept this invite with the matching account email.</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          <Button className="w-full" onClick={accept} disabled={loading}>
-            {loading ? "Joining…" : "Accept invite"}
-          </Button>
-          {msg ? <p className="text-sm text-red-600">{msg}</p> : null}
-        </CardContent>
-      </Card>
-    </div>
+    <AuthShell
+      title="Join team"
+      description="Accept this invite with the matching account email."
+      action={{ href: "/login", label: "Sign in" }}
+    >
+      {/* No fields to group, so no Card — the page is one action. */}
+      <div className="space-y-3">
+        <Button className="w-full" onClick={accept} disabled={loading}>
+          {loading ? "Joining…" : "Accept invite"}
+        </Button>
+        {msg ? (
+          <p role="alert" className="text-sm text-destructive">
+            {msg}
+          </p>
+        ) : null}
+      </div>
+    </AuthShell>
   );
 }

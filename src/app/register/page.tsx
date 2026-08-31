@@ -1,6 +1,6 @@
-import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getSession } from "@/lib/auth-session";
+import { AuthShell } from "@/components/auth/auth-shell";
 import { RegisterForm } from "@/components/auth/register-form";
 
 export default async function RegisterPage() {
@@ -8,18 +8,12 @@ export default async function RegisterPage() {
   if (session?.user) redirect("/app");
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center gap-6 bg-[radial-gradient(ellipse_at_top,_#e8eef5_0%,_#f7f5f1_45%,_#f3efe8_100%)] px-4">
-      <div className="text-center">
-        <h1 className="text-3xl font-semibold tracking-tight text-slate-900">IntrovertHubs</h1>
-        <p className="mt-1 text-sm text-slate-600">Create an account to start your team</p>
-      </div>
+    <AuthShell
+      title="Create account"
+      description="Then create or join a team."
+      action={{ href: "/login", label: "Sign in" }}
+    >
       <RegisterForm />
-      <p className="text-sm text-slate-600">
-        Already have an account?{" "}
-        <Link href="/login" className="underline">
-          Sign in
-        </Link>
-      </p>
-    </div>
+    </AuthShell>
   );
 }

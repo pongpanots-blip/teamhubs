@@ -122,8 +122,8 @@ export function ProjectSettingsPanels({
   return (
     <div className="mx-auto max-w-[800px] space-y-5">
       <div>
-        <h1 className="text-[22px] font-semibold tracking-tight">{projectName} settings</h1>
-        <p className="mt-1.5 text-[13px] leading-relaxed text-muted-foreground">
+        <h1 className="text-title font-semibold tracking-tight">{projectName} settings</h1>
+        <p className="mt-1.5 text-body leading-relaxed text-muted-foreground">
           Members and integrations for this project only.{" "}
           <Link href={TEAM_SETTINGS} className="underline">
             Team settings
@@ -141,7 +141,7 @@ export function ProjectSettingsPanels({
             {teamMembers.map((m, i) => (
               <div
                 key={m.id}
-                className={`flex items-center justify-between gap-2 py-2 text-[13px] ${i > 0 ? "border-t border-border" : ""}`}
+                className={`flex items-center justify-between gap-2 py-2 text-body ${i > 0 ? "border-t border-border" : ""}`}
               >
                 <span className="min-w-0 flex-1 truncate">
                   {m.name} · {m.email}
@@ -215,7 +215,7 @@ export function ProjectSettingsPanels({
           <>
             Connected: {providers.some((p) => p.provider === "github") ? "yes" : "no"}. Add a
             webhook to your repo pointing at{" "}
-            <code className="rounded bg-muted px-1 py-0.5 font-mono text-[11px]">
+            <code className="rounded bg-muted px-1 py-0.5 font-mono text-meta">
               /api/webhooks/github
             </code>{" "}
             (content type application/json, events: Pull requests) to auto-resolve dependencies on
@@ -306,6 +306,7 @@ export function ProjectSettingsPanels({
               </p>
               <Input
                 readOnly
+                aria-label="Figma plugin token"
                 value={pluginToken}
                 onFocus={(e) => e.currentTarget.select()}
                 className="font-mono text-xs"

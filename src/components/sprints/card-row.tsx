@@ -39,7 +39,7 @@ export function CardRow({
       }}
       className="flex cursor-grab items-center gap-2 rounded-md px-1 py-2 active:cursor-grabbing hover:bg-black/[0.02]"
     >
-      <span aria-hidden className="text-xs text-slate-400 select-none">
+      <span aria-hidden className="text-xs text-muted-foreground/70 select-none">
         ⠿
       </span>
       <div className="min-w-0 flex-1">
@@ -49,7 +49,7 @@ export function CardRow({
         >
           {card.title}
         </Link>
-        <span className="text-xs text-slate-500">
+        <span className="text-xs text-muted-foreground">
           {card.assigneeName ?? "Unassigned"}
         </span>
       </div>

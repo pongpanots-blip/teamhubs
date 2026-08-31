@@ -105,10 +105,10 @@ export default async function TaskDetailPage({ params }: Props) {
               ← Tasks
             </Link>
           )}
-          <h1 className="mt-1.5 text-[26px] font-semibold tracking-tight">{task.title}</h1>
+          <h1 className="mt-1.5 text-title font-semibold tracking-tight">{task.title}</h1>
           {subTasks.length > 0 ? (
             <span
-              className="mt-2.5 inline-flex h-[22px] items-center gap-1.5 rounded-full px-2.5 text-[11px] font-medium"
+              className="mt-2.5 inline-flex h-[22px] items-center gap-1.5 rounded-full px-2.5 text-meta font-medium"
               style={{ backgroundColor: "var(--violet-bg)", color: "var(--violet)" }}
             >
               ✶ {subTasks.length} sub-tasks
@@ -185,7 +185,7 @@ export default async function TaskDetailPage({ params }: Props) {
 
           <Card>
             <CardHeader>
-              <CardTitle className="text-base">Readiness</CardTitle>
+              <CardTitle>Readiness</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
@@ -200,7 +200,7 @@ export default async function TaskDetailPage({ params }: Props) {
 
           <Card>
             <CardHeader>
-              <CardTitle className="text-base">Requirement</CardTitle>
+              <CardTitle>Requirement</CardTitle>
             </CardHeader>
             <CardContent>
               <p className="whitespace-pre-wrap text-sm">{task.requirement || "—"}</p>
@@ -209,7 +209,7 @@ export default async function TaskDetailPage({ params }: Props) {
 
           <Card>
             <CardHeader>
-              <CardTitle className="text-base">Business Rules</CardTitle>
+              <CardTitle>Business Rules</CardTitle>
             </CardHeader>
             <CardContent>
               {parentTask ? (
@@ -237,7 +237,7 @@ export default async function TaskDetailPage({ params }: Props) {
 
           <Card>
             <CardHeader>
-              <CardTitle className="text-base">AI advisory (Claude) → Engine decisions</CardTitle>
+              <CardTitle>AI advisory (Claude) → Engine decisions</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4 text-sm">
               {task.contextRuns[0] ? (
@@ -322,7 +322,7 @@ export default async function TaskDetailPage({ params }: Props) {
 
           <Card id="decision-log">
             <CardHeader>
-              <CardTitle className="text-base">Decision log</CardTitle>
+              <CardTitle>Decision log</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <DecisionLogForm taskId={task.id} />
@@ -345,7 +345,7 @@ export default async function TaskDetailPage({ params }: Props) {
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between gap-2">
-              <CardTitle className="text-base">Handoff docs</CardTitle>
+              <CardTitle>Handoff docs</CardTitle>
               <RegenerateHandoffButton taskId={task.id} />
             </CardHeader>
             <CardContent className="space-y-4">
@@ -379,7 +379,7 @@ export default async function TaskDetailPage({ params }: Props) {
           {task.component ? (
             <Card>
               <CardHeader className="flex flex-row items-center justify-between gap-2">
-                <CardTitle className="text-base">Completion docs</CardTitle>
+                <CardTitle>Completion docs</CardTitle>
                 <UploadCompletionDocForm taskId={task.id} />
               </CardHeader>
               <CardContent className="space-y-4">
@@ -415,7 +415,7 @@ export default async function TaskDetailPage({ params }: Props) {
 
           <Card>
             <CardHeader>
-              <CardTitle className="text-base">Recent context runs</CardTitle>
+              <CardTitle>Recent context runs</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               {task.contextRuns.map((run) => (
@@ -462,7 +462,7 @@ export default async function TaskDetailPage({ params }: Props) {
               otherDeps.map((d, i) => (
                 <div
                   key={d.id}
-                  className={`py-1.5 text-[12.5px] ${i > 0 ? "border-t border-border" : ""}`}
+                  className={`py-1.5 text-body ${i > 0 ? "border-t border-border" : ""}`}
                 >
                   <span className={d.dependency.status === "done" ? "text-[color:var(--st-done)]" : "text-muted-foreground"}>
                     {d.dependency.status === "done" ? "✓" : "⏳"}
@@ -502,7 +502,7 @@ export default async function TaskDetailPage({ params }: Props) {
 
           <SideCard title="Links & docs">
             {task.githubPrUrl ? (
-              <div className="border-t border-border py-1.5 text-[12.5px] first:border-t-0">
+              <div className="border-t border-border py-1.5 text-body first:border-t-0">
                 <a
                   href={task.githubPrUrl}
                   target="_blank"
@@ -516,7 +516,7 @@ export default async function TaskDetailPage({ params }: Props) {
             {task.internalDocPaths.map((p, i) => (
               <div
                 key={p}
-                className={`py-1.5 text-[12.5px] ${i > 0 || task.githubPrUrl ? "border-t border-border" : ""}`}
+                className={`py-1.5 text-body ${i > 0 || task.githubPrUrl ? "border-t border-border" : ""}`}
               >
                 {p}
               </div>
@@ -528,7 +528,7 @@ export default async function TaskDetailPage({ params }: Props) {
 
           <div className="rounded-[14px] bg-card p-3.5 ring-1 ring-foreground/[0.06]">
             <div className="mb-2 flex items-center justify-between">
-              <h3 className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+              <h3 className="text-meta font-semibold uppercase tracking-wide text-muted-foreground">
                 Decisions
               </h3>
             </div>
@@ -549,7 +549,7 @@ export default async function TaskDetailPage({ params }: Props) {
 function SideCard({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div className="rounded-[14px] bg-card p-3.5 ring-1 ring-foreground/[0.06]">
-      <h3 className="mb-2.5 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+      <h3 className="mb-2.5 text-meta font-semibold uppercase tracking-wide text-muted-foreground">
         {title}
       </h3>
       {children}

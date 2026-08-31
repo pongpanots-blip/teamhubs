@@ -44,7 +44,7 @@ export function DecisionLogForm({ taskId }: { taskId: string }) {
         <Label>Rationale</Label>
         <Textarea value={rationale} onChange={(e) => setRationale(e.target.value)} />
       </div>
-      {error ? <p className="text-xs text-red-600">{error}</p> : null}
+      {error ? <p className="text-xs text-destructive">{error}</p> : null}
       <Button type="submit" size="sm" disabled={loading}>
         {loading ? "Saving…" : "Add decision"}
       </Button>

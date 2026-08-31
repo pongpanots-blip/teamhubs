@@ -83,14 +83,14 @@ export function SprintPicker({
           className={`inline-flex h-7 max-w-full items-center gap-1 rounded-full border px-2.5 text-xs disabled:opacity-50 ${
             current
               ? "border-transparent bg-foreground/[0.06] font-medium"
-              : "border-dashed border-black/15 text-muted-foreground"
+              : "border-dashed border-foreground/20 text-muted-foreground"
           }`}
         >
           <span className="truncate">{current?.name ?? "Backlog"}</span>
           {current?.isActive && (
-            <span aria-hidden className="size-1.5 shrink-0 rounded-full bg-emerald-500" />
+            <span aria-hidden className="size-1.5 shrink-0 rounded-full bg-success" />
           )}
-          <span aria-hidden className="shrink-0 text-[9px] opacity-60">
+          <span aria-hidden className="shrink-0 text-micro opacity-60">
             ▾
           </span>
         </DropdownMenuTrigger>
@@ -104,17 +104,17 @@ export function SprintPicker({
               <DropdownMenuRadioItem key={sprint.id} value={sprint.id}>
                 <span className="truncate">{sprint.name}</span>
                 {sprint.isActive && (
-                  <span className="ml-1 text-[10px] text-emerald-600">running</span>
+                  <span className="ml-1 text-micro text-success">running</span>
                 )}
                 {sprint.isClosed && (
-                  <span className="ml-1 text-[10px] text-muted-foreground">closed</span>
+                  <span className="ml-1 text-micro text-muted-foreground">closed</span>
                 )}
               </DropdownMenuRadioItem>
             ))}
           </DropdownMenuRadioGroup>
         </DropdownMenuContent>
       </DropdownMenu>
-      {error && <p className="mt-1 text-xs text-red-600">{error}</p>}
+      {error && <p className="mt-1 text-xs text-destructive">{error}</p>}
     </div>
   );
 }

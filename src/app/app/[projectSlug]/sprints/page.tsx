@@ -71,8 +71,8 @@ export default async function SprintsPage({ params }: Params) {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-xl font-semibold tracking-tight text-slate-900">Sprints</h1>
-        <p className="text-sm text-slate-600">
+        <h1 className="text-title font-semibold tracking-tight text-foreground">Sprints</h1>
+        <p className="text-sm text-muted-foreground">
           Drag a card between the backlog and a sprint to commit or drop it. Starting a
           sprint freezes what was committed — anything moved after that shows up on the
           burndown as scope change.

@@ -32,7 +32,7 @@ export function StartWorkingButton({ taskId }: { taskId: string }) {
       <Button variant="outline" size="sm" onClick={start} disabled={loading}>
         {loading ? "…" : "Start working"}
       </Button>
-      {error ? <p className="text-xs text-red-600">{error}</p> : null}
+      {error ? <p className="text-xs text-destructive">{error}</p> : null}
     </div>
   );
 }

@@ -72,7 +72,7 @@ export function MemberProjectMatrix({
   return (
     <div className="space-y-2">
       <div className="overflow-x-auto">
-        <table className="w-full border-collapse text-[13px]">
+        <table className="w-full border-collapse text-body">
           <thead>
             <tr>
               <th className="sticky left-0 bg-card px-2 py-2 text-left font-medium">คน</th>

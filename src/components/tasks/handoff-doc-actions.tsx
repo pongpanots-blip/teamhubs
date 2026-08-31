@@ -27,7 +27,7 @@ export function RegenerateHandoffButton({ taskId }: { taskId: string }) {
       <Button variant="outline" size="sm" onClick={run} disabled={loading}>
         {loading ? "Generating…" : "Regenerate"}
       </Button>
-      {error ? <p className="text-xs text-red-600">{error}</p> : null}
+      {error ? <p className="text-xs text-destructive">{error}</p> : null}
     </div>
   );
 }
@@ -103,7 +103,7 @@ export function UploadCompletionDocForm({ taskId }: { taskId: string }) {
           disabled={loading}
         />
       </label>
-      {error ? <p className="text-xs text-red-600">{error}</p> : null}
+      {error ? <p className="text-xs text-destructive">{error}</p> : null}
     </div>
   );
 }

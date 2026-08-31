@@ -22,13 +22,13 @@ export default async function OverviewPage() {
   if (projects.length === 0) {
     return (
       <AppShell teamName={membership.team.name} role={membership.role}>
-        <Card className="border-black/5 bg-white/80">
+        <Card className="border-border bg-card/80">
           <CardHeader>
-            <CardTitle className="text-base font-semibold text-slate-900">
+            <CardTitle className="font-semibold text-foreground">
               No projects yet
             </CardTitle>
           </CardHeader>
-          <CardContent className="text-sm text-slate-600">
+          <CardContent className="text-sm text-muted-foreground">
             {membership.role === "pm" ? (
               <>
                 Create your first project in{" "}
@@ -80,7 +80,7 @@ export default async function OverviewPage() {
         <OverviewWorkList tasks={myTasks} />
 
         <section className="space-y-3">
-          <h2 className="text-base font-semibold text-slate-900">Projects</h2>
+          <h2 className="text-section font-semibold text-foreground">Projects</h2>
           <div className="grid gap-3 sm:grid-cols-2">
             {projects.map((project) => {
               const projectTasks = byProject.get(project.id) ?? [];
@@ -88,13 +88,13 @@ export default async function OverviewPage() {
               const open = projectTasks.filter((t) => isOpenStatus(t.status)).length;
               return (
                 <Link key={project.id} href={projectHome(project.slug)}>
-                  <Card className="h-full border-black/5 bg-white/80 transition hover:border-black/15">
+                  <Card className="h-full border-border bg-card/80 transition hover:border-foreground/20">
                     <CardHeader>
-                      <CardTitle className="text-base font-semibold text-slate-900">
+                      <CardTitle className="font-semibold text-foreground">
                         {project.name}
                       </CardTitle>
                     </CardHeader>
-                    <CardContent className="flex flex-wrap items-center gap-2 text-sm text-slate-600">
+                    <CardContent className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
                       <span>{open} open</span>
                       {counts.blocked > 0 ? (
                         <Badge variant="destructive">🚧 {counts.blocked} blocked</Badge>

@@ -19,12 +19,12 @@ export function ChartCard({
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-base">{title}</CardTitle>
+        <CardTitle>{title}</CardTitle>
         <CardDescription>{description}</CardDescription>
       </CardHeader>
       <CardContent>
         {empty ? (
-          <p className="py-8 text-center text-sm text-slate-500">{empty}</p>
+          <p className="py-8 text-center text-sm text-muted-foreground">{empty}</p>
         ) : (
           <svg
             viewBox={`0 0 ${PLOT.width} ${PLOT.height}`}

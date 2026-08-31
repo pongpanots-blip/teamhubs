@@ -15,8 +15,8 @@ const ATTENTION_ITEMS: {
     emoji: "⚠",
     label: "Missing context",
     query: "missing_context",
-    color: "oklch(0.5 0.13 70)",
-    bg: "oklch(0.62 0.15 70 / 0.1)",
+    color: "var(--st-working-strong)",
+    bg: "var(--st-working-bg)",
   },
   {
     key: "blocked",
@@ -32,7 +32,7 @@ const ATTENTION_ITEMS: {
     label: "UI ready for dev",
     query: "ui_ready",
     color: "var(--st-done)",
-    bg: "oklch(0.55 0.13 150 / 0.1)",
+    bg: "var(--st-done-bg)",
   },
 ];
 
@@ -45,8 +45,8 @@ export function AttentionSection({
 }) {
   return (
     <section>
-      <h2 className="mb-3 text-[15px] font-semibold">Attention</h2>
-      <div className="grid grid-cols-3 gap-3">
+      <h2 className="mb-3 text-section font-semibold">Attention</h2>
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
         {ATTENTION_ITEMS.map((item) => (
           <Link
             key={item.key}
@@ -54,11 +54,11 @@ export function AttentionSection({
             className="flex flex-col gap-1 rounded-xl p-4"
             style={{ backgroundColor: item.bg }}
           >
-            <span className="text-[28px] font-semibold tracking-tight" style={{ color: item.color }}>
+            <span className="text-figure font-semibold tracking-tight" style={{ color: item.color }}>
               {counts[item.key]}
             </span>
             <span className="text-xs font-medium" style={{ color: item.color }}>
-              {item.emoji} {item.label}
+              <span aria-hidden>{item.emoji}</span> {item.label}
             </span>
           </Link>
         ))}

@@ -27,9 +27,9 @@ export function MissingContextPanel({
   if (items.length === 0) return null;
 
   return (
-    <Card className="border-amber-300 bg-amber-50">
+    <Card className="border-warning/40 bg-warning/8">
       <CardHeader>
-        <CardTitle className="flex items-center gap-2 text-base text-amber-900">
+        <CardTitle className="flex items-center gap-2 text-warning-strong">
           <span aria-hidden>🔴</span> NOT READY — Missing Context
         </CardTitle>
       </CardHeader>
@@ -50,7 +50,7 @@ export function MissingContextPanel({
             }}
           />
         ))}
-        <p className="pt-1 text-xs text-amber-700">
+        <p className="pt-1 text-xs text-warning-strong">
           Answering records a decision. Run context again to refresh readiness.
         </p>
       </CardContent>
@@ -99,13 +99,13 @@ function MissingContextRow({
   }
 
   return (
-    <div className="rounded-md border border-amber-200 bg-white/70 p-2 text-sm">
+    <div className="rounded-md border border-warning/25 bg-card/70 p-2 text-sm">
       <div className="flex items-center justify-between gap-2">
-        <span className="flex items-center gap-2 text-amber-900">
+        <span className="flex items-center gap-2 text-warning-strong">
           <span aria-hidden>⚠</span> {item.label}
         </span>
         {isAnswered ? (
-          <span className="text-xs font-medium text-emerald-700">✓ Answered</span>
+          <span className="text-xs font-medium text-success">✓ Answered</span>
         ) : (
           <Button
             type="button"
@@ -118,15 +118,16 @@ function MissingContextRow({
         )}
       </div>
       {isOpen ? (
-        <form onSubmit={onSubmit} className="mt-2 space-y-2 border-t border-amber-200 pt-2">
-          <p className="text-xs text-slate-600">{item.question}</p>
+        <form onSubmit={onSubmit} className="mt-2 space-y-2 border-t border-warning/25 pt-2">
+          <p className="text-xs text-muted-foreground">{item.question}</p>
           <Textarea
+            aria-label={item.question}
             value={answer}
             onChange={(e) => setAnswer(e.target.value)}
             placeholder="PM's answer…"
             required
           />
-          {error ? <p className="text-xs text-red-600">{error}</p> : null}
+          {error ? <p className="text-xs text-destructive">{error}</p> : null}
           <Button type="submit" size="sm" disabled={loading}>
             {loading ? "Saving…" : "Save answer"}
           </Button>

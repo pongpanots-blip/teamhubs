@@ -63,7 +63,7 @@ export function CfdChart({ days }: { days: CfdDay[] }) {
           <text
             x={PLOT.padLeft}
             y={PLOT.height - 8}
-            className="text-[10px]"
+            className="text-micro"
             fill="var(--muted-foreground)"
           >
             {shortDate(days[0].date)}
@@ -72,7 +72,7 @@ export function CfdChart({ days }: { days: CfdDay[] }) {
             x={xAt(days.length - 1, days.length)}
             y={PLOT.height - 8}
             textAnchor="end"
-            className="text-[10px]"
+            className="text-micro"
             fill="var(--muted-foreground)"
           >
             {shortDate(days[days.length - 1].date)}

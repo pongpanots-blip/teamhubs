@@ -37,7 +37,7 @@ export function MyWorkSection({
 
   return (
     <section>
-      <h2 className="mb-3 text-[15px] font-semibold">My Work</h2>
+      <h2 className="mb-3 text-section font-semibold">My Work</h2>
       <div className="rounded-[14px] bg-card/80 p-4 ring-1 ring-foreground/5">
         <div className="mb-3 flex gap-1">
           {FILTERS.map((f) => (

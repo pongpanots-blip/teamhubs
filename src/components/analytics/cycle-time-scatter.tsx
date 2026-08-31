@@ -70,7 +70,7 @@ export function CycleTimeScatter({
               strokeDasharray="4 4"
               strokeWidth={1}
             />
-            <text x={4} y={y + 4} className="text-[10px]" fill="var(--muted-foreground)">
+            <text x={4} y={y + 4} className="text-micro" fill="var(--muted-foreground)">
               {line.label}
             </text>
           </g>
@@ -91,7 +91,7 @@ export function CycleTimeScatter({
       <text
         x={PLOT.padLeft}
         y={PLOT.height - 8}
-        className="text-[10px]"
+        className="text-micro"
         fill="var(--muted-foreground)"
       >
         {`${windowDays} days ago`}
@@ -100,7 +100,7 @@ export function CycleTimeScatter({
         x={PLOT.padLeft + innerWidth}
         y={PLOT.height - 8}
         textAnchor="end"
-        className="text-[10px]"
+        className="text-micro"
         fill="var(--muted-foreground)"
       >
         today

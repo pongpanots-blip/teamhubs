@@ -26,6 +26,8 @@ const schema = z.object({
     .default([]),
   /** Full grilling Q&A, stored as one DecisionLog entry for later review. */
   transcript: z.string().default(""),
+  /** Project the draft was started in — defaults to the header's current project. */
+  projectSlug: z.string().optional(),
 });
 
 /**
@@ -38,8 +40,8 @@ export async function POST(req: Request) {
   try {
     const cx = await requireMembership();
     const { user, membership } = cx;
-    const { project } = await requireProjectMembership(cx);
     const body = schema.parse(await req.json());
+    const { project } = await requireProjectMembership(cx, body.projectSlug);
 
     const result = await prisma.$transaction(async (tx) => {
       const parent = await tx.task.create({

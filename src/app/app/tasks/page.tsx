@@ -17,7 +17,7 @@ export default async function TasksPage() {
   const { project, projects } = await resolveCurrentProject(membership);
   if (!project) redirect("/onboarding");
 
-  const [tasks, members] = await Promise.all([
+  const [tasks, allProjectMembers] = await Promise.all([
     prisma.task.findMany({
       where: { projectId: project.id },
       include: {
@@ -28,11 +28,16 @@ export default async function TasksPage() {
       },
       orderBy: { updatedAt: "desc" },
     }),
+    // Every project's members, not just the current one — a grilling draft
+    // is locked to the project it was started in, so the assignee dropdown
+    // needs to filter by *that* project even if the header has since
+    // switched to a different one.
     prisma.projectMembership.findMany({
-      where: { projectId: project.id },
+      where: { project: { teamId: membership.teamId } },
       include: { user: { select: { id: true, name: true } } },
     }),
   ]);
+  const projectSlugById = new Map(projects.map((p) => [p.id, p.slug]));
 
   return (
     <AppShell
@@ -43,7 +48,14 @@ export default async function TasksPage() {
     >
       <TasksBoard
         initialTasks={tasks}
-        members={members.map((m) => ({ id: m.user.id, name: m.user.name, role: m.role }))}
+        projects={projects}
+        currentProjectSlug={project.slug}
+        members={allProjectMembers.map((m) => ({
+          id: m.user.id,
+          name: m.user.name,
+          role: m.role,
+          projectSlug: projectSlugById.get(m.projectId) ?? "",
+        }))}
       />
     </AppShell>
   );

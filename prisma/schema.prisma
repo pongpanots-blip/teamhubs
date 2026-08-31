@@ -167,6 +167,7 @@ model Project {
   contextRuns   ContextRun[]
   invites       Invite[]
   sprints       Sprint[]
+  flowSnapshots FlowSnapshot[]
 
   @@unique([teamId, slug])
 }
@@ -528,4 +529,19 @@ model SprintScopeChange {
   task      Task              @relation(fields: [taskId], references: [id], onDelete: Cascade)
 
   @@index([sprintId, changedAt])
+}
+
+/// One row per status per project per day — the Cumulative Flow Diagram reads
+/// from here instead of replaying the whole transition log on every page view.
+/// Written by a daily job; re-running it for the same day overwrites in place.
+model FlowSnapshot {
+  snapshotDate DateTime
+  projectId    String
+  status       TaskStatus
+  taskCount    Int
+  createdAt    DateTime   @default(now())
+  project      Project    @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@id([snapshotDate, projectId, status])
+  @@index([projectId, snapshotDate])
 }

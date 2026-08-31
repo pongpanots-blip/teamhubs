@@ -8,6 +8,7 @@ import { ProjectSwitcher } from "@/components/layout/project-switcher";
 import {
   OVERVIEW,
   TEAM_SETTINGS,
+  projectAnalytics,
   projectDocs,
   projectHome,
   projectSettings,
@@ -33,6 +34,7 @@ export function AppShell({
         { href: OVERVIEW, label: "All projects" },
         { href: projectHome(currentProjectSlug), label: "Overview" },
         { href: projectTasks(currentProjectSlug), label: "Tasks" },
+        { href: projectAnalytics(currentProjectSlug), label: "Analytics" },
         { href: projectDocs(currentProjectSlug), label: "Docs / RAG" },
         { href: projectSettings(currentProjectSlug), label: "Settings" },
       ]

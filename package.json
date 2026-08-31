@@ -16,7 +16,9 @@
     "check:home": "tsx scripts/check-home-logic.ts",
     "check:grill-recommendation": "tsx scripts/check-grill-recommendation.ts",
     "check:task-metrics": "tsx scripts/check-task-metrics.ts",
-    "check:burndown": "tsx scripts/check-burndown.ts"
+    "check:burndown": "tsx scripts/check-burndown.ts",
+    "check:analytics": "tsx scripts/check-analytics.ts",
+    "snapshot:flow": "tsx scripts/snapshot-flow.ts"
   },
   "dependencies": {
     "@base-ui/react": "^1.7.0",

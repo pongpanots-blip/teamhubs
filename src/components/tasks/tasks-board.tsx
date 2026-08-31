@@ -140,6 +140,7 @@ export function TasksBoard({
   const [drafts, setDrafts] = useState<Draft[]>([]);
   const [draftFilter, setDraftFilter] = useState("all");
   const [draft, setDraft] = useState<Draft | null>(null);
+  const [newChatProjectSlug, setNewChatProjectSlug] = useState(currentProjectSlug);
   const [answer, setAnswer] = useState("");
   const [loading, setLoading] = useState(false);
   const [components, setComponents] = useState<ComponentDraft[]>([]);
@@ -224,7 +225,7 @@ export function TasksBoard({
     const res = await fetch("/api/tasks/grill", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ messages, forceFinish }),
+      body: JSON.stringify({ messages, forceFinish, projectSlug: draft.projectSlug }),
     });
     const data = await res.json();
     setLoading(false);
@@ -339,6 +340,7 @@ export function TasksBoard({
             setOpen(v);
             if (v) {
               setDrafts(loadDrafts());
+              setNewChatProjectSlug(currentProjectSlug);
             } else {
               setDraft(null);
               setComponents([]);
@@ -402,9 +404,33 @@ export function TasksBoard({
                     ) : null}
                   </div>
                 ) : null}
-                <Button className="w-full" onClick={() => openDraft(newDraft(currentProject))}>
-                  เริ่มคุยใหม่ ({currentProject.name})
-                </Button>
+                <div className="space-y-2 rounded-lg border border-black/10 p-2">
+                  <Label className="text-xs">Project</Label>
+                  <Select value={newChatProjectSlug} onValueChange={(v) => v && setNewChatProjectSlug(v)}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {projects.map((p) => (
+                        <SelectItem key={p.slug} value={p.slug}>
+                          {p.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Button
+                    className="w-full"
+                    onClick={() =>
+                      openDraft(
+                        newDraft(
+                          projects.find((p) => p.slug === newChatProjectSlug) ?? currentProject,
+                        ),
+                      )
+                    }
+                  >
+                    เริ่มคุยใหม่
+                  </Button>
+                </div>
               </div>
             ) : draft.result ? (
               <div className="space-y-4">

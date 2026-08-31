@@ -1,13 +1,16 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { requireMembership } from "@/lib/auth-session";
+import { requireMembership, requireProjectMembership } from "@/lib/auth-session";
 import { grillTurn } from "@/lib/ai/grill";
+import { retrieveRelevantChunks } from "@/lib/context/ingest";
 
 const schema = z.object({
   messages: z
     .array(z.object({ role: z.enum(["user", "assistant"]), content: z.string().min(1) }))
     .min(1),
   forceFinish: z.boolean().optional(),
+  /** Project the draft was started in — same project the finished draft will be created under. */
+  projectSlug: z.string().optional(),
 });
 
 /**
@@ -17,9 +20,14 @@ const schema = z.object({
  */
 export async function POST(req: Request) {
   try {
-    await requireMembership();
+    const cx = await requireMembership();
     const body = schema.parse(await req.json());
-    const turn = await grillTurn(body.messages, body.forceFinish);
+    const { project } = await requireProjectMembership(cx, body.projectSlug);
+
+    const query = body.messages.map((m) => m.content).join("\n");
+    const docs = query.trim() ? await retrieveRelevantChunks(project.id, query) : [];
+
+    const turn = await grillTurn(body.messages, body.forceFinish, docs);
     return NextResponse.json(turn);
   } catch (e) {
     const msg = e instanceof Error ? e.message : "ERROR";

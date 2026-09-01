@@ -172,6 +172,34 @@ function assertEqual(actual: unknown, expected: unknown, label: string) {
   assertEqual(m.flowEfficiency, null, "and yields no flow efficiency to divide");
 }
 
+// currentStatusMs is the *open* segment only — not the lifetime total in a
+// status, which is what timeInStatusMs already answers.
+{
+  const m = computeTaskMetrics(
+    {
+      createdAt: T0,
+      history: [
+        entry(0, "assigned", null),
+        entry(2, "working", "assigned"),
+        entry(10, "blocked", "working"), // Mon 12:00 → Tue 12:00 Bangkok, no weekend crossed
+      ],
+    },
+    at(34),
+  );
+  assertEqual(
+    m.currentStatusMs,
+    24 * HOUR,
+    "currentStatusMs is only the open (blocked) segment, not time-in-working too",
+  );
+}
+
+// A brand-new card with no history yet has nothing to report — distinct from
+// "just entered its first status", which would read as a real duration.
+{
+  const m = computeTaskMetrics({ createdAt: T0, history: [] }, at(5));
+  assertEqual(m.currentStatusMs, null, "no history yet → no current-status age");
+}
+
 // Category + rank mapping — the assumptions every metric above rests on.
 {
   assertEqual(STATUS_CATEGORY.assigned, "backlog", "assigned is not active work");

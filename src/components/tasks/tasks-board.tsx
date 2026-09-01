@@ -50,7 +50,39 @@ type TaskRow = {
   estimateHours: number | null;
   actualHours: number | null;
   dependsOn: { dependency: { id: string; title: string; status: string } }[];
+  /** Business days the card has sat in its current status. Null with no history yet. */
+  daysInStatus: number | null;
 };
+
+/** Business days in the current column before the card counts as stuck. */
+const STAGNANT_THRESHOLD_DAYS = 3;
+
+/**
+ * Graduated dots for how long a card has sat in its current column — same
+ * idea as the readiness bar: glance, don't read. One dot lights per threshold
+ * crossed (3 / 7 / 14 business days), amber then red.
+ */
+function ColumnAgeDots({ days }: { days: number | null }) {
+  if (days === null || days < STAGNANT_THRESHOLD_DAYS) return null;
+  const level = days >= 14 ? 3 : days >= 7 ? 2 : 1;
+  const color = level >= 3 ? "var(--destructive)" : "var(--st-working)";
+  return (
+    <span
+      className="flex items-center gap-1"
+      title={`${days} business day${days === 1 ? "" : "s"} in this column`}
+    >
+      {[1, 2, 3].map((dot) => (
+        <span
+          key={dot}
+          className="size-[5px] shrink-0 rounded-full"
+          style={{
+            backgroundColor: dot <= level ? color : "var(--muted)",
+          }}
+        />
+      ))}
+    </span>
+  );
+}
 
 /**
  * Quick filters from the Task List artboard. "Missing context" and "Ready for
@@ -127,6 +159,7 @@ export function TasksBoard({
     "all",
   );
   const [assigneeFilter, setAssigneeFilter] = useState("all");
+  const [stagnantOnly, setStagnantOnly] = useState(false);
   const sorted = useMemo(
     () =>
       [...tasks].sort((a, b) => {
@@ -152,9 +185,20 @@ export function TasksBoard({
       sorted.filter(
         (t) =>
           (statusFilter === "all" || t.status === statusFilter) &&
-          (assigneeFilter === "all" || t.assignee?.name === assigneeFilter),
+          (assigneeFilter === "all" || t.assignee?.name === assigneeFilter) &&
+          (!stagnantOnly ||
+            (t.daysInStatus !== null &&
+              t.daysInStatus >= STAGNANT_THRESHOLD_DAYS)),
       ),
-    [sorted, statusFilter, assigneeFilter],
+    [sorted, statusFilter, assigneeFilter, stagnantOnly],
+  );
+
+  const stagnantCount = useMemo(
+    () =>
+      sorted.filter(
+        (t) => t.daysInStatus !== null && t.daysInStatus >= STAGNANT_THRESHOLD_DAYS,
+      ).length,
+    [sorted],
   );
 
   return (
@@ -203,6 +247,28 @@ export function TasksBoard({
             </button>
           );
         })}
+        {stagnantCount > 0 || stagnantOnly ? (
+          <button
+            type="button"
+            onClick={() => setStagnantOnly((v) => !v)}
+            className="rounded-full border px-2.5 py-[5px] text-xs font-medium"
+            style={
+              stagnantOnly
+                ? {
+                    backgroundColor: "var(--primary)",
+                    color: "var(--primary-foreground)",
+                    borderColor: "var(--primary)",
+                  }
+                : {
+                    color: "var(--st-working-strong)",
+                    borderColor: "oklch(0.62 0.15 70 / 0.4)",
+                    backgroundColor: "oklch(0.62 0.15 70 / 0.08)",
+                  }
+            }
+          >
+            🐌 Stagnant ({stagnantCount})
+          </button>
+        ) : null}
         <span className="mx-0.5 h-5 w-px bg-border" />
         <Select
           value={assigneeFilter}
@@ -310,8 +376,11 @@ export function TasksBoard({
                               {formatHours(t.actualHours, t.estimateHours)}
                             </span>
                           ) : null}
-                          <span className="ml-auto flex size-5 shrink-0 items-center justify-center rounded-full bg-muted text-micro font-semibold text-muted-foreground">
-                            {t.assignee?.name?.[0]?.toUpperCase() ?? "?"}
+                          <span className="ml-auto flex items-center gap-2">
+                            <ColumnAgeDots days={t.daysInStatus} />
+                            <span className="flex size-5 shrink-0 items-center justify-center rounded-full bg-muted text-micro font-semibold text-muted-foreground">
+                              {t.assignee?.name?.[0]?.toUpperCase() ?? "?"}
+                            </span>
                           </span>
                         </div>
                         <div className="mt-2 h-[3px] overflow-hidden rounded-full bg-muted">

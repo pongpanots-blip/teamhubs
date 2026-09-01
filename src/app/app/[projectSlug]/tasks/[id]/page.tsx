@@ -451,6 +451,7 @@ export default async function TaskDetailPage({ params }: Props) {
               storyPoints={task.storyPoints}
               estimateHours={task.estimateHours}
               actualHours={task.actualHours}
+              actualHoursSource={task.actualHoursSource}
               sprints={options}
             />
           </SideCard>

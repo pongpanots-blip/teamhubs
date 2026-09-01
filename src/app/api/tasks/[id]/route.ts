@@ -5,6 +5,7 @@ import { prisma } from "@/lib/db";
 import { requireMembership } from "@/lib/auth-session";
 import { requireTaskAccess, assertAssignable } from "@/lib/tasks/access";
 import { recordStatusChange } from "@/lib/tasks/status-history";
+import { maybeRecomputeActualHours } from "@/lib/tasks/recompute-actual-hours";
 import { computeTaskMetrics } from "@/lib/tasks/metrics";
 import { recordSprintMove } from "@/lib/sprint/service";
 import { assertSprintInProject } from "@/lib/sprint/access";
@@ -41,9 +42,9 @@ const updateSchema = z.object({
   dependencyIds: z.array(z.string()).optional(),
   sprintId: z.string().nullable().optional(),
   storyPoints: z.number().int().min(0).nullable().optional(),
-  // Hours are entered by hand, so allow halves but keep them sane.
+  // The estimate is a forecast, so a person owns it. actualHours is derived
+  // from commits or status time and is deliberately not accepted here.
   estimateHours: z.number().min(0).max(1000).nullable().optional(),
-  actualHours: z.number().min(0).max(1000).nullable().optional(),
 });
 
 type Params = { params: Promise<{ id: string }> };
@@ -211,6 +212,8 @@ export async function PATCH(req: Request, { params }: Params) {
           url: new URL(projectTask(project.slug, task.id), new URL(req.url).origin).toString(),
         },
       );
+      // Outside any transaction on purpose: this may call GitHub.
+      await maybeRecomputeActualHours(task.id, task.status as TaskStatusValue);
     }
 
     // A status change (API done) or a rewired graph can unblock other people's

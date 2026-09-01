@@ -21,7 +21,8 @@ export function BacklogPanel({
   busy: boolean;
   onMoveCard: (taskId: string, sprintId: string | null) => void;
   onSetPoints: (taskId: string, points: number | null) => void;
-  onSetHours: (taskId: string, hours: { estimateHours?: number | null; actualHours?: number | null }) => void;
+  /** Only the estimate is settable — actual hours are derived, never typed. */
+  onSetHours: (taskId: string, hours: { estimateHours: number | null }) => void;
 }) {
   return (
     <Card className="lg:sticky lg:top-4">

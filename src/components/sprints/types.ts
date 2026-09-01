@@ -7,6 +7,8 @@ export type SprintCard = {
   storyPoints: number | null;
   estimateHours: number | null;
   actualHours: number | null;
+  /** "commits" | "status" | null (legacy hand-entered). Drives the row's tooltip. */
+  actualHoursSource: string | null;
   assigneeName: string | null;
 };
 

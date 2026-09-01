@@ -21,6 +21,7 @@ const card = (over: Partial<SprintCard> = {}): SprintCard => ({
   storyPoints: null,
   estimateHours: null,
   actualHours: null,
+  actualHoursSource: null,
   assigneeName: null,
   ...over,
 });

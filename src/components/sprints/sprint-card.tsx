@@ -57,7 +57,8 @@ export function SprintPanel({
   onDelete: () => void;
   onMoveCard: (taskId: string, sprintId: string | null) => void;
   onSetPoints: (taskId: string, points: number | null) => void;
-  onSetHours: (taskId: string, hours: { estimateHours?: number | null; actualHours?: number | null }) => void;
+  /** Only the estimate is settable — actual hours are derived, never typed. */
+  onSetHours: (taskId: string, hours: { estimateHours: number | null }) => void;
 }) {
   // canManage gates the sprint's own lifecycle (PM only, as the API enforces).
   // Committing and sizing cards is a task edit, which any project member may

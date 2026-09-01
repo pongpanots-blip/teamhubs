@@ -276,8 +276,13 @@ model Task {
   /// Man hours the card was estimated at. Kept alongside storyPoints: points
   /// drive velocity, hours answer "can this person fit it in the sprint".
   estimateHours      Float?
-  /// Man hours actually spent, entered by whoever did the work.
+  /// Man hours actually spent. Derived, never typed: commit sessions when the
+  /// card has a merged PR, otherwise capped time in `working`.
   actualHours        Float?
+  /// How actualHours was arrived at — "commits" | "status". Null on legacy rows
+  /// entered by hand before the field became derived.
+  actualHoursSource  String?
+  actualHoursComputedAt DateTime?
   engineStatus       String?
   lastContextRunId   String?
   createdAt          DateTime       @default(now())

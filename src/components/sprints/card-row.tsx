@@ -26,7 +26,8 @@ export function CardRow({
   projectSlug: string;
   busy: boolean;
   onSetPoints: (taskId: string, points: number | null) => void;
-  onSetHours: (taskId: string, hours: { estimateHours?: number | null; actualHours?: number | null }) => void;
+  /** Only the estimate is settable — actual hours are derived, never typed. */
+  onSetHours: (taskId: string, hours: { estimateHours: number | null }) => void;
   /** Keyboard-reachable equivalent of dropping this card somewhere else. */
   action?: React.ReactNode;
 }) {
@@ -76,17 +77,36 @@ export function CardRow({
           busy={busy}
           onSave={(next) => onSetHours(card.id, { estimateHours: next })}
         />
-        <NumberCell
-          label={`Actual hours for ${card.title}`}
-          value={card.actualHours}
-          placeholder="act hrs"
-          hint="Actual hours"
-          busy={busy}
-          onSave={(next) => onSetHours(card.id, { actualHours: next })}
-        />
+        <ActualCell hours={card.actualHours} source={card.actualHoursSource} />
         {action}
       </div>
     </li>
+  );
+}
+
+/**
+ * Actual hours, shown rather than asked for. The card knows how it was worked
+ * out, so say so on hover — a derived number nobody can trace is a number
+ * nobody believes.
+ */
+function ActualCell({ hours, source }: { hours: number | null; source: string | null }) {
+  const explanation =
+    source === "commits"
+      ? "Actual hours — from commit sessions on the linked PR"
+      : source === "status"
+        ? "Actual hours — from time in Working, capped at 8h/day"
+        : hours === null
+          ? "Actual hours — filled in when the card is done"
+          : "Actual hours — entered by hand before this became automatic";
+
+  return (
+    <span
+      title={explanation}
+      aria-label={explanation}
+      className="flex h-8 w-20 shrink-0 items-center justify-center rounded-lg border border-dashed border-input text-sm tabular-nums text-muted-foreground"
+    >
+      {hours === null ? "—" : `${hours}h`}
+    </span>
   );
 }
 

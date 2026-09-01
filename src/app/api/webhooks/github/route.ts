@@ -6,6 +6,7 @@ import { decryptJson } from "@/lib/crypto";
 import { cascadeFromTask, reevaluateTask } from "@/lib/engine/cascade";
 import { forwardCompletionDoc } from "@/lib/tasks/completion-doc";
 import { recordStatusChange } from "@/lib/tasks/status-history";
+import { maybeRecomputeActualHours } from "@/lib/tasks/recompute-actual-hours";
 import type { TaskStatusValue } from "@/lib/task-constants";
 
 /** Convention devs are told to put in the PR title, e.g. "[TASK-cmtg...] Add coupon API". */
@@ -116,6 +117,9 @@ export async function POST(req: Request) {
   });
   await reevaluateTask(task.id);
   const cascade = await cascadeFromTask(task.id);
+  // The PR is merged, so its commits are final — this is the best moment to
+  // read them. Falls back to status time on its own if GitHub says no.
+  const actualHours = await maybeRecomputeActualHours(task.id, "done");
 
   let completionDocAttached = false;
   if (task.component && match.creds.token && payload.pull_request.merge_commit_sha) {
@@ -141,6 +145,7 @@ export async function POST(req: Request) {
     ok: true,
     taskId: task.id,
     completionDocAttached,
+    actualHours,
     cascade: cascade.filter((c) => c.changed).map((c) => ({ taskId: c.task.id, to: c.status })),
   });
 }

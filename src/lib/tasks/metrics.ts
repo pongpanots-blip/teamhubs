@@ -29,6 +29,13 @@ export type TaskMetrics = {
   flowEfficiency: number | null;
   /** How long the card has been in flight. Null once done, or before it starts. */
   wipAgeMs: number | null;
+  /**
+   * How long the card has sat in its *current* status — the open segment's
+   * duration, not the lifetime total in timeInStatusMs. Drives the "stuck
+   * in this column" indicator on the board. Null only when the task has no
+   * history yet (a row that predates status tracking).
+   */
+  currentStatusMs: number | null;
   /** Times the card moved backwards through the workflow. */
   reworkCount: number;
 };
@@ -75,6 +82,7 @@ export function computeTaskMetrics(
       waitingTimeMs: 0,
       flowEfficiency: null,
       wipAgeMs: null,
+      currentStatusMs: null,
       reworkCount: 0,
     };
   }
@@ -123,6 +131,7 @@ export function computeTaskMetrics(
     waitingTimeMs: timeInStatusMs.blocked + timeInStatusMs.review,
     flowEfficiency: cycleTimeMs ? activeMsInCycle / cycleTimeMs : null,
     wipAgeMs: !isDone && firstActiveAt ? businessMs(firstActiveAt, now) : null,
+    currentStatusMs: businessMs(segments[segments.length - 1].start, now),
     reworkCount: history.filter(
       (e) => e.fromStatus && isRework(e.fromStatus, e.toStatus),
     ).length,

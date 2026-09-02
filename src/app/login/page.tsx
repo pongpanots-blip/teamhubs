@@ -1,11 +1,14 @@
+import { Suspense } from "react";
 import { redirect } from "next/navigation";
 import { getSession } from "@/lib/auth-session";
 import { AuthShell } from "@/components/auth/auth-shell";
 import { LoginForm } from "@/components/auth/login-form";
 
-export default async function LoginPage() {
-  const session = await getSession();
-  if (session?.user) redirect("/app");
+type Props = { searchParams: Promise<{ next?: string }> };
+
+export default async function LoginPage({ searchParams }: Props) {
+  const [session, { next }] = await Promise.all([getSession(), searchParams]);
+  if (session?.user) redirect(next || "/app");
 
   return (
     <AuthShell
@@ -13,7 +16,9 @@ export default async function LoginPage() {
       description="Team-based access for your small squad."
       action={{ href: "/register", label: "Get started" }}
     >
-      <LoginForm />
+      <Suspense>
+        <LoginForm />
+      </Suspense>
     </AuthShell>
   );
 }

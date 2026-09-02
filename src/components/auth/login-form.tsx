@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { authClient } from "@/lib/auth-client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,7 +10,11 @@ import { Card, CardContent } from "@/components/ui/card";
 
 export function LoginForm() {
   const router = useRouter();
-  const [email, setEmail] = useState("");
+  const searchParams = useSearchParams();
+  // Coming from an invite link — land back there instead of the generic
+  // overview, and start with the email the invite is actually for.
+  const next = searchParams.get("next");
+  const [email, setEmail] = useState(searchParams.get("email") ?? "");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -25,7 +29,7 @@ export function LoginForm() {
       setError(err.message ?? "Sign in failed");
       return;
     }
-    router.push("/app");
+    router.push(next || "/app");
     router.refresh();
   }
 

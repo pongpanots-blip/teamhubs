@@ -1,11 +1,14 @@
+import { Suspense } from "react";
 import { redirect } from "next/navigation";
 import { getSession } from "@/lib/auth-session";
 import { AuthShell } from "@/components/auth/auth-shell";
 import { RegisterForm } from "@/components/auth/register-form";
 
-export default async function RegisterPage() {
-  const session = await getSession();
-  if (session?.user) redirect("/app");
+type Props = { searchParams: Promise<{ next?: string }> };
+
+export default async function RegisterPage({ searchParams }: Props) {
+  const [session, { next }] = await Promise.all([getSession(), searchParams]);
+  if (session?.user) redirect(next || "/app");
 
   return (
     <AuthShell
@@ -13,7 +16,9 @@ export default async function RegisterPage() {
       description="Then create or join a team."
       action={{ href: "/login", label: "Sign in" }}
     >
-      <RegisterForm />
+      <Suspense>
+        <RegisterForm />
+      </Suspense>
     </AuthShell>
   );
 }

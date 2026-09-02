@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { authClient } from "@/lib/auth-client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,8 +10,12 @@ import { Card, CardContent } from "@/components/ui/card";
 
 export function RegisterForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  // Coming from an invite link — skip onboarding's "create a team" step and
+  // land back on the invite so it can be accepted with the fresh account.
+  const next = searchParams.get("next");
   const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
+  const [email, setEmail] = useState(searchParams.get("email") ?? "");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -26,7 +30,7 @@ export function RegisterForm() {
       setError(err.message ?? "Registration failed");
       return;
     }
-    router.push("/onboarding");
+    router.push(next || "/onboarding");
     router.refresh();
   }
 

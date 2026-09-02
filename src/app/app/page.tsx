@@ -69,10 +69,14 @@ export default async function OverviewPage() {
 
   const myTasks = tasks
     .filter((t) => t.assigneeId === user.id && isOpenStatus(t.status))
-    .map((t) => ({
-      ...t,
-      projectSlug: projects.find((p) => p.id === t.projectId)?.slug ?? "",
-    }));
+    .map((t) => {
+      const project = projects.find((p) => p.id === t.projectId);
+      return {
+        ...t,
+        projectSlug: project?.slug ?? "",
+        projectName: project?.name ?? "",
+      };
+    });
 
   return (
     <AppShell teamName={membership.team.name} role={membership.role}>

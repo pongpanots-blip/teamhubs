@@ -40,21 +40,21 @@ export function CardRow({
       }}
       /* Wraps because the backlog column is a fixed 320px: the sizing boxes drop
          to their own line there, and stay inline in the wider sprint panel. */
-      className="flex flex-wrap items-center gap-x-2 gap-y-1.5 rounded-md px-1 py-2 hover:bg-foreground/[0.02] cursor-grab active:cursor-grabbing"
+      className="flex flex-wrap items-center gap-x-3 gap-y-2 rounded-md px-1.5 py-3 hover:bg-foreground/[0.02] cursor-grab active:cursor-grabbing"
     >
-      <span aria-hidden className="shrink-0 text-xs text-muted-foreground/70 select-none">
+      <span aria-hidden className="shrink-0 text-sm text-muted-foreground/70 select-none">
         ⠿
       </span>
-      <div className="min-w-0 flex-1 basis-40">
+      <div className="min-w-0 flex-1 basis-48">
         <Link
           href={projectTask(projectSlug, card.id)}
-          className="block truncate text-sm hover:underline"
+          className="block truncate text-base font-medium hover:underline"
         >
           {card.title}
         </Link>
         {/* truncate too — an untruncated name overflowed the collapsed column
             and painted on top of the status badge. */}
-        <span className="block truncate text-xs text-muted-foreground">
+        <span className="block truncate text-sm text-muted-foreground">
           {card.assigneeName ?? "Unassigned"}
         </span>
       </div>
@@ -103,7 +103,7 @@ function ActualCell({ hours, source }: { hours: number | null; source: string | 
     <span
       title={explanation}
       aria-label={explanation}
-      className="flex h-8 w-20 shrink-0 items-center justify-center rounded-lg border border-dashed border-input text-sm tabular-nums text-muted-foreground"
+      className="flex h-9 w-24 shrink-0 items-center justify-center rounded-lg border border-dashed border-input text-sm tabular-nums text-muted-foreground"
     >
       {hours === null ? "—" : `${hours}h`}
     </span>
@@ -140,7 +140,7 @@ function NumberCell({
       defaultValue={value ?? ""}
       placeholder={placeholder}
       disabled={busy}
-      className="h-8 w-20 shrink-0"
+      className="h-9 w-24 shrink-0 text-sm"
       onBlur={(e) => {
         const raw = e.target.value.trim();
         const next = raw === "" ? null : Number(raw);

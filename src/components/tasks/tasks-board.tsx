@@ -170,6 +170,8 @@ export function TasksBoard({
     "all",
   );
   const [assigneeFilter, setAssigneeFilter] = useState("all");
+  const [priorityFilter, setPriorityFilter] = useState<TaskPriorityValue | "all">("all");
+  const [sprintFilter, setSprintFilter] = useState<"all" | "backlog" | string>("all");
   const [stagnantOnly, setStagnantOnly] = useState(false);
   const [quickTaskOpen, setQuickTaskOpen] = useState(false);
   const sorted = useMemo(
@@ -198,12 +200,23 @@ export function TasksBoard({
         (t) =>
           (statusFilter === "all" || t.status === statusFilter) &&
           (assigneeFilter === "all" || t.assignee?.name === assigneeFilter) &&
+          (priorityFilter === "all" || t.priority === priorityFilter) &&
+          (sprintFilter === "all" ||
+            (sprintFilter === "backlog" ? t.sprintId === null : t.sprintId === sprintFilter)) &&
           (!stagnantOnly ||
             (t.daysInStatus !== null &&
               t.daysInStatus >= STAGNANT_THRESHOLD_DAYS)),
       ),
-    [sorted, statusFilter, assigneeFilter, stagnantOnly],
+    [sorted, statusFilter, assigneeFilter, priorityFilter, sprintFilter, stagnantOnly],
   );
+
+  const activeFilterCount = [
+    statusFilter !== "all",
+    assigneeFilter !== "all",
+    priorityFilter !== "all",
+    sprintFilter !== "all",
+    stagnantOnly,
+  ].filter(Boolean).length;
 
   const stagnantCount = useMemo(
     () =>
@@ -221,7 +234,7 @@ export function TasksBoard({
           <DropdownMenuTrigger className={buttonVariants({})}>
             + New task
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
+          <DropdownMenuContent align="end" className="w-72">
             <DropdownMenuItem onClick={() => setQuickTaskOpen(true)}>
               <FilePlus className="size-4" />
               <div>
@@ -272,7 +285,7 @@ export function TasksBoard({
                     : chip.status,
                 )
               }
-              className="rounded-full border px-2.5 py-[5px] text-xs font-medium"
+              className="rounded-lg border px-2.5 py-[5px] text-xs font-medium"
               style={
                 active
                   ? {
@@ -291,7 +304,7 @@ export function TasksBoard({
           <button
             type="button"
             onClick={() => setStagnantOnly((v) => !v)}
-            className="rounded-full border px-2.5 py-[5px] text-xs font-medium"
+            className="rounded-lg border px-2.5 py-[5px] text-xs font-medium"
             style={
               stagnantOnly
                 ? {
@@ -311,14 +324,74 @@ export function TasksBoard({
         ) : null}
         <span className="mx-0.5 h-5 w-px bg-border" />
         <Select
+          value={statusFilter}
+          onValueChange={(v) => v && setStatusFilter(v as TaskStatusValue | "all")}
+        >
+          <SelectTrigger className="h-[26px] rounded-lg text-xs">
+            <SelectValue>
+              {(v: TaskStatusValue | "all") =>
+                `Status: ${v === "all" ? "All" : TASK_STATUS_COLUMN_LABEL[v]}`
+              }
+            </SelectValue>
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All</SelectItem>
+            {TASK_STATUSES.map((s) => (
+              <SelectItem key={s} value={s}>
+                {TASK_STATUS_COLUMN_LABEL[s]}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <Select
+          value={priorityFilter}
+          onValueChange={(v) => v && setPriorityFilter(v as TaskPriorityValue | "all")}
+        >
+          <SelectTrigger className="h-[26px] rounded-lg text-xs">
+            <SelectValue>
+              {(v: TaskPriorityValue | "all") =>
+                `Priority: ${v === "all" ? "All" : TASK_PRIORITY_SHORT_LABEL[v]}`
+              }
+            </SelectValue>
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All</SelectItem>
+            {(["p0", "p1", "p2", "p3"] as const).map((p) => (
+              <SelectItem key={p} value={p}>
+                {TASK_PRIORITY_SHORT_LABEL[p]}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <Select value={sprintFilter} onValueChange={(v) => v && setSprintFilter(v)}>
+          <SelectTrigger className="h-[26px] rounded-lg text-xs">
+            <SelectValue>
+              {(v: string) => {
+                const label =
+                  v === "all" ? "All" : v === "backlog" ? "Backlog" : (sprints.find((s) => s.id === v)?.name ?? v);
+                return `Sprint: ${label}`;
+              }}
+            </SelectValue>
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All</SelectItem>
+            <SelectItem value="backlog">Backlog</SelectItem>
+            {sprints.map((s) => (
+              <SelectItem key={s.id} value={s.id}>
+                {s.name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <Select
           value={assigneeFilter}
           onValueChange={(v) => v && setAssigneeFilter(v)}
         >
-          <SelectTrigger className="h-[26px] rounded-full text-xs">
-            <SelectValue />
+          <SelectTrigger className="h-[26px] rounded-lg text-xs">
+            <SelectValue>{(v: string) => `Assignee: ${v === "all" ? "All" : v}`}</SelectValue>
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">Assignee: All</SelectItem>
+            <SelectItem value="all">All</SelectItem>
             {assigneeOptions.map((name) => (
               <SelectItem key={name} value={name}>
                 {name}
@@ -326,6 +399,21 @@ export function TasksBoard({
             ))}
           </SelectContent>
         </Select>
+        {activeFilterCount > 0 ? (
+          <button
+            type="button"
+            onClick={() => {
+              setStatusFilter("all");
+              setAssigneeFilter("all");
+              setPriorityFilter("all");
+              setSprintFilter("all");
+              setStagnantOnly(false);
+            }}
+            className="text-xs text-muted-foreground underline underline-offset-2 hover:text-foreground"
+          >
+            Clear filters ({activeFilterCount})
+          </button>
+        ) : null}
         <div className="ml-auto inline-flex overflow-hidden rounded-lg ring-1 ring-border">
           <button
             type="button"
@@ -383,7 +471,7 @@ export function TasksBoard({
                       >
                         {t.dependsOn.length > 0 ? (
                           <span
-                            className="mb-1.5 inline-flex h-[17px] items-center rounded-full px-1.5 text-micro font-medium"
+                            className="mb-1.5 inline-flex h-[17px] items-center rounded-lg px-1.5 text-micro font-medium"
                             style={{
                               backgroundColor: "var(--violet-bg)",
                               color: "var(--violet)",
@@ -489,7 +577,7 @@ export function TasksBoard({
                   </div>
                   {t.dependsOn.length > 0 ? (
                     <span
-                      className="mt-1 inline-flex h-[18px] items-center gap-1 rounded-full px-[7px] text-micro font-medium"
+                      className="mt-1 inline-flex h-[18px] items-center gap-1 rounded-lg px-[7px] text-micro font-medium"
                       style={{
                         backgroundColor: "var(--violet-bg)",
                         color: "var(--violet)",
@@ -532,7 +620,7 @@ export function TasksBoard({
                 </div>
                 <div>
                   <span
-                    className="inline-flex h-5 items-center gap-1 rounded-full px-2 text-meta font-medium whitespace-nowrap"
+                    className="inline-flex h-5 items-center gap-1 rounded-lg px-2 text-meta font-medium whitespace-nowrap"
                     style={{
                       backgroundColor: deployStyle.bg,
                       color: deployStyle.color,

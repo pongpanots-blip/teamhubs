@@ -1,9 +1,12 @@
 "use client";
 
 import { useState } from "react";
+import { Pencil } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { CardRow, DropZone } from "@/components/sprints/card-row";
 import {
   daysLeft,
@@ -43,6 +46,7 @@ export function SprintPanel({
   onStart,
   onComplete,
   onDelete,
+  onEdit,
   onMoveCard,
   onSetPoints,
   onSetHours,
@@ -55,6 +59,12 @@ export function SprintPanel({
   onStart: () => void;
   onComplete: () => void;
   onDelete: () => void;
+  onEdit: (fields: {
+    name: string;
+    goal: string;
+    startAt: string;
+    endAt: string;
+  }) => Promise<boolean>;
   onMoveCard: (taskId: string, sprintId: string | null) => void;
   onSetPoints: (taskId: string, points: number | null) => void;
   /** Only the estimate is settable — actual hours are derived, never typed. */
@@ -67,6 +77,29 @@ export function SprintPanel({
   const progress = sprintProgress(sprint.tasks);
   const current = totalPoints(sprint.tasks);
   const [byPerson, setByPerson] = useState(false);
+  const [editing, setEditing] = useState(false);
+  const [editForm, setEditForm] = useState({
+    name: sprint.name,
+    goal: sprint.goal,
+    startAt: sprint.startAt.slice(0, 10),
+    endAt: sprint.endAt.slice(0, 10),
+  });
+
+  function startEditing() {
+    setEditForm({
+      name: sprint.name,
+      goal: sprint.goal,
+      startAt: sprint.startAt.slice(0, 10),
+      endAt: sprint.endAt.slice(0, 10),
+    });
+    setEditing(true);
+  }
+
+  async function saveEdit(e: React.FormEvent) {
+    e.preventDefault();
+    const ok = await onEdit(editForm);
+    if (ok) setEditing(false);
+  }
   // Only meaningful once the commitment is frozen — before kick-off, "scope
   // change" is just planning.
   const drift = sprint.committedPoints === null ? null : current - sprint.committedPoints;
@@ -83,6 +116,17 @@ export function SprintPanel({
             <Badge variant={state === "active" ? "default" : "secondary"}>
               {STATE_LABEL[state]}
             </Badge>
+            {canManage && (
+              <Button
+                size="icon-sm"
+                variant="ghost"
+                aria-label="Edit sprint"
+                disabled={busy}
+                onClick={() => (editing ? setEditing(false) : startEditing())}
+              >
+                <Pencil className="size-4" />
+              </Button>
+            )}
             {canManage && state === "planning" && (
               <>
                 <Button size="sm" disabled={busy} onClick={onStart}>
@@ -100,11 +144,74 @@ export function SprintPanel({
             )}
           </div>
         </div>
-        <CardDescription>
-          {formatRange(sprint.startAt, sprint.endAt)}
-          {state === "active" ? ` · ${formatDaysLeft(sprint.endAt)}` : ""}
-          {sprint.goal ? ` · ${sprint.goal}` : " · No goal set yet"}
-        </CardDescription>
+        {editing ? (
+          <form onSubmit={saveEdit} className="grid gap-3 pt-2 sm:grid-cols-2">
+            <div className="space-y-1">
+              <Label htmlFor={`edit-name-${sprint.id}`}>Name</Label>
+              <Input
+                id={`edit-name-${sprint.id}`}
+                required
+                value={editForm.name}
+                onChange={(e) =>
+                  setEditForm({ ...editForm, name: e.target.value })
+                }
+              />
+            </div>
+            <div className="space-y-1">
+              <Label htmlFor={`edit-goal-${sprint.id}`}>Goal</Label>
+              <Input
+                id={`edit-goal-${sprint.id}`}
+                value={editForm.goal}
+                onChange={(e) =>
+                  setEditForm({ ...editForm, goal: e.target.value })
+                }
+              />
+            </div>
+            <div className="space-y-1">
+              <Label htmlFor={`edit-start-${sprint.id}`}>Starts</Label>
+              <Input
+                id={`edit-start-${sprint.id}`}
+                type="date"
+                required
+                value={editForm.startAt}
+                onChange={(e) =>
+                  setEditForm({ ...editForm, startAt: e.target.value })
+                }
+              />
+            </div>
+            <div className="space-y-1">
+              <Label htmlFor={`edit-end-${sprint.id}`}>Ends</Label>
+              <Input
+                id={`edit-end-${sprint.id}`}
+                type="date"
+                required
+                value={editForm.endAt}
+                onChange={(e) =>
+                  setEditForm({ ...editForm, endAt: e.target.value })
+                }
+              />
+            </div>
+            <div className="flex justify-end gap-2 sm:col-span-2">
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={() => setEditing(false)}
+              >
+                Cancel
+              </Button>
+              <Button type="submit" size="sm" disabled={busy}>
+                Save changes
+              </Button>
+            </div>
+          </form>
+        ) : (
+          <CardDescription>
+            {formatRange(sprint.startAt, sprint.endAt)}
+            {state === "active" ? ` · ${formatDaysLeft(sprint.endAt)}` : ""}
+            {sprint.goal ? ` · ${sprint.goal}` : " · No goal set yet"}
+          </CardDescription>
+        )}
       </CardHeader>
 
       <CardContent className="space-y-4">

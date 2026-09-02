@@ -29,7 +29,7 @@ const ERROR_MESSAGES: Record<string, string> = {
 };
 
 /** YYYY-MM-DD (what <input type="date"> speaks) → an instant at UTC midnight. */
-function toIso(date: string): string {
+export function toIso(date: string): string {
   return new Date(`${date}T00:00:00.000Z`).toISOString();
 }
 
@@ -225,6 +225,14 @@ export function SprintsPanel({
                   call(() =>
                     fetch(`/api/sprints/${sprint.id}`, { method: "DELETE" }),
                   )
+                }
+                onEdit={(fields) =>
+                  patchSprint(sprint.id, {
+                    name: fields.name,
+                    goal: fields.goal,
+                    startAt: toIso(fields.startAt),
+                    endAt: toIso(fields.endAt),
+                  })
                 }
                 onMoveCard={(taskId, sprintId) =>
                   patchTask(taskId, { sprintId })

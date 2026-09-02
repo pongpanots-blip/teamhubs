@@ -151,7 +151,9 @@ export function QuickTaskDialog({
                 onValueChange={(v) => setPriority(v as TaskPriorityValue)}
               >
                 <SelectTrigger id="quick-task-priority">
-                  <SelectValue />
+                  <SelectValue>
+                    {(value: TaskPriorityValue) => TASK_PRIORITY_LABEL[value]}
+                  </SelectValue>
                 </SelectTrigger>
                 <SelectContent>
                   {TASK_PRIORITIES.map((p) => (

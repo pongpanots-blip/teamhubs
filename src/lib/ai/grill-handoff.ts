@@ -15,6 +15,16 @@ export type GrillHandoffComponent = {
   assigneeName: string | null;
 };
 
+export type GrillHandoffRepo = {
+  owner: string;
+  name: string;
+  defaultBranch: string;
+  pathPrefix: string | null;
+  isPrimary: boolean;
+};
+
+export type GrillHandoffFigmaFile = { name: string; isPrimary: boolean };
+
 export type GrillHandoffInput = {
   parentTitle: string;
   requirement: string;
@@ -24,6 +34,10 @@ export type GrillHandoffInput = {
   own: GrillHandoffComponent;
   /** Every other included component, for coordination context. */
   siblings: GrillHandoffComponent[];
+  /** The project's registered repos/Figma files — named here even before this
+   * sub-task has its own PR or design link, so there is no "which repo?" ask. */
+  projectRepos: GrillHandoffRepo[];
+  projectFigmaFiles: GrillHandoffFigmaFile[];
 };
 
 function rulesToText(rules: BusinessRule[]): string {
@@ -95,6 +109,21 @@ function integrationToText(own: GrillHandoffComponent, siblings: GrillHandoffCom
   return lines.join("\n\n");
 }
 
+function reposToText(repos: GrillHandoffRepo[]): string {
+  if (repos.length === 0) return "—";
+  return repos
+    .map(
+      (r) =>
+        `- ${r.owner}/${r.name} (branch: ${r.defaultBranch}${r.pathPrefix ? `, path: ${r.pathPrefix}` : ""})${r.isPrimary ? " · primary" : ""}`,
+    )
+    .join("\n");
+}
+
+function figmaFilesToText(files: GrillHandoffFigmaFile[]): string {
+  if (files.length === 0) return "—";
+  return files.map((f) => `- ${f.name}${f.isPrimary ? " · primary" : ""}`).join("\n");
+}
+
 function deployChecklistToText(taskId: string): string {
   return [
     `1. Put \`[TASK-${taskId}]\` in your PR title — the system links the merge to this exact sub-task automatically (no need to paste the PR URL anywhere).`,
@@ -131,6 +160,10 @@ export function buildGrillHandoffDoc(input: GrillHandoffInput): { title: string;
     "",
     "## Other components in this requirement",
     siblingsToText(input.siblings),
+    "",
+    "## Repo & Design",
+    `Project repos:\n${reposToText(input.projectRepos)}`,
+    `Figma files:\n${figmaFilesToText(input.projectFigmaFiles)}`,
     "",
     "## Deploy checklist",
     deployChecklistToText(input.own.id),

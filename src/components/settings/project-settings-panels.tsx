@@ -24,6 +24,22 @@ export type TeamMemberOption = {
   projectRole: string | null;
 };
 
+export type ProjectRepositoryOption = {
+  id: string;
+  owner: string;
+  name: string;
+  defaultBranch: string;
+  pathPrefix: string | null;
+  isPrimary: boolean;
+};
+
+export type ProjectFigmaFileOption = {
+  id: string;
+  fileKey: string;
+  name: string;
+  isPrimary: boolean;
+};
+
 /**
  * Settings that belong to one project: its integration credentials, its Figma
  * plugin token, and who is in it. Team-wide settings live at /app/team/settings.
@@ -36,6 +52,8 @@ export function ProjectSettingsPanels({
   providers,
   hasPluginToken,
   teamMembers,
+  repositories,
+  figmaFiles,
 }: {
   isPm: boolean;
   projectId: string;
@@ -44,6 +62,8 @@ export function ProjectSettingsPanels({
   providers: { provider: string; updatedAt: string }[];
   hasPluginToken: boolean;
   teamMembers: TeamMemberOption[];
+  repositories: ProjectRepositoryOption[];
+  figmaFiles: ProjectFigmaFileOption[];
 }) {
   const [memberRoles, setMemberRoles] = useState<Record<string, string>>(
     Object.fromEntries(teamMembers.map((m) => [m.id, m.projectRole ?? ""])),
@@ -62,7 +82,85 @@ export function ProjectSettingsPanels({
   const [pluginToken, setPluginToken] = useState<string | null>(null);
   const [pluginHasToken, setPluginHasToken] = useState(hasPluginToken);
 
+  const [repos, setRepos] = useState(repositories);
+  const [repoOwner, setRepoOwner] = useState("");
+  const [repoName, setRepoName] = useState("");
+  const [repoBranch, setRepoBranch] = useState("main");
+  const [repoPathPrefix, setRepoPathPrefix] = useState("");
+  const [repoMsg, setRepoMsg] = useState<string | null>(null);
+
+  const [figFiles, setFigFiles] = useState(figmaFiles);
+  const [figUrl, setFigUrl] = useState("");
+  const [figName, setFigName] = useState("");
+  const [figMsg, setFigMsg] = useState<string | null>(null);
+
   const scoped = (path: string) => `${path}?project=${encodeURIComponent(projectSlug)}`;
+
+  async function addRepo(e: React.FormEvent) {
+    e.preventDefault();
+    setRepoMsg(null);
+    const res = await fetch(scoped("/api/projects/repos"), {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        owner: repoOwner,
+        name: repoName,
+        defaultBranch: repoBranch || "main",
+        pathPrefix: repoPathPrefix || null,
+      }),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      setRepoMsg(data.error ?? "Failed");
+      return;
+    }
+    setRepos((prev) => [...prev, data.repository]);
+    setRepoOwner("");
+    setRepoName("");
+    setRepoPathPrefix("");
+  }
+
+  async function removeRepo(id: string) {
+    setRepoMsg(null);
+    const res = await fetch(`/api/projects/repos/${id}`, { method: "DELETE" });
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      setRepoMsg(data.error ?? "Failed");
+      return;
+    }
+    setRepos((prev) => prev.filter((r) => r.id !== id));
+  }
+
+  async function addFigmaFile(e: React.FormEvent) {
+    e.preventDefault();
+    setFigMsg(null);
+    const res = await fetch(scoped("/api/projects/figma-files"), {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ fileUrl: figUrl, name: figName }),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      setFigMsg(
+        data.error === "INVALID_FIGMA_URL" ? "That doesn't look like a Figma file link" : (data.error ?? "Failed"),
+      );
+      return;
+    }
+    setFigFiles((prev) => [...prev, data.figmaFile]);
+    setFigUrl("");
+    setFigName("");
+  }
+
+  async function removeFigmaFile(id: string) {
+    setFigMsg(null);
+    const res = await fetch(`/api/projects/figma-files/${id}`, { method: "DELETE" });
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      setFigMsg(data.error ?? "Failed");
+      return;
+    }
+    setFigFiles((prev) => prev.filter((f) => f.id !== id));
+  }
 
   async function saveCredential(provider: "github" | "figma", payload: Record<string, string>) {
     const res = await fetch(scoped("/api/integrations"), {
@@ -289,6 +387,115 @@ export function ProjectSettingsPanels({
           </Button>
         </form>
         {intMsg ? <p className="mt-3 text-sm">{intMsg}</p> : null}
+      </SettingsCard>
+
+      <SettingsCard
+        title="Repositories"
+        description="Which repo(s) this project's code lives in — so dev/AI know where to check commits and push, even before a task has its own PR link."
+      >
+        <div>
+          {repos.map((r, i) => (
+            <div
+              key={r.id}
+              className={`flex items-center justify-between gap-2 py-2 text-body ${i > 0 ? "border-t border-border" : ""}`}
+            >
+              <span className="min-w-0 flex-1 truncate font-mono text-xs">
+                {r.owner}/{r.name}
+                {r.pathPrefix ? ` · ${r.pathPrefix}` : ""} · {r.defaultBranch}
+                {r.isPrimary ? " · primary" : ""}
+              </span>
+              {isPm ? (
+                <Button variant="outline" size="sm" onClick={() => removeRepo(r.id)}>
+                  Remove
+                </Button>
+              ) : null}
+            </div>
+          ))}
+          {repos.length === 0 ? (
+            <p className="text-sm text-muted-foreground">No repos registered yet.</p>
+          ) : null}
+        </div>
+
+        {isPm ? (
+          <form
+            onSubmit={addRepo}
+            className="mt-4 grid gap-3 border-t border-border pt-4 sm:grid-cols-4 sm:items-end"
+          >
+            <div className="space-y-1.5">
+              <Label className="text-xs">Owner</Label>
+              <Input value={repoOwner} onChange={(e) => setRepoOwner(e.target.value)} required />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs">Repo</Label>
+              <Input value={repoName} onChange={(e) => setRepoName(e.target.value)} required />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs">Branch</Label>
+              <Input value={repoBranch} onChange={(e) => setRepoBranch(e.target.value)} />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs">Path prefix (monorepo)</Label>
+              <Input value={repoPathPrefix} onChange={(e) => setRepoPathPrefix(e.target.value)} />
+            </div>
+            <Button type="submit" className="sm:col-span-4">
+              Add repo
+            </Button>
+          </form>
+        ) : null}
+        {repoMsg ? <p className="mt-2 text-sm">{repoMsg}</p> : null}
+      </SettingsCard>
+
+      <SettingsCard
+        title="Figma files"
+        description="Which Figma file(s) this project's design lives in — so a task without its own link yet still points somewhere real."
+      >
+        <div>
+          {figFiles.map((f, i) => (
+            <div
+              key={f.id}
+              className={`flex items-center justify-between gap-2 py-2 text-body ${i > 0 ? "border-t border-border" : ""}`}
+            >
+              <span className="min-w-0 flex-1 truncate">
+                {f.name}
+                {f.isPrimary ? " · primary" : ""}
+                <span className="ml-1.5 font-mono text-xs text-muted-foreground">{f.fileKey}</span>
+              </span>
+              {isPm ? (
+                <Button variant="outline" size="sm" onClick={() => removeFigmaFile(f.id)}>
+                  Remove
+                </Button>
+              ) : null}
+            </div>
+          ))}
+          {figFiles.length === 0 ? (
+            <p className="text-sm text-muted-foreground">No Figma files registered yet.</p>
+          ) : null}
+        </div>
+
+        {isPm ? (
+          <form
+            onSubmit={addFigmaFile}
+            className="mt-4 grid gap-3 border-t border-border pt-4 sm:grid-cols-2 sm:items-end"
+          >
+            <div className="space-y-1.5">
+              <Label className="text-xs">Figma file link</Label>
+              <Input
+                value={figUrl}
+                onChange={(e) => setFigUrl(e.target.value)}
+                placeholder="https://www.figma.com/design/..."
+                required
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs">Name</Label>
+              <Input value={figName} onChange={(e) => setFigName(e.target.value)} required />
+            </div>
+            <Button type="submit" className="sm:col-span-2">
+              Add Figma file
+            </Button>
+          </form>
+        ) : null}
+        {figMsg ? <p className="mt-2 text-sm">{figMsg}</p> : null}
       </SettingsCard>
 
       <SettingsCard

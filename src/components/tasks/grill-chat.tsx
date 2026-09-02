@@ -18,7 +18,7 @@ import { TASK_COMPONENT_LABEL, COMPONENT_TO_ROLE } from "@/lib/task-constants";
 import { projectTasks } from "@/lib/routes";
 import type { GrillMessage, GrillResult } from "@/lib/ai/grill";
 
-type Member = { id: string; name: string; role: string; projectSlug: string };
+type Member = { id: string; name: string; role: string; projectSlug: string; activeTaskCount: number };
 type ProjectOption = { slug: string; name: string };
 
 type Draft = {
@@ -466,32 +466,65 @@ export function GrillChat({
                 {c.included ? (
                   <>
                     <p className="mb-2 pl-6 text-xs text-muted-foreground">{c.description}</p>
-                    <div className="pl-6">
-                      <Select
-                        value={c.assigneeId ?? undefined}
-                        onValueChange={(value) =>
-                          setComponents((prev) =>
-                            prev.map((p, pi) => (pi === i ? { ...p, assigneeId: value || null } : p)),
+                    <div className="flex flex-wrap gap-1.5 pl-6">
+                      {(() => {
+                        const candidates = members
+                          .filter(
+                            (m) =>
+                              m.projectSlug === draft.projectSlug &&
+                              m.role === COMPONENT_TO_ROLE[c.component],
                           )
+                          .sort((a, b) => a.activeTaskCount - b.activeTaskCount);
+                        if (candidates.length === 0) {
+                          return (
+                            <p className="text-xs text-muted-foreground italic">
+                              ยังไม่มีคน role &quot;{COMPONENT_TO_ROLE[c.component]}&quot; ในโปรเจกต์นี้ —
+                              ปล่อยว่างไว้ก่อนก็สร้างได้
+                            </p>
+                          );
                         }
-                      >
-                        <SelectTrigger className="max-w-[220px]">
-                          <SelectValue placeholder="Assign to…" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {members
-                            .filter(
-                              (m) =>
-                                m.projectSlug === draft.projectSlug &&
-                                m.role === COMPONENT_TO_ROLE[c.component],
-                            )
-                            .map((m) => (
-                              <SelectItem key={m.id} value={m.id}>
-                                {m.name}
-                              </SelectItem>
-                            ))}
-                        </SelectContent>
-                      </Select>
+                        const suggestedId = candidates[0].id;
+                        return candidates.map((m) => {
+                          const selected = c.assigneeId === m.id;
+                          return (
+                            <button
+                              key={m.id}
+                              type="button"
+                              onClick={() =>
+                                setComponents((prev) =>
+                                  prev.map((p, pi) =>
+                                    pi === i
+                                      ? { ...p, assigneeId: selected ? null : m.id }
+                                      : p,
+                                  ),
+                                )
+                              }
+                              className={`flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs ${
+                                selected
+                                  ? "border-transparent bg-primary text-primary-foreground"
+                                  : "border-border bg-card text-foreground hover:bg-muted"
+                              }`}
+                            >
+                              <span
+                                className={`flex size-4 items-center justify-center rounded-full text-[9px] font-semibold ${
+                                  selected ? "bg-primary-foreground/20" : "bg-muted"
+                                }`}
+                              >
+                                {m.name[0]?.toUpperCase()}
+                              </span>
+                              {m.name}
+                              <span className={selected ? "opacity-80" : "text-muted-foreground"}>
+                                · {m.activeTaskCount} งาน active
+                              </span>
+                              {m.id === suggestedId && !selected ? (
+                                <span className="rounded-full bg-[var(--st-done-bg)] px-1.5 py-px text-[9px] font-semibold text-[color:var(--st-done)]">
+                                  แนะนำ
+                                </span>
+                              ) : null}
+                            </button>
+                          );
+                        });
+                      })()}
                     </div>
                   </>
                 ) : null}

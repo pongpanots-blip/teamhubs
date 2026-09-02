@@ -10,7 +10,7 @@ export default async function TasksPage({ params }: Params) {
   const { projectSlug } = await params;
   const { project } = await requireProjectPage(projectSlug);
 
-  const [tasks, sprints] = await Promise.all([
+  const [tasks, sprints, memberships] = await Promise.all([
     prisma.task.findMany({
       where: { projectId: project.id },
       include: {
@@ -27,6 +27,10 @@ export default async function TasksPage({ params }: Params) {
     // Every card on this screen can be committed from here, so offer the same
     // sprints the card's own page would.
     sprintOptions(project.id),
+    prisma.projectMembership.findMany({
+      where: { projectId: project.id },
+      include: { user: { select: { id: true, name: true } } },
+    }),
   ]);
 
   // Business-day age of the card's *current* status — the board's stagnant
@@ -48,6 +52,7 @@ export default async function TasksPage({ params }: Params) {
       projectName={project.name}
       currentProjectSlug={project.slug}
       sprints={sprints}
+      members={memberships.map((m) => ({ id: m.user.id, name: m.user.name }))}
     />
   );
 }

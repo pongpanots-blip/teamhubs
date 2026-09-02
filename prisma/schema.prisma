@@ -170,8 +170,44 @@ model Project {
   invites       Invite[]
   sprints       Sprint[]
   flowSnapshots FlowSnapshot[]
+  repositories  ProjectRepository[]
+  figmaFiles    ProjectFigmaFile[]
 
   @@unique([teamId, slug])
+}
+
+/// A repo this project's code lives in — dev/AI needs to know which repo to
+/// check commits/PRs against and push to, independent of any single task's
+/// githubPrUrl (which only exists once a task has one).
+model ProjectRepository {
+  id            String   @id @default(cuid())
+  projectId     String
+  provider      String   @default("github")
+  owner         String
+  name          String
+  defaultBranch String   @default("main")
+  /// Set on a monorepo where this project owns only part of the tree, e.g. "apps/backend".
+  pathPrefix    String?
+  isPrimary     Boolean  @default(false)
+  createdAt     DateTime @default(now())
+  project       Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@unique([projectId, owner, name, pathPrefix])
+}
+
+/// A Figma file this project's design lives in — lets a task without its own
+/// figmaUrl yet still point at where the design should come from.
+model ProjectFigmaFile {
+  id        String   @id @default(cuid())
+  projectId String
+  /// The file key segment of the Figma URL.
+  fileKey   String
+  name      String
+  isPrimary Boolean  @default(false)
+  createdAt DateTime @default(now())
+  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@unique([projectId, fileKey])
 }
 
 /// Per-project role — separate from the team-wide Membership because a

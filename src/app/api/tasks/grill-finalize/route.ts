@@ -52,6 +52,17 @@ export async function POST(req: Request) {
       await assertAssignable(project.id, c.assigneeId);
     }
 
+    const [projectRepos, projectFigmaFiles] = await Promise.all([
+      prisma.projectRepository.findMany({
+        where: { projectId: project.id },
+        orderBy: [{ isPrimary: "desc" }, { createdAt: "asc" }],
+      }),
+      prisma.projectFigmaFile.findMany({
+        where: { projectId: project.id },
+        orderBy: [{ isPrimary: "desc" }, { createdAt: "asc" }],
+      }),
+    ]);
+
     const result = await prisma.$transaction(async (tx) => {
       const parent = await tx.task.create({
         data: {
@@ -125,6 +136,17 @@ export async function POST(req: Request) {
               acceptanceCriteria: body.acceptanceCriteria,
               own,
               siblings: componentSummaries.filter((_, j) => j !== i),
+              projectRepos: projectRepos.map((r) => ({
+                owner: r.owner,
+                name: r.name,
+                defaultBranch: r.defaultBranch,
+                pathPrefix: r.pathPrefix,
+                isPrimary: r.isPrimary,
+              })),
+              projectFigmaFiles: projectFigmaFiles.map((f) => ({
+                name: f.name,
+                isPrimary: f.isPrimary,
+              })),
             });
             return { taskId: s.id, role: "dev", title: doc.title, content: doc.content };
           }),

@@ -30,6 +30,7 @@ import {
   type SprintOption,
 } from "@/components/tasks/sprint-select";
 import { QuickTaskDialog } from "@/components/tasks/quick-task-dialog";
+import type { QuickTaskMember } from "@/components/tasks/quick-task-form";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -155,11 +156,13 @@ export function TasksBoard({
   projectName,
   currentProjectSlug,
   sprints,
+  members,
 }: {
   initialTasks: TaskRow[];
   projectName: string;
   currentProjectSlug: string;
   sprints: SprintOption[];
+  members: QuickTaskMember[];
 }) {
   const tasks = initialTasks;
   const [view, setView] = useState<"list" | "board">("list");
@@ -244,6 +247,7 @@ export function TasksBoard({
         <QuickTaskDialog
           projectSlug={currentProjectSlug}
           sprints={sprints}
+          members={members}
           open={quickTaskOpen}
           onOpenChange={setQuickTaskOpen}
         />

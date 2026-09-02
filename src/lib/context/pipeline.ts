@@ -232,10 +232,20 @@ export async function syncHandoffDocs(
   analysis: ClaudeTaskAnalysis,
   engineOutput: Pick<EngineOutput, "status" | "readinessScore" | "readinessNotes" | "waitingFor">,
 ): Promise<HandoffDoc[]> {
-  const deps = await prisma.taskDependency.findMany({
-    where: { dependentId: task.id },
-    include: { dependency: { include: { assignee: { select: { name: true } } } } },
-  });
+  const [deps, projectRepos, projectFigmaFiles] = await Promise.all([
+    prisma.taskDependency.findMany({
+      where: { dependentId: task.id },
+      include: { dependency: { include: { assignee: { select: { name: true } } } } },
+    }),
+    prisma.projectRepository.findMany({
+      where: { projectId: task.projectId },
+      orderBy: [{ isPrimary: "desc" }, { createdAt: "asc" }],
+    }),
+    prisma.projectFigmaFile.findMany({
+      where: { projectId: task.projectId },
+      orderBy: [{ isPrimary: "desc" }, { createdAt: "asc" }],
+    }),
+  ]);
 
   const { docs } = await generateHandoffDocs({
     taskTitle: task.title,
@@ -253,6 +263,14 @@ export async function syncHandoffDocs(
       status: d.dependency.status,
       assigneeName: d.dependency.assignee?.name ?? null,
     })),
+    projectRepos: projectRepos.map((r) => ({
+      owner: r.owner,
+      name: r.name,
+      defaultBranch: r.defaultBranch,
+      pathPrefix: r.pathPrefix,
+      isPrimary: r.isPrimary,
+    })),
+    projectFigmaFiles: projectFigmaFiles.map((f) => ({ name: f.name, isPrimary: f.isPrimary })),
     analysis,
     engineOutput: {
       status: engineOutput.status,

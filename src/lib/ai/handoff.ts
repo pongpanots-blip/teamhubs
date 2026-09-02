@@ -39,11 +39,25 @@ Rules:
 - Do NOT invent business rules, dependencies, or links that are not present in the input.
 - Each doc should cover (as relevant to that role): what to build, why, business rules, design/
   API/PR links, dependencies & owners, acceptance criteria, current status.
+- Always include a "Repo & Design" section naming the project's registered repos (owner/name,
+  branch, path prefix) and Figma files from \`projectRepos\`/\`projectFigmaFiles\`, even when this
+  task has no PR or design link of its own yet — the next person (or AI) must know where to work
+  without asking.
 
 Return ONLY a valid JSON array:
 [{ "role": string, "title": string, "content": string (markdown) }]`;
 
 type DependencySummary = { title: string; status: string; assigneeName: string | null };
+
+export type ProjectRepoSummary = {
+  owner: string;
+  name: string;
+  defaultBranch: string;
+  pathPrefix: string | null;
+  isPrimary: boolean;
+};
+
+export type ProjectFigmaFileSummary = { name: string; isPrimary: boolean };
 
 export type HandoffInput = {
   taskTitle: string;
@@ -57,6 +71,10 @@ export type HandoffInput = {
   githubPrUrl: string | null;
   internalDocPaths: string[];
   dependencies: DependencySummary[];
+  /** The project's registered repos/Figma files — so the doc still says where
+   * to work even when this task has no PR or design link of its own yet. */
+  projectRepos: ProjectRepoSummary[];
+  projectFigmaFiles: ProjectFigmaFileSummary[];
   analysis: ClaudeTaskAnalysis;
   engineOutput: {
     status: string;
@@ -78,6 +96,21 @@ function depsToText(deps: DependencySummary[]): string {
     .join("\n");
 }
 
+function reposToText(repos: ProjectRepoSummary[]): string {
+  if (repos.length === 0) return "—";
+  return repos
+    .map(
+      (r) =>
+        `- ${r.owner}/${r.name} (branch: ${r.defaultBranch}${r.pathPrefix ? `, path: ${r.pathPrefix}` : ""})${r.isPrimary ? " · primary" : ""}`,
+    )
+    .join("\n");
+}
+
+function figmaFilesToText(files: ProjectFigmaFileSummary[]): string {
+  if (files.length === 0) return "—";
+  return files.map((f) => `- ${f.name}${f.isPrimary ? " · primary" : ""}`).join("\n");
+}
+
 function offlineDevDoc(input: HandoffInput, rules: BusinessRule[]): HandoffDoc {
   const lines = [
     `# ${input.taskTitle} — Dev handoff`,
@@ -94,8 +127,12 @@ function offlineDevDoc(input: HandoffInput, rules: BusinessRule[]): HandoffDoc {
     "## Acceptance criteria",
     input.acceptanceCriteria || "—",
     "",
-    "## Design",
-    input.figmaUrl ? `Figma: ${input.figmaUrl} (${input.figmaReady ? "ready" : "not ready"})` : "—",
+    "## Repo & Design",
+    `Project repos:\n${reposToText(input.projectRepos)}`,
+    `Figma files:\n${figmaFilesToText(input.projectFigmaFiles)}`,
+    input.figmaUrl
+      ? `This task's design: ${input.figmaUrl} (${input.figmaReady ? "ready" : "not ready"})`
+      : "This task's design: not linked yet — see the project's Figma files above",
     "",
     "## API / GitHub",
     [input.githubIssueUrl, input.githubPrUrl].filter(Boolean).join("\n") || "—",
@@ -117,6 +154,7 @@ function offlineDesignDoc(input: HandoffInput): HandoffDoc {
     "",
     "## Figma",
     input.figmaUrl ? `${input.figmaUrl} (${input.figmaReady ? "ready for dev" : "not ready"})` : "—",
+    `Project's Figma files:\n${figmaFilesToText(input.projectFigmaFiles)}`,
     "",
     "## Context",
     input.requirement || input.description || "—",
@@ -151,6 +189,8 @@ export async function generateHandoffDocs(
           githubPrUrl: input.githubPrUrl,
           internalDocPaths: input.internalDocPaths,
           dependencies: input.dependencies,
+          projectRepos: input.projectRepos,
+          projectFigmaFiles: input.projectFigmaFiles,
         },
         analysis: input.analysis,
         engineOutput: input.engineOutput,

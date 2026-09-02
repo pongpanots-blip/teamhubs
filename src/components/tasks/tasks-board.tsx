@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import { Button } from "@/components/ui/button";
+import { buttonVariants } from "@/components/ui/button";
 import { TaskStatusBadge } from "@/components/tasks/status-badge";
 import {
   Select,
@@ -29,6 +29,14 @@ import {
   SprintPicker,
   type SprintOption,
 } from "@/components/tasks/sprint-select";
+import { QuickTaskDialog } from "@/components/tasks/quick-task-dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { FilePlus, MessageCircle } from "lucide-react";
 
 const PRIORITY_DOT_COLOR: Record<TaskPriorityValue, string> = {
   p0: "var(--destructive)",
@@ -160,6 +168,7 @@ export function TasksBoard({
   );
   const [assigneeFilter, setAssigneeFilter] = useState("all");
   const [stagnantOnly, setStagnantOnly] = useState(false);
+  const [quickTaskOpen, setQuickTaskOpen] = useState(false);
   const sorted = useMemo(
     () =>
       [...tasks].sort((a, b) => {
@@ -205,12 +214,39 @@ export function TasksBoard({
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-title font-semibold tracking-tight">Tasks</h1>
-        <Button
-          nativeButton={false}
-          render={<Link href={projectTaskNew(currentProjectSlug)} />}
-        >
-          + New task
-        </Button>
+        <DropdownMenu>
+          <DropdownMenuTrigger className={buttonVariants({})}>
+            + New task
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem onClick={() => setQuickTaskOpen(true)}>
+              <FilePlus className="size-4" />
+              <div>
+                <p>Quick task</p>
+                <p className="text-xs text-muted-foreground">
+                  Fill a short form and create it now
+                </p>
+              </div>
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              render={<Link href={projectTaskNew(currentProjectSlug)} />}
+            >
+              <MessageCircle className="size-4" />
+              <div>
+                <p>Grill with AI</p>
+                <p className="text-xs text-muted-foreground">
+                  Chat it out until the context is complete
+                </p>
+              </div>
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+        <QuickTaskDialog
+          projectSlug={currentProjectSlug}
+          sprints={sprints}
+          open={quickTaskOpen}
+          onOpenChange={setQuickTaskOpen}
+        />
       </div>
 
       <div className="flex flex-wrap items-center gap-2">

@@ -100,7 +100,7 @@ export function OverviewWorkList({ tasks }: { tasks: OverviewTask[] }) {
           <CardTitle className="font-semibold text-foreground">
             My Work · all projects
           </CardTitle>
-          {projectOptions.length > 1 && (
+          {projectOptions.length > 0 && (
             <div className="flex items-center gap-2">
               <Select value={projectFilter} onValueChange={(v) => v && setProjectFilter(v)}>
                 <SelectTrigger className="h-7 rounded-full text-xs" size="sm">

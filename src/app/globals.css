@@ -2,9 +2,9 @@
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
 
-/* App is light-only. This keeps the `dark:` utilities left in the vendored
-   ui/ primitives scoped to a .dark class that is never applied — drop this
-   line and they would activate off the OS preference instead. */
+/* Dark is the default appearance — `.dark` is applied on <html> in the root
+   layout. Scoping to a class (rather than @media prefers-color-scheme) keeps
+   this a deliberate app-wide choice instead of following the OS setting. */
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
@@ -126,6 +126,64 @@
   --violet-bg: oklch(0.52 0.14 300 / 0.07);
 }
 
+.dark {
+  --background: oklch(0.16 0.012 260);
+  --foreground: oklch(0.95 0 0);
+  --card: oklch(0.205 0.012 260);
+  --card-foreground: oklch(0.95 0 0);
+  --popover: oklch(0.205 0.012 260);
+  --popover-foreground: oklch(0.95 0 0);
+  --primary: oklch(0.7 0.13 258);
+  --primary-foreground: oklch(0.145 0 0);
+  --secondary: oklch(0.26 0.012 260);
+  --secondary-foreground: oklch(0.95 0 0);
+  --muted: oklch(0.26 0.012 260);
+  --muted-foreground: oklch(0.66 0 0);
+  --accent: oklch(0.28 0.012 260);
+  --accent-foreground: oklch(0.95 0 0);
+  --destructive: oklch(0.68 0.2 25);
+  --destructive-bg: oklch(0.68 0.2 25 / 0.16);
+  --border: oklch(0.32 0.012 260);
+  --input: oklch(0.32 0.012 260);
+  --ring: oklch(0.55 0 0);
+  --chart-1: oklch(0.35 0 0);
+  --chart-2: oklch(0.5 0 0);
+  --chart-3: oklch(0.62 0 0);
+  --chart-4: oklch(0.75 0 0);
+  --chart-5: oklch(0.87 0 0);
+
+  /* Same idea as the light canvas — a subtle radial wash rather than a flat
+     fill, kept dark enough to sit behind --card without competing with it. */
+  --canvas-app: radial-gradient(ellipse at top, #1b2430 0%, #171512 45%, #14120f 100%);
+  --sidebar: oklch(0.13 0.012 260);
+  --sidebar-foreground: oklch(0.95 0 0);
+  --sidebar-primary: oklch(0.85 0 0);
+  --sidebar-primary-foreground: oklch(0.145 0 0);
+  --sidebar-accent: oklch(0.24 0.012 260);
+  --sidebar-accent-foreground: oklch(0.95 0 0);
+  --sidebar-border: oklch(0.3 0.012 260);
+  --sidebar-ring: oklch(0.55 0 0);
+
+  /* Task status colors — same hues as light mode, lightness/alpha bumped up
+     so they still read on a dark ground instead of washing out. */
+  --st-not_ready: oklch(0.66 0 0);
+  --st-ready: oklch(0.68 0.15 240);
+  --st-ready-bg: oklch(0.68 0.15 240 / 0.18);
+  --st-assigned: oklch(0.68 0.15 300);
+  --st-assigned-bg: oklch(0.68 0.15 300 / 0.18);
+  --st-working: oklch(0.72 0.15 70);
+  --st-working-bg: oklch(0.72 0.15 70 / 0.2);
+  --st-working-strong: oklch(0.78 0.14 70);
+  --st-blocked: oklch(0.68 0.2 25);
+  --st-blocked-bg: oklch(0.68 0.2 25 / 0.16);
+  --st-review: oklch(0.68 0.12 200);
+  --st-review-bg: oklch(0.68 0.12 200 / 0.18);
+  --st-done: oklch(0.68 0.14 150);
+  --st-done-bg: oklch(0.68 0.14 150 / 0.18);
+  --violet: oklch(0.7 0.14 300);
+  --violet-bg: oklch(0.7 0.14 300 / 0.14);
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;
@@ -140,6 +198,9 @@
   }
   html {
     @apply font-sans;
+  }
+  .dark {
+    color-scheme: dark;
   }
 }
 

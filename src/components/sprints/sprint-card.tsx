@@ -8,6 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { CardRow, DropZone } from "@/components/sprints/card-row";
+import { SprintStatusBoard } from "@/components/sprints/sprint-status-board";
 import {
   daysLeft,
   loadByPerson,
@@ -76,7 +77,7 @@ export function SprintPanel({
   const state = sprintState(sprint);
   const progress = sprintProgress(sprint.tasks);
   const current = totalPoints(sprint.tasks);
-  const [byPerson, setByPerson] = useState(false);
+  const [view, setView] = useState<"status" | "person" | "list">("status");
   const [editing, setEditing] = useState(false);
   const [editForm, setEditForm] = useState({
     name: sprint.name,
@@ -251,19 +252,51 @@ export function SprintPanel({
           </div>
         </div>
 
+        {sprint.committedPoints !== null && sprint.committedPoints > 0 ? (
+          <div className="space-y-1">
+            <div className="flex items-center justify-between text-xs text-muted-foreground">
+              <span>Capacity</span>
+              <span className="tabular-nums">
+                {current}/{sprint.committedPoints} pts
+              </span>
+            </div>
+            <div className="h-1.5 overflow-hidden rounded-full bg-muted">
+              <div
+                className="h-full rounded-full bg-primary transition-[width] duration-300"
+                style={{
+                  width: `${Math.min(100, Math.round((current / sprint.committedPoints) * 100))}%`,
+                }}
+              />
+            </div>
+          </div>
+        ) : null}
+
         <div className="flex items-center justify-between gap-2">
           <span className="text-xs text-muted-foreground">
             {open ? "Drop a card here to commit it" : "Closed — the commitment is final"}
           </span>
           {sprint.tasks.length > 0 && (
-            <Button
-              size="sm"
-              variant="ghost"
-              onClick={() => setByPerson((v) => !v)}
-              aria-pressed={byPerson}
-            >
-              {byPerson ? "Show as one list" : "Group by person"}
-            </Button>
+            <div className="inline-flex overflow-hidden rounded-lg text-xs ring-1 ring-border">
+              {(
+                [
+                  ["status", "Board"],
+                  ["person", "By person"],
+                  ["list", "List"],
+                ] as const
+              ).map(([v, label]) => (
+                <button
+                  key={v}
+                  type="button"
+                  onClick={() => setView(v)}
+                  aria-pressed={view === v}
+                  className={`px-2.5 py-1 font-medium ${
+                    view === v ? "bg-primary text-primary-foreground" : "text-muted-foreground"
+                  }`}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
           )}
         </div>
 
@@ -280,7 +313,15 @@ export function SprintPanel({
             <p className="px-1 py-4 text-center text-sm text-muted-foreground">
               No cards committed yet.
             </p>
-          ) : byPerson ? (
+          ) : view === "status" ? (
+            <SprintStatusBoard
+              cards={sprint.tasks}
+              projectSlug={projectSlug}
+              busy={busy}
+              open={open}
+              onRemove={(taskId) => onMoveCard(taskId, null)}
+            />
+          ) : view === "person" ? (
             <div className="space-y-3">
               {people.map((person) => (
                 <div key={person.name ?? "__unassigned"}>

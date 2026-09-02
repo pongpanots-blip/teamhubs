@@ -217,8 +217,17 @@ export function ProjectSettingsPanels({
     setPluginHasToken(true);
   }
 
+  const SECTIONS = [
+    ...(isPm ? [{ id: "members", label: "Members" } as const] : []),
+    { id: "integrations", label: "Integrations" } as const,
+    { id: "repos", label: "Repositories" } as const,
+    { id: "figma-files", label: "Figma files" } as const,
+    { id: "plugin", label: "Figma Plugin" } as const,
+  ];
+  const [section, setSection] = useState<string>(SECTIONS[0].id);
+
   return (
-    <div className="mx-auto max-w-[800px] space-y-5">
+    <div className="mx-auto max-w-[900px] space-y-5">
       <div>
         <h1 className="text-title font-semibold tracking-tight">{projectName} settings</h1>
         <p className="mt-1.5 text-body leading-relaxed text-muted-foreground">
@@ -230,7 +239,26 @@ export function ProjectSettingsPanels({
         </p>
       </div>
 
-      {isPm ? (
+      <div className="grid gap-6 sm:grid-cols-[180px_1fr] sm:items-start">
+        <nav className="flex gap-1 overflow-x-auto pb-1 sm:sticky sm:top-6 sm:flex-col sm:overflow-visible sm:pb-0">
+          {SECTIONS.map((s) => (
+            <button
+              key={s.id}
+              type="button"
+              onClick={() => setSection(s.id)}
+              className={`shrink-0 rounded-lg px-3 py-2 text-left text-sm font-medium whitespace-nowrap ${
+                section === s.id
+                  ? "bg-accent text-accent-foreground"
+                  : "text-muted-foreground hover:bg-accent/50"
+              }`}
+            >
+              {s.label}
+            </button>
+          ))}
+        </nav>
+
+        <div className="min-w-0 space-y-5">
+      {section === "members" && isPm ? (
         <SettingsCard
           title="Members"
           description="People in this project. Anyone already on the team is added instantly; anyone else gets an invite that puts them in the team and this project at once."
@@ -307,6 +335,8 @@ export function ProjectSettingsPanels({
         </SettingsCard>
       ) : null}
 
+      {section === "integrations" ? (
+        <>
       <SettingsCard
         title="GitHub"
         description={
@@ -388,7 +418,10 @@ export function ProjectSettingsPanels({
         </form>
         {intMsg ? <p className="mt-3 text-sm">{intMsg}</p> : null}
       </SettingsCard>
+        </>
+      ) : null}
 
+      {section === "repos" ? (
       <SettingsCard
         title="Repositories"
         description="Which repo(s) this project's code lives in — so dev/AI know where to check commits and push, even before a task has its own PR link."
@@ -444,7 +477,9 @@ export function ProjectSettingsPanels({
         ) : null}
         {repoMsg ? <p className="mt-2 text-sm">{repoMsg}</p> : null}
       </SettingsCard>
+      ) : null}
 
+      {section === "figma-files" ? (
       <SettingsCard
         title="Figma files"
         description="Which Figma file(s) this project's design lives in — so a task without its own link yet still points somewhere real."
@@ -497,7 +532,9 @@ export function ProjectSettingsPanels({
         ) : null}
         {figMsg ? <p className="mt-2 text-sm">{figMsg}</p> : null}
       </SettingsCard>
+      ) : null}
 
+      {section === "plugin" ? (
       <SettingsCard
         title="Figma Plugin"
         description={`Lets designers mark a task "Ready for Dev" from inside Figma. Scoped to this project (${projectSlug}). Token status: ${pluginHasToken ? "generated" : "not generated"}`}
@@ -522,6 +559,9 @@ export function ProjectSettingsPanels({
           ) : null}
         </div>
       </SettingsCard>
+      ) : null}
+        </div>
+      </div>
     </div>
   );
 }

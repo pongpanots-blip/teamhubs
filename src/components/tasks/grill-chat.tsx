@@ -400,7 +400,20 @@ export function GrillChat({
         </div>
       ) : draft.result ? (
         <div className="mx-auto w-full max-w-[680px] space-y-4 pb-2">
-          <div className="rounded-[14px] bg-card p-4 ring-1 ring-foreground/[0.08]">
+          <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+            <span className="font-medium" style={{ color: "var(--st-done)" }}>
+              ✓ คุยแชท
+            </span>
+            <span className="h-px w-5 bg-border" />
+            <span className="font-semibold text-primary">● มอบหมายคน</span>
+            <span className="h-px w-5 bg-border" />
+            <span>สร้าง Task</span>
+          </div>
+
+          <div
+            className="rounded-[14px] p-4"
+            style={{ backgroundColor: "var(--violet-bg)", boxShadow: "0 0 0 1px oklch(0.52 0.14 300 / 0.25)" }}
+          >
             <div className="text-sm font-semibold">{draft.result.titleHint}</div>
             <p className="mt-1.5 text-body leading-relaxed text-muted-foreground">
               {draft.result.requirement}

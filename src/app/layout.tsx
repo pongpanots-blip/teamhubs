@@ -34,7 +34,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html
       lang="en"
-      className={`dark ${kanit.variable} ${jetBrainsMono.variable} ${fraunces.variable} h-full antialiased`}
+      className={`${kanit.variable} ${jetBrainsMono.variable} ${fraunces.variable} h-full antialiased`}
     >
       <body className="flex min-h-full flex-col">{children}</body>
     </html>

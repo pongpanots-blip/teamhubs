@@ -385,8 +385,8 @@ export function TasksBoard({
                           <span
                             className="mb-1.5 inline-flex h-[17px] items-center rounded-full px-1.5 text-micro font-medium"
                             style={{
-                              backgroundColor: "oklch(0.52 0.14 300 / 0.1)",
-                              color: "oklch(0.46 0.14 300)",
+                              backgroundColor: "var(--violet-bg)",
+                              color: "var(--violet)",
                             }}
                           >
                             🔍 part of {t.dependsOn.length} sub-tasks
@@ -491,8 +491,8 @@ export function TasksBoard({
                     <span
                       className="mt-1 inline-flex h-[18px] items-center gap-1 rounded-full px-[7px] text-micro font-medium"
                       style={{
-                        backgroundColor: "oklch(0.52 0.14 300 / 0.1)",
-                        color: "oklch(0.46 0.14 300)",
+                        backgroundColor: "var(--violet-bg)",
+                        color: "var(--violet)",
                       }}
                     >
                       🔍 part of {t.dependsOn.length} sub-tasks

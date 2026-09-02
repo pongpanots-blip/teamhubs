@@ -133,10 +133,10 @@ export default async function TaskDetailPage({ params }: Props) {
           >
             <div className="mb-3 flex flex-wrap items-start justify-between gap-2">
               <div>
-                <h2 className="text-sm font-medium" style={{ color: "oklch(0.42 0.14 300)" }}>
+                <h2 className="text-sm font-medium" style={{ color: "var(--violet)" }}>
                   Sub-tasks ({subTasks.length})
                 </h2>
-                <p className="mt-0.5 text-xs" style={{ color: "oklch(0.5 0.1 300)" }}>
+                <p className="mt-0.5 text-xs text-muted-foreground">
                   Each sub-task is a task of its own — it has its own page, owner and status, and
                   blocks this one until it is done.
                 </p>
@@ -176,9 +176,7 @@ export default async function TaskDetailPage({ params }: Props) {
                 );
               })}
               {subTasks.length === 0 ? (
-                <p className="text-xs" style={{ color: "oklch(0.5 0.1 300)" }}>
-                  No sub-tasks yet.
-                </p>
+                <p className="text-xs text-muted-foreground">No sub-tasks yet.</p>
               ) : null}
             </div>
           </div>

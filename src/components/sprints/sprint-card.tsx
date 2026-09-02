@@ -109,7 +109,7 @@ export function SprintPanel({
   const open = state !== "completed";
 
   return (
-    <Card>
+    <Card className="min-w-0">
       <CardHeader>
         <div className="flex flex-wrap items-center justify-between gap-2">
           <CardTitle>{sprint.name}</CardTitle>

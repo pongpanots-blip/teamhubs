@@ -85,7 +85,7 @@ export function NotificationBell() {
       </button>
 
       {open ? (
-        <div className="absolute top-10 right-0 z-20 w-80 rounded-xl bg-card p-1.5 shadow-[0_0_0_1px_rgb(0_0_0_/_0.08),0_10px_30px_rgb(0_0_0_/_0.1)]">
+        <div className="absolute top-10 right-0 z-20 w-80 rounded-xl bg-card p-1.5 shadow-lg ring-1 ring-foreground/[0.08]">
           <div className="flex items-center justify-between px-2 py-1.5">
             <span className="text-meta font-semibold tracking-wide text-muted-foreground uppercase">
               Notifications
@@ -115,9 +115,7 @@ export function NotificationBell() {
                     </p>
                     <p className="mt-0.5 text-xs text-muted-foreground">{n.body}</p>
                     {n.projectName ? (
-                      <p className="mt-0.5 text-meta" style={{ color: "oklch(0.7 0 0)" }}>
-                        {n.projectName}
-                      </p>
+                      <p className="mt-0.5 text-meta text-muted-foreground">{n.projectName}</p>
                     ) : null}
                   </div>
                 );

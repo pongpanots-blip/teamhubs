@@ -21,6 +21,6 @@ export const DEPLOY_STATE_LABEL: Record<DeployStateValue, string> = {
 
 export const DEPLOY_STATE_STYLE: Record<DeployStateValue, { color: string; bg: string }> = {
   not_started: { color: "var(--muted-foreground)", bg: "var(--muted)" },
-  awaiting: { color: "oklch(0.5 0.13 70)", bg: "oklch(0.62 0.15 70 / 0.14)" },
+  awaiting: { color: "var(--st-working-strong)", bg: "var(--st-working-bg)" },
   deployed: { color: "var(--st-done)", bg: "var(--st-done-bg)" },
 };

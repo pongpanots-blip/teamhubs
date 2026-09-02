@@ -205,7 +205,7 @@ export function SprintsPanel({
           }
           onSetHours={(taskId, hours) => patchTask(taskId, hours)}
         />
-        <div className="space-y-6">
+        <div className="min-w-0 space-y-6">
           {initialSprints.length === 0 ? (
             <p className="text-sm text-muted-foreground">No sprints yet.</p>
           ) : (

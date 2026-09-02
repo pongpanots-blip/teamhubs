@@ -3,6 +3,7 @@ import { requireProjectPage } from "@/lib/page-context";
 import { MyWorkSection } from "@/components/home/my-work-section";
 import { TeamSection, type TeamMemberRow } from "@/components/home/team-section";
 import { AttentionSection } from "@/components/home/attention-section";
+import { TasksByStatusChart } from "@/components/home/tasks-by-status-chart";
 import { computeAttentionCounts, type HomeTask } from "@/lib/home";
 
 type Params = { params: Promise<{ projectSlug: string }> };
@@ -52,6 +53,7 @@ export default async function ProjectHomePage({ params }: Params) {
         counts={computeAttentionCounts(homeTasks)}
         projectSlug={project.slug}
       />
+      <TasksByStatusChart tasks={homeTasks} />
       <TeamSection members={teamMembers} projectSlug={project.slug} />
     </div>
   );

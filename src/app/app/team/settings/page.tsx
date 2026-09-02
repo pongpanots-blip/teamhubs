@@ -6,7 +6,7 @@ import { TeamSettingsPanels } from "@/components/settings/team-settings-panels";
 
 /** Team-wide settings — no project in scope, so no project switcher. */
 export default async function TeamSettingsPage() {
-  const { membership, projects } = await requireTeamPage();
+  const { user, membership, projects } = await requireTeamPage();
   if (membership.role !== "pm") notFound();
 
   const [invites, teamMembers] = await Promise.all([
@@ -36,7 +36,7 @@ export default async function TeamSettingsPage() {
   ]);
 
   return (
-    <AppShell teamName={membership.team.name} role={membership.role}>
+    <AppShell teamName={membership.team.name} role={membership.role} userName={user.name}>
       <TeamSettingsPanels
         teamName={membership.team.name}
         invites={invites.map((i) => ({

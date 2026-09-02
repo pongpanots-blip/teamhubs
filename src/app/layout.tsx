@@ -1,10 +1,19 @@
 import type { Metadata } from "next";
-import { Kanit, JetBrains_Mono } from "next/font/google";
+import { Kanit, JetBrains_Mono, Fraunces } from "next/font/google";
 import "./globals.css";
 
 const kanit = Kanit({
   variable: "--font-kanit",
   weight: ["300", "400", "500", "600", "700"],
+  subsets: ["latin"],
+});
+
+// Latin-only display face for the sidebar masthead/issue numbers ONLY — never
+// for anything that can carry real (often Thai) content, which stays in Kanit.
+const fraunces = Fraunces({
+  variable: "--font-fraunces",
+  weight: ["500", "600"],
+  style: ["normal", "italic"],
   subsets: ["latin"],
 });
 
@@ -25,7 +34,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html
       lang="en"
-      className={`dark ${kanit.variable} ${jetBrainsMono.variable} h-full antialiased`}
+      className={`dark ${kanit.variable} ${jetBrainsMono.variable} ${fraunces.variable} h-full antialiased`}
     >
       <body className="flex min-h-full flex-col">{children}</body>
     </html>

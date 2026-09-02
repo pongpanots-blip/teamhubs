@@ -13,7 +13,7 @@ export default async function ProjectLayout({
   params: Promise<{ projectSlug: string }>;
 }) {
   const { projectSlug } = await params;
-  const { membership, projects, project, role } = await requireProjectPage(projectSlug);
+  const { user, membership, projects, project, role } = await requireProjectPage(projectSlug);
 
   return (
     <AppShell
@@ -21,6 +21,7 @@ export default async function ProjectLayout({
       role={role}
       projects={projects.map((p) => ({ slug: p.slug, name: p.name }))}
       currentProjectSlug={project.slug}
+      userName={user.name}
     >
       {children}
     </AppShell>

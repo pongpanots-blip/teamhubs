@@ -21,7 +21,7 @@ export default async function OverviewPage() {
   // actually true instead of looping.
   if (projects.length === 0) {
     return (
-      <AppShell teamName={membership.team.name} role={membership.role}>
+      <AppShell teamName={membership.team.name} role={membership.role} userName={user.name}>
         <Card className="border-border bg-card/80">
           <CardHeader>
             <CardTitle className="font-semibold text-foreground">
@@ -79,7 +79,7 @@ export default async function OverviewPage() {
     });
 
   return (
-    <AppShell teamName={membership.team.name} role={membership.role}>
+    <AppShell teamName={membership.team.name} role={membership.role} userName={user.name}>
       <div className="space-y-8">
         <OverviewWorkList tasks={myTasks} />
 

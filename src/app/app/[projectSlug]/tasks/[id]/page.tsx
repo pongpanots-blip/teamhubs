@@ -108,7 +108,7 @@ export default async function TaskDetailPage({ params }: Props) {
           <h1 className="mt-1.5 text-title font-semibold tracking-tight">{task.title}</h1>
           {subTasks.length > 0 ? (
             <span
-              className="mt-2.5 inline-flex h-[22px] items-center gap-1.5 rounded-full px-2.5 text-meta font-medium"
+              className="mt-2.5 inline-flex h-[22px] items-center gap-1.5 rounded-lg px-2.5 text-meta font-medium"
               style={{ backgroundColor: "var(--violet-bg)", color: "var(--violet)" }}
             >
               ✶ {subTasks.length} sub-tasks

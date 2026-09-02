@@ -103,7 +103,7 @@ export function OverviewWorkList({ tasks }: { tasks: OverviewTask[] }) {
           {projectOptions.length > 0 && (
             <div className="flex items-center gap-2">
               <Select value={projectFilter} onValueChange={(v) => v && setProjectFilter(v)}>
-                <SelectTrigger className="h-7 rounded-full text-xs" size="sm">
+                <SelectTrigger className="h-7 rounded-lg text-xs" size="sm">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -119,7 +119,7 @@ export function OverviewWorkList({ tasks }: { tasks: OverviewTask[] }) {
                 type="button"
                 aria-pressed={groupByProject}
                 onClick={() => setGroupByProject((v) => !v)}
-                className={`h-7 shrink-0 rounded-full border px-2.5 text-xs transition-colors ${
+                className={`h-7 shrink-0 rounded-lg border px-2.5 text-xs transition-colors ${
                   groupByProject
                     ? "border-transparent bg-foreground/[0.08] font-medium"
                     : "border-dashed border-foreground/20 text-muted-foreground"

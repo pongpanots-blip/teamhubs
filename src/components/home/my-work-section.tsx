@@ -45,7 +45,7 @@ export function MyWorkSection({
               key={f.key}
               type="button"
               onClick={() => setFilter(f.key)}
-              className={`rounded-full px-2.5 py-1 text-xs ${
+              className={`rounded-lg px-2.5 py-1 text-xs ${
                 filter === f.key
                   ? "bg-primary text-primary-foreground"
                   : "text-muted-foreground"

@@ -80,7 +80,7 @@ export function SprintPicker({
         <DropdownMenuTrigger
           disabled={busy}
           aria-label="Sprint for this card"
-          className={`inline-flex h-7 max-w-full items-center gap-1 rounded-full border px-2.5 text-xs disabled:opacity-50 ${
+          className={`inline-flex h-7 max-w-full items-center gap-1 rounded-lg border px-2.5 text-xs disabled:opacity-50 ${
             current
               ? "border-transparent bg-foreground/[0.06] font-medium"
               : "border-dashed border-foreground/20 text-muted-foreground"

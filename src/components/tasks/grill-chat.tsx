@@ -123,7 +123,6 @@ export function GrillChat({
   );
   const [draftFilter, setDraftFilter] = useState("all");
   const [draft, setDraft] = useState<Draft | null>(null);
-  const [newChatProjectSlug, setNewChatProjectSlug] = useState(currentProjectSlug);
   const [answer, setAnswer] = useState("");
   const [loading, setLoading] = useState(false);
   const [components, setComponents] = useState<ComponentDraft[]>([]);
@@ -317,7 +316,7 @@ export function GrillChat({
             <p className="mt-1 text-body text-muted-foreground">{subtitle}</p>
           </div>
           {draft ? (
-            <span className="inline-flex h-[30px] shrink-0 items-center gap-1.5 rounded-full border border-border bg-card px-3 text-xs font-medium">
+            <span className="inline-flex h-[30px] shrink-0 items-center gap-1.5 rounded-lg border border-border bg-card px-3 text-xs font-medium">
               <span className="font-normal text-muted-foreground">Project</span>
               {draft.projectName}
             </span>
@@ -369,29 +368,9 @@ export function GrillChat({
             </div>
           ) : null}
           <div className="space-y-2 rounded-xl border border-border bg-card p-3">
-            <Label className="text-xs">Project</Label>
-            <Select
-              value={newChatProjectSlug}
-              onValueChange={(v) => v && setNewChatProjectSlug(v)}
-            >
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {projects.map((p) => (
-                  <SelectItem key={p.slug} value={p.slug}>
-                    {p.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
             <Button
               className="w-full"
-              onClick={() =>
-                openDraft(
-                  newDraft(projects.find((p) => p.slug === newChatProjectSlug) ?? currentProject),
-                )
-              }
+              onClick={() => openDraft(newDraft(currentProject))}
             >
               เริ่มคุยใหม่
             </Button>
@@ -512,7 +491,7 @@ export function GrillChat({
                                   ),
                                 )
                               }
-                              className={`flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs ${
+                              className={`flex items-center gap-1.5 rounded-lg border px-2.5 py-1 text-xs ${
                                 selected
                                   ? "border-transparent bg-primary text-primary-foreground"
                                   : "border-border bg-card text-foreground hover:bg-muted"
@@ -530,7 +509,7 @@ export function GrillChat({
                                 · {m.activeTaskCount} งาน active
                               </span>
                               {m.id === suggestedId && !selected ? (
-                                <span className="rounded-full bg-[var(--st-done-bg)] px-1.5 py-px text-[9px] font-semibold text-[color:var(--st-done)]">
+                                <span className="rounded-lg bg-[var(--st-done-bg)] px-1.5 py-px text-[9px] font-semibold text-[color:var(--st-done)]">
                                   แนะนำ
                                 </span>
                               ) : null}
@@ -619,7 +598,7 @@ export function GrillChat({
                   type="button"
                   disabled={loading}
                   onClick={() => submitAnswer(false, choice)}
-                  className="inline-flex items-center gap-1.5 rounded-full border border-border bg-card px-3 py-1.5 text-xs disabled:opacity-50"
+                  className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-card px-3 py-1.5 text-xs disabled:opacity-50"
                 >
                   {choice}
                   {choice === recommendation.matchedChoice ? (

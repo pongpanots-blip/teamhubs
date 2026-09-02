@@ -66,49 +66,48 @@
 }
 
 :root {
-  /* Warm off-white ground (mockup: #faf9f7) instead of pure white — cards sit
-     a shade lighter on top of it so surfaces read as layered, not flat. */
-  --background: oklch(0.98 0.004 80);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(0.995 0.003 80);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(0.995 0.003 80);
-  --popover-foreground: oklch(0.145 0 0);
-  /* Violet accent (mockup's brand hue) — same hue as --violet below, used as
-     the one accent for primary actions/focus instead of the old blue. */
-  --primary: oklch(0.52 0.14 300);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.965 0.004 80);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.965 0.004 80);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.965 0.004 80);
-  --accent-foreground: oklch(0.205 0 0);
+  /* Netflix design system — near-white ground kept for the (rarely used)
+     light theme, but the brand red and near-black surfaces are what carry
+     the identity in .dark below, which is this app's actual default. */
+  --background: #fafafa;
+  --foreground: #141414;
+  --card: #ffffff;
+  --card-foreground: #141414;
+  --popover: #ffffff;
+  --popover-foreground: #141414;
+  --primary: #e50914;
+  --primary-foreground: #ffffff;
+  --secondary: #ececec;
+  --secondary-foreground: #141414;
+  --muted: #ececec;
+  --muted-foreground: #6b6b6b;
+  --accent: #ececec;
+  --accent-foreground: #141414;
   --destructive: oklch(0.577 0.245 27.325);
   --destructive-bg: oklch(0.577 0.245 27.325 / 0.1);
-  --border: oklch(0.9 0.006 80);
-  --input: oklch(0.9 0.006 80);
-  --ring: oklch(0.65 0.1 300);
+  --border: #dcdcdc;
+  --input: #dcdcdc;
+  --ring: #e50914;
   --chart-1: oklch(0.87 0 0);
   --chart-2: oklch(0.556 0 0);
   --chart-3: oklch(0.439 0 0);
   --chart-4: oklch(0.371 0 0);
   --chart-5: oklch(0.269 0 0);
-  --radius: 0.78125rem;
+  --radius: 0.25rem;
   --gutter: clamp(1rem, 4vw, 2rem);
 
   /* Canvas behind the signed-in app. Public pages (landing, auth, invite) run a
      solid background instead. Left in sRGB hex — converting to OKLCH would
      shift the ramp, and this is one decorative surface, not a palette token. */
-  --canvas-app: radial-gradient(ellipse at top, #e8eef5 0%, #f7f5f1 45%, #f3efe8 100%);
-  --sidebar: oklch(0.985 0.003 80);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.52 0.14 300);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.965 0.004 80);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.9 0.006 80);
-  --sidebar-ring: oklch(0.65 0.1 300);
+  --canvas-app: #fafafa;
+  --sidebar: #ffffff;
+  --sidebar-foreground: #141414;
+  --sidebar-primary: #e50914;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #ececec;
+  --sidebar-accent-foreground: #141414;
+  --sidebar-border: #dcdcdc;
+  --sidebar-ring: #e50914;
 
   /* Task status colors — mirrors TASK_STATUSES in src/lib/task-constants.ts */
   --st-not_ready: oklch(0.556 0 0);
@@ -132,44 +131,43 @@
 
 .dark {
   /* Neutral hue shifted from blue-slate (260) to a warm plum (300) — same
-     family as the violet accent, matching the mockup's near-black-purple
-     ground instead of a cool blue-black. */
-  --background: oklch(0.16 0.012 300);
-  --foreground: oklch(0.95 0 0);
-  --card: oklch(0.205 0.012 300);
-  --card-foreground: oklch(0.95 0 0);
-  --popover: oklch(0.205 0.012 300);
-  --popover-foreground: oklch(0.95 0 0);
-  --primary: oklch(0.72 0.13 300);
-  --primary-foreground: oklch(0.145 0 0);
-  --secondary: oklch(0.26 0.012 300);
-  --secondary-foreground: oklch(0.95 0 0);
-  --muted: oklch(0.26 0.012 300);
-  --muted-foreground: oklch(0.66 0 0);
-  --accent: oklch(0.28 0.012 300);
-  --accent-foreground: oklch(0.95 0 0);
+     family as the violet accent — Netflix's dark surfaces instead. */
+  --background: #000000;
+  --foreground: #ffffff;
+  --card: #141414;
+  --card-foreground: #ffffff;
+  --popover: #181818;
+  --popover-foreground: #ffffff;
+  --primary: #e50914;
+  --primary-foreground: #ffffff;
+  --secondary: #2f2f2f;
+  --secondary-foreground: #ffffff;
+  --muted: #141414;
+  --muted-foreground: #b3b3b3;
+  --accent: #2f2f2f;
+  --accent-foreground: #ffffff;
   --destructive: oklch(0.68 0.2 25);
   --destructive-bg: oklch(0.68 0.2 25 / 0.16);
-  --border: oklch(0.32 0.012 300);
-  --input: oklch(0.32 0.012 300);
-  --ring: oklch(0.72 0.13 300);
+  --border: #2f2f2f;
+  --input: #2f2f2f;
+  --ring: #e50914;
   --chart-1: oklch(0.35 0 0);
   --chart-2: oklch(0.5 0 0);
   --chart-3: oklch(0.62 0 0);
   --chart-4: oklch(0.75 0 0);
   --chart-5: oklch(0.87 0 0);
 
-  /* Same idea as the light canvas — a subtle radial wash rather than a flat
-     fill, kept dark enough to sit behind --card without competing with it. */
-  --canvas-app: radial-gradient(ellipse at top, #211c2c 0%, #17151b 45%, #141319 100%);
-  --sidebar: oklch(0.13 0.012 300);
-  --sidebar-foreground: oklch(0.95 0 0);
-  --sidebar-primary: oklch(0.72 0.13 300);
-  --sidebar-primary-foreground: oklch(0.145 0 0);
-  --sidebar-accent: oklch(0.24 0.012 300);
-  --sidebar-accent-foreground: oklch(0.95 0 0);
-  --sidebar-border: oklch(0.3 0.012 300);
-  --sidebar-ring: oklch(0.72 0.13 300);
+  /* Netflix keeps the canvas flat black — no wash, nothing to compete with
+     poster/content color, which for us means the UI itself. */
+  --canvas-app: #000000;
+  --sidebar: #000000;
+  --sidebar-foreground: #ffffff;
+  --sidebar-primary: #e50914;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #2f2f2f;
+  --sidebar-accent-foreground: #ffffff;
+  --sidebar-border: #2f2f2f;
+  --sidebar-ring: #e50914;
 
   /* Task status colors — same hues as light mode, lightness/alpha bumped up
      so they still read on a dark ground instead of washing out. */

@@ -54,6 +54,7 @@ export function ProjectSettingsPanels({
   teamMembers,
   repositories,
   figmaFiles,
+  capacity,
 }: {
   isPm: boolean;
   projectId: string;
@@ -64,6 +65,7 @@ export function ProjectSettingsPanels({
   teamMembers: TeamMemberOption[];
   repositories: ProjectRepositoryOption[];
   figmaFiles: ProjectFigmaFileOption[];
+  capacity: { ui: number; dev: number; total: number; weeklyPoints: number };
 }) {
   const [memberRoles, setMemberRoles] = useState<Record<string, string>>(
     Object.fromEntries(teamMembers.map((m) => [m.id, m.projectRole ?? ""])),
@@ -236,6 +238,11 @@ export function ProjectSettingsPanels({
             Team settings
           </Link>{" "}
           cover invites and creating projects.
+        </p>
+        <p className="mt-2 text-xs text-muted-foreground">
+          Capacity: {capacity.dev} dev + {capacity.ui} UI ={" "}
+          <span className="font-medium text-foreground">{capacity.weeklyPoints} pts/week</span>{" "}
+          (7h/day, 1 point = 1 hour — sprint capacity bars use this)
         </p>
       </div>
 

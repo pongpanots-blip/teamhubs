@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/db";
 import { requireProjectPage } from "@/lib/page-context";
 import { ProjectSettingsPanels } from "@/components/settings/project-settings-panels";
+import { capacityBreakdown, weeklyCapacityPoints } from "@/lib/sprint/capacity";
 
 type Params = { params: Promise<{ projectSlug: string }> };
 
@@ -25,9 +26,8 @@ export default async function ProjectSettingsPage({ params }: Params) {
             include: { user: { select: { id: true, name: true, email: true } } },
           })
         : Promise.resolve([]),
-      isPm
-        ? prisma.projectMembership.findMany({ where: { projectId: project.id } })
-        : Promise.resolve([]),
+      // Role counts drive the capacity summary — shown to everyone, not PM-gated.
+      prisma.projectMembership.findMany({ where: { projectId: project.id } }),
       prisma.projectRepository.findMany({
         where: { projectId: project.id },
         orderBy: [{ isPrimary: "desc" }, { createdAt: "asc" }],
@@ -38,6 +38,7 @@ export default async function ProjectSettingsPage({ params }: Params) {
       }),
     ]);
   const roleByUserId = new Map(projectMembers.map((pm) => [pm.userId, pm.role]));
+  const capacity = capacityBreakdown(projectMembers);
 
   return (
     <ProjectSettingsPanels
@@ -45,6 +46,7 @@ export default async function ProjectSettingsPage({ params }: Params) {
       projectId={project.id}
       projectSlug={project.slug}
       projectName={project.name}
+      capacity={{ ...capacity, weeklyPoints: weeklyCapacityPoints(capacity.total) }}
       providers={providers.map((p) => ({
         provider: p.provider,
         updatedAt: p.updatedAt.toISOString(),

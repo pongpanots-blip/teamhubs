@@ -4,7 +4,9 @@ import { MyWorkSection } from "@/components/home/my-work-section";
 import { TeamSection, type TeamMemberRow } from "@/components/home/team-section";
 import { AttentionSection } from "@/components/home/attention-section";
 import { TasksByStatusChart } from "@/components/home/tasks-by-status-chart";
+import { VelocityCard } from "@/components/home/velocity-card";
 import { computeAttentionCounts, type HomeTask } from "@/lib/home";
+import { capacityBreakdown, weeklyCapacityPoints } from "@/lib/sprint/capacity";
 import { projectFlowMetrics } from "@/lib/analytics/project-metrics";
 import { sprintBurndown } from "@/lib/sprint/service";
 import { SleSummary } from "@/components/analytics/sle-summary";
@@ -66,12 +68,20 @@ export default async function ProjectHomePage({ params }: Params) {
     tasks: homeTasks.filter((t) => t.assigneeId === m.userId),
   }));
 
+  const capacity = capacityBreakdown(memberships);
+
   return (
     <div className="space-y-8">
       <MyWorkSection tasks={myWorkTasks} projectSlug={project.slug} />
       <AttentionSection
         counts={computeAttentionCounts(homeTasks)}
         projectSlug={project.slug}
+      />
+      <VelocityCard
+        headcount={capacity.total}
+        uiCount={capacity.ui}
+        devCount={capacity.dev}
+        weeklyPoints={weeklyCapacityPoints(capacity.total)}
       />
       <TasksByStatusChart tasks={homeTasks} />
       <TeamSection members={teamMembers} projectSlug={project.slug} />

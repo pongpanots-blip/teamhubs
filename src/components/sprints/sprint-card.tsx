@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { CardRow, DropZone } from "@/components/sprints/card-row";
 import { SprintStatusBoard } from "@/components/sprints/sprint-status-board";
+import { capacityForRange } from "@/lib/sprint/capacity";
 import {
   daysLeft,
   loadByPerson,
@@ -51,12 +52,15 @@ export function SprintPanel({
   onMoveCard,
   onSetPoints,
   onSetHours,
+  capacityHeadcount,
 }: {
   sprint: SprintSummary;
   backlog: Card_[];
   projectSlug: string;
   canManage: boolean;
   busy: boolean;
+  /** UI + dev headcount on this project — capacity = headcount × 7h/day over the sprint's business days. */
+  capacityHeadcount: number;
   onStart: () => void;
   onComplete: () => void;
   onDelete: () => void;
@@ -107,6 +111,13 @@ export function SprintPanel({
   const people = loadByPerson(sprint.tasks);
   const hours = totalHours(sprint.tasks);
   const open = state !== "completed";
+  // Capacity = headcount × 7h/day over this sprint's business days (1 point = 1 hour) —
+  // computed from the team roster, not from what got committed.
+  const capacityPoints = capacityForRange(
+    capacityHeadcount,
+    new Date(sprint.startAt),
+    new Date(sprint.endAt),
+  );
 
   return (
     <Card className="min-w-0">
@@ -252,24 +263,33 @@ export function SprintPanel({
           </div>
         </div>
 
-        {sprint.committedPoints !== null && sprint.committedPoints > 0 ? (
+        {capacityPoints > 0 ? (
           <div className="space-y-1">
             <div className="flex items-center justify-between text-xs text-muted-foreground">
-              <span>Capacity</span>
+              <span>Capacity ({capacityHeadcount} UI/dev × 7h/day)</span>
               <span className="tabular-nums">
-                {current}/{sprint.committedPoints} pts
+                {current}/{capacityPoints} pts
               </span>
             </div>
             <div className="h-1.5 overflow-hidden rounded-full bg-muted">
               <div
                 className="h-full rounded-full bg-primary transition-[width] duration-300"
                 style={{
-                  width: `${Math.min(100, Math.round((current / sprint.committedPoints) * 100))}%`,
+                  width: `${Math.min(100, Math.round((current / capacityPoints) * 100))}%`,
                 }}
               />
             </div>
+            {current > capacityPoints ? (
+              <p className="text-xs text-destructive">
+                Committed {current - capacityPoints} pts over capacity.
+              </p>
+            ) : null}
           </div>
-        ) : null}
+        ) : (
+          <p className="text-xs text-muted-foreground">
+            No UI/dev on this project yet — capacity can&apos;t be estimated.
+          </p>
+        )}
 
         <div className="flex items-center justify-between gap-2">
           <span className="text-xs text-muted-foreground">

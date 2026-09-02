@@ -38,11 +38,14 @@ export function SprintsPanel({
   backlog,
   projectSlug,
   canManage,
+  capacityHeadcount,
 }: {
   initialSprints: SprintSummary[];
   backlog: SprintCard[];
   projectSlug: string;
   canManage: boolean;
+  /** UI + dev headcount on this project — drives the capacity bar on each sprint. */
+  capacityHeadcount: number;
 }) {
   const router = useRouter();
   const [busy, setBusy] = useState(false);
@@ -216,6 +219,7 @@ export function SprintsPanel({
                 backlog={backlog}
                 projectSlug={projectSlug}
                 canManage={canManage}
+                capacityHeadcount={capacityHeadcount}
                 busy={busy}
                 onStart={() => patchSprint(sprint.id, { action: "start" })}
                 onComplete={() =>

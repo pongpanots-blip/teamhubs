@@ -3,6 +3,7 @@ import { requireProjectPage } from "@/lib/page-context";
 import { SprintsPanel } from "@/components/sprints/sprints-panel";
 import type { SprintCard, SprintSummary } from "@/components/sprints/types";
 import type { TaskStatusValue } from "@/lib/task-constants";
+import { capacityBreakdown, weeklyCapacityPoints } from "@/lib/sprint/capacity";
 
 type Params = { params: Promise<{ projectSlug: string }> };
 
@@ -25,7 +26,7 @@ export default async function SprintsPage({ params }: Params) {
   // whose project role is "backend" still manages the sprint.
   const canManage = membership.role === "pm";
 
-  const [sprints, backlog] = await Promise.all([
+  const [sprints, backlog, projectMembers] = await Promise.all([
     prisma.sprint.findMany({
       where: { projectId: project.id },
       orderBy: { startAt: "desc" },
@@ -37,7 +38,14 @@ export default async function SprintsPage({ params }: Params) {
       select: CARD_FIELDS,
       orderBy: [{ priority: "asc" }, { createdAt: "asc" }],
     }),
+    prisma.projectMembership.findMany({
+      where: { projectId: project.id },
+      select: { role: true },
+    }),
   ]);
+
+  // Capacity = headcount (UI + dev roles, PM excluded) × 7h/day, 1 point = 1 hour.
+  const { total: capacityHeadcount } = capacityBreakdown(projectMembers);
 
   const toCard = (t: {
     id: string;
@@ -80,12 +88,17 @@ export default async function SprintsPage({ params }: Params) {
           sprint freezes what was committed — anything moved after that shows up on the
           burndown as scope change.
         </p>
+        <p className="mt-1 text-xs text-muted-foreground">
+          Team capacity: {capacityHeadcount} {capacityHeadcount === 1 ? "person" : "people"}{" "}
+          (UI + dev) × 7h/day ≈ {weeklyCapacityPoints(capacityHeadcount)} pts/week
+        </p>
       </div>
       <SprintsPanel
         initialSprints={initialSprints}
         backlog={backlog.map(toCard)}
         projectSlug={project.slug}
         canManage={canManage}
+        capacityHeadcount={capacityHeadcount}
       />
     </div>
   );

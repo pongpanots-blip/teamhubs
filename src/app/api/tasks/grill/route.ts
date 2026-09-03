@@ -3,6 +3,7 @@ import { z } from "zod";
 import { requireMembership, requireProjectBySlug } from "@/lib/auth-session";
 import { errorResponse } from "@/lib/api-error";
 import { grillTurn } from "@/lib/ai/grill";
+import { hasAiKey } from "@/lib/ai/model-client";
 import { retrieveRelevantChunks } from "@/lib/context/ingest";
 
 const schema = z.object({
@@ -29,7 +30,10 @@ export async function POST(req: Request) {
     const docs = query.trim() ? await retrieveRelevantChunks(project.id, query) : [];
 
     const turn = await grillTurn(body.messages, body.forceFinish, docs);
-    return NextResponse.json(turn);
+    // The PM should know when "AI" is actually a fixed offline script (no
+    // GEMINI_API_KEY configured) — the questions and finalized result are
+    // much dumber than the real model.
+    return NextResponse.json({ ...turn, offline: !hasAiKey() });
   } catch (e) {
     return errorResponse(e);
   }

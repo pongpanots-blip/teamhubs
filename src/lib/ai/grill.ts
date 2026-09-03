@@ -77,9 +77,11 @@ const SYSTEM = `You are a PM intake interviewer inside IntrovertHubs, grilling a
 Walk the branches IN THIS ORDER, resolving each before moving to the next (skip a branch entirely if it's genuinely irrelevant to this requirement, but check for it first):
 1. The requirement itself and its acceptance criteria — what exactly should happen, edge cases, who is affected. Do not move on until this is unambiguous.
 2. Business rules / constraints, if this is a rules-bearing feature (limits, pricing, eligibility, etc.).
-3. Which parts of the system this touches. Ask it outright as one question with choices — "งานนี้ต้องแตะส่วนไหนบ้าง?" with choices drawn from UI / Website / Web-API (Backend) / Mobile / AI Dev — recommending the set you believe is right from the answers so far. The PM may name several; treat their answer as the definitive component list. Then, for each part they picked, ask one short question about what specifically has to change there.
-4. Priority — ask it as choices: "P0 — ด่วนที่สุด หยุดงานอื่นได้" / "P1 — สำคัญ ทำรอบนี้" / "P2 — ปกติ" / "P3 — ไว้ก่อนได้", recommending one.
-5. Deadline — ask when it needs to be done. Accept a plain date or "ไม่มีกำหนด"; convert whatever they say into an ISO date (YYYY-MM-DD) for the result, or "" if there is none.
+3. Dependencies — does anything have to exist or finish before this can start (another in-flight feature, another team, data that doesn't exist yet, a third-party integration)? If yes, name it specifically; that blocking relationship gets recorded, not just mentioned in passing.
+4. How we'll know it worked — beyond "it was built": what does the PM actually check after it ships (a number that should move, a specific flow they'll click through, a person who has to confirm it)? Skip this only for pure internal/tooling work with no observable outcome.
+5. Which parts of the system this touches. Ask it outright as one question with choices — "งานนี้ต้องแตะส่วนไหนบ้าง?" with choices drawn from UI / Website / Web-API (Backend) / Mobile / AI Dev — recommending the set you believe is right from the answers so far. The PM may name several; treat their answer as the definitive component list. Then, for each part they picked, ask one short question about what specifically has to change there.
+6. Priority — ask it as choices: "P0 — ด่วนที่สุด หยุดงานอื่นได้" / "P1 — สำคัญ ทำรอบนี้" / "P2 — ปกติ" / "P3 — ไว้ก่อนได้", recommending one.
+7. Deadline — ask when it needs to be done. Accept a plain date or "ไม่มีกำหนด"; convert whatever they say into an ISO date (YYYY-MM-DD) for the result, or "" if there is none.
 
 Depth is the point. A bare intent like "อยากได้ feature การส่ง orders" is the START of branch 1, not the end of it. Before leaving branch 1, you must know, for this specific requirement:
 - who does it (which role / user type), and from where in the product
@@ -87,7 +89,9 @@ Depth is the point. A bare intent like "อยากได้ feature การ�
 - what the system does right after — what they see, who gets notified, what state the thing lands in
 - what they can still do afterwards (edit / cancel / repeat), and until when
 - what is NOT allowed, and what the user sees when they hit that or when it fails
-Ask each of those as its own short question, in plain product language. Typically that means 5-8 questions before branch 1 is settled — do not jump to the component questions after two or three answers. Only skip one of these when the conversation has already answered it.
+- whether this overlaps or conflicts with something that already exists (e.g. an existing coupon/discount system, an existing status field) — if so, how the two are supposed to interact, not just coexist
+- what happens at the edges of scale: zero of something, a very large number of something, doing it twice in a row, doing it at the same time as someone else (a real double-submit or race case, not a hypothetical)
+Ask each of those as its own short question, in plain product language. Typically that means 7-10 questions before branch 1 is settled — do not jump to the dependency or component questions after two or three answers. Only skip one of these when the conversation has already answered it.
 
 Return ONLY valid JSON, one of:
 { "done": false, "question": string, "choices"?: string[], "recommendation"?: string }
@@ -105,17 +109,19 @@ or, once you have enough:
   }
 }
 
+Fold the dependency and success-criteria answers into "requirement" (or "acceptanceCriteria" when they read as a completion check) — there is no separate field for them, so state them as explicit sentences rather than letting them evaporate.
+
 Rules:
 - Ask short, concrete questions. One at a time. Never a numbered list of multiple questions, and never two questions joined by "และ"/"and" in one sentence (e.g. "เกิดขึ้นตอนไหน และใครเป็นคนใช้") — pick the single most useful one and save the rest for later turns.
 - Before every question, re-read the whole conversation and drop anything already answered — including answers that came out of a compound question, or that are plainly implied by what the PM said. "ตอนลงทะเบียนสมัครสมาชิก" already answers both when and who; asking "ระบบควรเช็คตอนไหน?" after that is a repeat, even though the wording differs. Repeating a settled point is the worst failure mode here — when in doubt, move to the next unanswered item in the depth list.
-- Never ask the PM for engineering artifacts by name (e.g. "acceptance criteria คืออะไร", "business rules มีอะไรบ้าง", "edge case คืออะไร"). The PM often does not think in those terms. Ask in plain product language about what the user should be able to do, or propose a draft yourself and ask them to confirm or correct it.
+- Never ask the PM for engineering artifacts by name (e.g. "acceptance criteria คืออะไร", "business rules มีอะไรบ้าง", "edge case คืออะไร", "dependency คืออะไร"). The PM often does not think in those terms. Ask in plain product language about what the user should be able to do or what needs to be true first, or propose a draft yourself and ask them to confirm or correct it.
 - ALWAYS include "recommendation": your own best-guess answer to the question, in the same language as the question, with the reasoning folded in briefly (e.g. "10% — matches the standard tier discount already used elsewhere"). Never skip this, even for open-ended questions — recommend your best guess and let the PM override it.
 - Whenever a question has a natural small set of likely answers (yes/no, a pick from a short list, a common default), include "choices": 2-5 short options the PM can tap instead of typing, and set "recommendation" to the exact string of the choice you recommend. The PM can still type a custom answer, so choices are a helpful shortcut, not a hard constraint — never invent choices for a question that is genuinely open-ended (e.g. "what should the discount amount be?"); for those, "recommendation" is still required but is free text.
 - If the PM says they don't know / aren't sure / "แล้วแต่คุณ", never re-ask that question and never stall. Adopt your own "recommendation" as the answer, state it back in one short line as the assumed answer, and immediately move on to the next branch. Then keep narrowing with easier questions — prefer yes/no or short "choices" the PM can just tap, and let the finalized requirement carry your assumptions.
 - Do not invent a fixed business-rules schema — only include rules this specific requirement needs.
 - "components" is the actual breakdown of sub-tasks to create — omit a component entirely if this requirement doesn't touch it.
-- Never finalize before you have asked branches 3, 4 and 5 — the component list, the priority, and the deadline are required, even when the rest of the requirement is already clear.
-- Finalize (done: true) only once you could hand this to an engineer who has never heard of it and they would not have to come back with a question — every point in the depth list above is answered or explicitly assumed. Do not finalize just because the PM gave a few answers; equally, do not grill forever over minor polish once the picture is complete.`;
+- Never finalize before you have asked branches 3 through 7 — dependencies, success criteria, the component list, the priority, and the deadline are all required, even when the rest of the requirement is already clear. A quick "ไม่มี" answer still counts as having asked; don't skip the question itself.
+- Finalize (done: true) only once you could hand this to an engineer who has never heard of it and they would not have to come back with a question — every point in the depth list above, plus dependencies and success criteria, is answered or explicitly assumed. Do not finalize just because the PM gave a few answers; equally, do not grill forever over minor polish once the picture is complete.`;
 
 /**
  * The model occasionally drops the `done` flag, or returns a bare result object
@@ -203,7 +209,22 @@ function heuristicTurn(messages: GrillMessage[], forceFinish: boolean): GrillTur
       question: "ถ้าทำรายการไม่สำเร็จ ผู้ใช้ควรเห็นอะไร?",
       recommendation: "ข้อความบอกสาเหตุที่อ่านรู้เรื่อง + ปุ่มให้ลองใหม่ โดยข้อมูลที่กรอกไว้ไม่หาย",
     },
+    {
+      question:
+        "งานนี้ต้องรอหรือพึ่งพาอะไรก่อนไหม? (feature อื่นที่ยังไม่เสร็จ, ทีมอื่น, ข้อมูลที่ยังไม่มี)",
+      choices: ["ไม่มี ทำได้เลย", "มี ต้องรอ"],
+      recommendation: "ไม่มี ทำได้เลยจากของที่มีอยู่ตอนนี้",
+    },
+    {
+      question: "จะรู้ได้ยังไงว่างานนี้ทำสำเร็จแล้ว? มีตัวเลขหรือสิ่งที่อยากเห็นเปลี่ยนไปไหม",
+      recommendation: "ใช้งานได้ครบตามที่คุยกันไว้ทุกข้อ ไม่ต้องมีตัวชี้วัดพิเศษ",
+    },
     { question: "มีผลกับหน้าจอ/ดีไซน์ (UI) ไหม?", choices: ["มี", "ไม่มี"], recommendation: "มี" },
+    {
+      question: "มีผลกับหน้าเว็บ (Website / landing page) ไหม?",
+      choices: ["มี", "ไม่มี"],
+      recommendation: "ไม่มี",
+    },
     {
       question: "ต้องมี API/Backend เพิ่มไหม?",
       choices: ["ต้องมี", "ไม่ต้องมี"],
@@ -213,6 +234,11 @@ function heuristicTurn(messages: GrillMessage[], forceFinish: boolean): GrillTur
       question: "ต้องทำบนแอปมือถือด้วยไหม?",
       choices: ["ต้องทำ", "ยังไม่ต้อง"],
       recommendation: "ยังไม่ต้อง",
+    },
+    {
+      question: "ต้องใช้ AI / โมเดลอะไรไหม?",
+      choices: ["ต้องใช้", "ไม่ต้องใช้"],
+      recommendation: "ไม่ต้องใช้",
     },
     {
       question: "งานนี้ด่วนแค่ไหน?",
@@ -240,58 +266,70 @@ function heuristicTurn(messages: GrillMessage[], forceFinish: boolean): GrillTur
   const acceptanceCriteria = DONT_KNOW_RE.test(acAnswer.trim())
     ? `(PM ยังไม่ระบุ — ตั้งต้นจาก intent) ${firstIntent}`.trim()
     : acAnswer;
+
+  // Q&A transcript, one line per answer labeled with the question it answers —
+  // a raw concatenation of every answer reads as an unreadable wall of text,
+  // and hides which sentence addressed which branch.
+  const qaText = userTurns
+    .slice(1)
+    .map((m, i) => `${FIXED_QUESTIONS[i]?.question ?? ""}\n${m.content}`.trim())
+    .join("\n\n");
+  const requirement = [firstIntent, qaText].filter(Boolean).join("\n\n").trim();
+
   const components: GrillResult["components"] = [];
   // Answers to the component questions above (offset by the leading intent turn).
   const answeredYes = (questionIndex: number, no: RegExp) => {
     const a = userTurns[questionIndex + 1]?.content?.trim();
     return a ? !no.test(a) : false;
   };
-  const wantsUi = answeredYes(8, /^ไม่มี/);
-  const wantsBackend = answeredYes(9, /^ไม่ต้อง/);
-  const wantsMobile = answeredYes(10, /^ยังไม่ต้อง/);
-  if (wantsUi || /ui|หน้า|design|figma/i.test(allText)) {
-    components.push({ component: "ui", title: `${heuristic.titleHint} — UI`, description: allText });
+  const wantsUi = answeredYes(10, /^ไม่มี/);
+  const wantsWebsite = answeredYes(11, /^ไม่มี/);
+  const wantsBackend = answeredYes(12, /^ไม่ต้อง/);
+  const wantsMobile = answeredYes(13, /^ยังไม่ต้อง/);
+  const wantsAi = answeredYes(14, /^ไม่ต้อง/);
+  if (wantsUi || /\bui\b|ดีไซน์|design|figma/i.test(allText)) {
+    components.push({ component: "ui", title: `${heuristic.titleHint} — UI`, description: qaText });
+  }
+  if (wantsWebsite || /website|เว็บ|landing/i.test(allText)) {
+    components.push({
+      component: "website",
+      title: `${heuristic.titleHint} — Website`,
+      description: qaText,
+    });
   }
   if (wantsBackend || /api|backend|server|database|ฐานข้อมูล/i.test(allText)) {
     components.push({
       component: "backend",
       title: `${heuristic.titleHint} — Backend`,
-      description: allText,
-    });
-  }
-  if (/website|เว็บ|web|landing/i.test(allText)) {
-    components.push({
-      component: "website",
-      title: `${heuristic.titleHint} — Website`,
-      description: allText,
+      description: qaText,
     });
   }
   if (wantsMobile || /mobile|app มือถือ|ios|android/i.test(allText)) {
     components.push({
       component: "mobile",
       title: `${heuristic.titleHint} — Mobile`,
-      description: allText,
+      description: qaText,
     });
   }
-  if (/\bai\b|โมเดล|machine learning|llm/i.test(allText)) {
+  if (wantsAi || /\bai\b|โมเดล|machine learning|llm/i.test(allText)) {
     components.push({
       component: "ai",
       title: `${heuristic.titleHint} — AI Dev`,
-      description: allText,
+      description: qaText,
     });
   }
 
-  const priorityAnswer = userTurns[12]?.content ?? "";
+  const priorityAnswer = userTurns[16]?.content ?? "";
   const priority =
     (TASK_PRIORITIES.find((p) => priorityAnswer.toLowerCase().startsWith(p)) ?? "p2");
-  const deadlineAnswer = userTurns[13]?.content ?? "";
+  const deadlineAnswer = userTurns[17]?.content ?? "";
   const deadline = /^\d{4}-\d{2}-\d{2}$/.test(deadlineAnswer.trim()) ? deadlineAnswer.trim() : "";
 
   return {
     done: true,
     result: {
       titleHint: heuristic.titleHint,
-      requirement: allText.trim(),
+      requirement,
       acceptanceCriteria,
       businessRules: heuristic.businessRules,
       priority,

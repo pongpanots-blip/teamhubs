@@ -4,6 +4,8 @@ export type SprintCard = {
   id: string;
   title: string;
   status: TaskStatusValue;
+  /** Human-facing "CHK-142" key; null on tasks created before this existed. */
+  taskKey: string | null;
   storyPoints: number | null;
   estimateHours: number | null;
   actualHours: number | null;

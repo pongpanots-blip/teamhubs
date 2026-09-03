@@ -21,6 +21,7 @@ import {
   type TaskComponentValue,
 } from "@/lib/task-constants";
 import { taskStatusStyle } from "@/lib/task-status-style";
+import { avatarColor } from "@/lib/avatar-color";
 import {
   DEPLOY_STATE_LABEL,
   DEPLOY_STATE_STYLE,
@@ -47,6 +48,19 @@ const PRIORITY_DOT_COLOR: Record<TaskPriorityValue, string> = {
   p2: "oklch(0.55 0.05 240)",
   p3: "var(--muted-foreground)",
 };
+
+/** Small filled triangle for priority — the board-card glyph, key+priority share the top row. */
+function PriorityGlyph({ priority }: { priority: TaskPriorityValue }) {
+  return (
+    <svg
+      viewBox="0 0 12 12"
+      className="size-2.5 shrink-0"
+      aria-hidden="true"
+    >
+      <path d="M6 1.5 L10.5 10 L1.5 10 Z" fill={PRIORITY_DOT_COLOR[priority]} />
+    </svg>
+  );
+}
 
 /** One accent color per component — the "epic tag" chip on list rows and board cards. */
 const COMPONENT_TAG_COLOR: Record<TaskComponentValue, { color: string; bg: string }> = {
@@ -491,7 +505,7 @@ export function TasksBoard({
                   {columnTasks.map((t) => (
                     <div
                       key={t.id}
-                      className="rounded-[10px] border-l-[3px] bg-card px-3 py-2.5 ring-1 ring-foreground/[0.07]"
+                      className="rounded-xl border-l-[3px] bg-card px-3.5 py-3 ring-1 ring-foreground/[0.07] transition-shadow hover:ring-foreground/[0.12]"
                       style={{ borderLeftColor: taskStatusStyle(t.status).color }}
                     >
                       <Link
@@ -502,13 +516,9 @@ export function TasksBoard({
                           <span className="font-mono text-micro text-muted-foreground">
                             {t.taskKey ?? " "}
                           </span>
-                          <span
-                            className="size-1.5 shrink-0 rounded-full"
-                            style={{
-                              backgroundColor: PRIORITY_DOT_COLOR[t.priority],
-                            }}
-                            title={`Priority: ${TASK_PRIORITY_SHORT_LABEL[t.priority]}`}
-                          />
+                          <span title={`Priority: ${TASK_PRIORITY_SHORT_LABEL[t.priority]}`}>
+                            <PriorityGlyph priority={t.priority} />
+                          </span>
                         </div>
                         {t.component ? (
                           <div className="mb-1.5">
@@ -546,7 +556,15 @@ export function TasksBoard({
                           ) : null}
                           <span className="ml-auto flex items-center gap-2">
                             <ColumnAgeDots days={t.daysInStatus} />
-                            <span className="flex size-5 shrink-0 items-center justify-center rounded-full bg-muted text-micro font-semibold text-muted-foreground">
+                            <span
+                              className="flex size-5 shrink-0 items-center justify-center rounded-full text-micro font-semibold text-white"
+                              style={
+                                t.assignee?.name
+                                  ? { backgroundColor: avatarColor(t.assignee.name) }
+                                  : { backgroundColor: "var(--muted)", color: "var(--muted-foreground)" }
+                              }
+                              title={t.assignee?.name ?? "Unassigned"}
+                            >
                               {t.assignee?.name?.[0]?.toUpperCase() ?? "?"}
                             </span>
                           </span>
@@ -633,7 +651,14 @@ export function TasksBoard({
                     </div>
                   </div>
                 <div className="flex min-w-0 items-center gap-2 text-body">
-                  <span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-muted text-micro font-semibold text-muted-foreground">
+                  <span
+                    className="flex size-6 shrink-0 items-center justify-center rounded-full text-micro font-semibold text-white"
+                    style={
+                      t.assignee?.name
+                        ? { backgroundColor: avatarColor(t.assignee.name) }
+                        : { backgroundColor: "var(--muted)", color: "var(--muted-foreground)" }
+                    }
+                  >
                     {t.assignee?.name?.[0]?.toUpperCase() ?? "?"}
                   </span>
                   <span className="truncate">

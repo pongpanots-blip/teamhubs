@@ -4,6 +4,7 @@ import Link from "next/link";
 import { Input } from "@/components/ui/input";
 import { TaskStatusBadge } from "@/components/tasks/status-badge";
 import { projectTask } from "@/lib/routes";
+import { avatarColor } from "@/lib/avatar-color";
 import type { SprintCard } from "@/components/sprints/types";
 
 /** What a drag carries: the id of the card being moved. */
@@ -45,13 +46,30 @@ export function CardRow({
       <span aria-hidden className="shrink-0 text-sm text-muted-foreground/70 select-none">
         ⠿
       </span>
+      <span
+        className="flex size-7 shrink-0 items-center justify-center rounded-full text-xs font-semibold text-white"
+        style={
+          card.assigneeName
+            ? { backgroundColor: avatarColor(card.assigneeName) }
+            : { backgroundColor: "var(--muted)", color: "var(--muted-foreground)" }
+        }
+      >
+        {card.assigneeName?.[0]?.toUpperCase() ?? "?"}
+      </span>
       <div className="min-w-0 flex-1 basis-48">
-        <Link
-          href={projectTask(projectSlug, card.id)}
-          className="block truncate text-base font-medium hover:underline"
-        >
-          {card.title}
-        </Link>
+        <div className="flex items-center gap-1.5">
+          {card.taskKey ? (
+            <span className="shrink-0 font-mono text-xs text-muted-foreground/80">
+              {card.taskKey}
+            </span>
+          ) : null}
+          <Link
+            href={projectTask(projectSlug, card.id)}
+            className="min-w-0 truncate text-base font-medium hover:underline"
+          >
+            {card.title}
+          </Link>
+        </div>
         {/* truncate too — an untruncated name overflowed the collapsed column
             and painted on top of the status badge. */}
         <span className="block truncate text-sm text-muted-foreground">

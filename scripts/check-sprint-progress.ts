@@ -18,6 +18,7 @@ const card = (over: Partial<SprintCard> = {}): SprintCard => ({
   id: Math.random().toString(36).slice(2),
   title: "card",
   status: "ready",
+  taskKey: null,
   storyPoints: null,
   estimateHours: null,
   actualHours: null,

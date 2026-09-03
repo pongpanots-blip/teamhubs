@@ -4,6 +4,7 @@ import { SprintsPanel } from "@/components/sprints/sprints-panel";
 import type { SprintCard, SprintSummary } from "@/components/sprints/types";
 import type { TaskStatusValue } from "@/lib/task-constants";
 import { capacityBreakdown, weeklyCapacityPoints } from "@/lib/sprint/capacity";
+import { formatTaskKey } from "@/lib/tasks/task-key";
 
 type Params = { params: Promise<{ projectSlug: string }> };
 
@@ -11,6 +12,7 @@ const CARD_FIELDS = {
   id: true,
   title: true,
   status: true,
+  taskNumber: true,
   storyPoints: true,
   estimateHours: true,
   actualHours: true,
@@ -53,6 +55,7 @@ export default async function SprintsPage({ params }: Params) {
     id: string;
     title: string;
     status: string;
+    taskNumber: number | null;
     storyPoints: number | null;
     estimateHours: number | null;
     actualHours: number | null;
@@ -63,6 +66,7 @@ export default async function SprintsPage({ params }: Params) {
     id: t.id,
     title: t.title,
     status: t.status as TaskStatusValue,
+    taskKey: formatTaskKey(project.keyPrefix, t.taskNumber),
     storyPoints: t.storyPoints,
     estimateHours: t.estimateHours,
     actualHours: t.actualHours,

@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { Pencil } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -26,6 +25,26 @@ const STATE_LABEL = {
   active: "Active",
   completed: "Completed",
 } as const;
+
+/** Same amber/green language as a task's own status pill — a sprint's state
+ * is a lifecycle stage too, not just a generic badge. */
+const STATE_PILL_STYLE = {
+  planning: { bg: "var(--muted)", color: "var(--muted-foreground)" },
+  active: { bg: "var(--st-working-bg)", color: "var(--st-working-strong)" },
+  completed: { bg: "var(--st-done-bg)", color: "var(--st-done)" },
+} as const;
+
+function SprintStatePill({ state }: { state: keyof typeof STATE_LABEL }) {
+  const { bg, color } = STATE_PILL_STYLE[state];
+  return (
+    <span
+      className="inline-flex h-[22px] shrink-0 items-center rounded-lg px-2.5 text-xs font-semibold"
+      style={{ backgroundColor: bg, color }}
+    >
+      {STATE_LABEL[state]}
+    </span>
+  );
+}
 
 function formatRange(startAt: string, endAt: string): string {
   const fmt = (iso: string) => iso.slice(0, 10);
@@ -125,9 +144,7 @@ export function SprintPanel({
         <div className="flex flex-wrap items-center justify-between gap-2">
           <CardTitle>{sprint.name}</CardTitle>
           <div className="flex items-center gap-2">
-            <Badge variant={state === "active" ? "default" : "secondary"}>
-              {STATE_LABEL[state]}
-            </Badge>
+            <SprintStatePill state={state} />
             {canManage && (
               <Button
                 size="icon-sm"

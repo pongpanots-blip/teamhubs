@@ -197,17 +197,7 @@ export function SprintsPanel({
         </Card>
       )}
 
-      <div className="grid items-start gap-6 lg:grid-cols-[320px_1fr]">
-        <BacklogPanel
-          backlog={backlog}
-          projectSlug={projectSlug}
-          busy={busy}
-          onMoveCard={moveCard}
-          onSetPoints={(taskId, storyPoints) =>
-            patchTask(taskId, { storyPoints })
-          }
-          onSetHours={(taskId, hours) => patchTask(taskId, hours)}
-        />
+      <div className="grid items-start gap-6 lg:grid-cols-[1fr_320px]">
         <div className="min-w-0 space-y-6">
           {initialSprints.length === 0 ? (
             <p className="text-sm text-muted-foreground">No sprints yet.</p>
@@ -249,6 +239,16 @@ export function SprintsPanel({
             ))
           )}
         </div>
+        <BacklogPanel
+          backlog={backlog}
+          projectSlug={projectSlug}
+          busy={busy}
+          onMoveCard={moveCard}
+          onSetPoints={(taskId, storyPoints) =>
+            patchTask(taskId, { storyPoints })
+          }
+          onSetHours={(taskId, hours) => patchTask(taskId, hours)}
+        />
       </div>
     </div>
   );

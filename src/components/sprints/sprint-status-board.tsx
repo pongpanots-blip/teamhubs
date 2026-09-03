@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { taskStatusStyle } from "@/lib/task-status-style";
+import { avatarColor } from "@/lib/avatar-color";
 import { TASK_STATUSES, TASK_STATUS_COLUMN_LABEL } from "@/lib/task-constants";
 import { projectTask } from "@/lib/routes";
 import type { SprintCard } from "@/components/sprints/types";
@@ -46,9 +47,14 @@ export function SprintStatusBoard({
               {columnCards.map((card) => (
                 <div
                   key={card.id}
-                  className="rounded-[10px] border-l-[3px] bg-card px-3.5 py-3 ring-1 ring-foreground/[0.07]"
+                  className="rounded-xl border-l-[3px] bg-card px-3.5 py-3 ring-1 ring-foreground/[0.07]"
                   style={{ borderLeftColor: color }}
                 >
+                  {card.taskKey ? (
+                    <p className="mb-0.5 font-mono text-xs text-muted-foreground/80">
+                      {card.taskKey}
+                    </p>
+                  ) : null}
                   <Link
                     href={projectTask(projectSlug, card.id)}
                     className="block text-sm leading-snug font-medium hover:underline"
@@ -56,7 +62,14 @@ export function SprintStatusBoard({
                     {card.title}
                   </Link>
                   <div className="mt-2 flex items-center gap-2 text-sm text-muted-foreground">
-                    <span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-semibold text-muted-foreground">
+                    <span
+                      className="flex size-6 shrink-0 items-center justify-center rounded-full text-xs font-semibold text-white"
+                      style={
+                        card.assigneeName
+                          ? { backgroundColor: avatarColor(card.assigneeName) }
+                          : { backgroundColor: "var(--muted)", color: "var(--muted-foreground)" }
+                      }
+                    >
                       {card.assigneeName?.[0]?.toUpperCase() ?? "?"}
                     </span>
                     <span className="truncate">{card.assigneeName ?? "Unassigned"}</span>

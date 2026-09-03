@@ -4,6 +4,7 @@ import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import { requireMembership, requireProjectBySlug } from "@/lib/auth-session";
 import { assertAssignable } from "@/lib/tasks/access";
+import { allocateTaskNumber } from "@/lib/tasks/next-task-number";
 import { errorResponse } from "@/lib/api-error";
 import { BusinessRuleSchema, rulesPresent } from "@/lib/business-rules";
 import { TASK_COMPONENTS, TASK_COMPONENT_LABEL } from "@/lib/task-constants";
@@ -64,10 +65,12 @@ export async function POST(req: Request) {
     ]);
 
     const result = await prisma.$transaction(async (tx) => {
+      const { taskNumber: parentTaskNumber } = await allocateTaskNumber(tx, project.id);
       const parent = await tx.task.create({
         data: {
           teamId: membership.teamId,
           projectId: project.id,
+          taskNumber: parentTaskNumber,
           title: body.titleHint,
           requirement: body.requirement,
           businessRules: body.businessRules as Prisma.InputJsonValue,
@@ -84,10 +87,12 @@ export async function POST(req: Request) {
 
       const subTasks = [];
       for (const c of body.components) {
+        const { taskNumber: subTaskNumber } = await allocateTaskNumber(tx, project.id);
         const sub = await tx.task.create({
           data: {
             teamId: membership.teamId,
             projectId: project.id,
+            taskNumber: subTaskNumber,
             title: c.title,
             requirement: c.description,
             component: c.component,

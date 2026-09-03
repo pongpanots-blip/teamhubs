@@ -86,6 +86,8 @@ type TaskRow = {
   daysInStatus: number | null;
   /** Set on a component sub-task; null on a parent/container task. */
   component: TaskComponentValue | null;
+  /** Human-facing "CHK-142" key; null on tasks created before this existed. */
+  taskKey: string | null;
 };
 
 /** Business days in the current column before the card counts as stuck. */
@@ -510,6 +512,11 @@ export function TasksBoard({
                             🔍 part of {t.dependsOn.length} sub-tasks
                           </span>
                         ) : null}
+                        {t.taskKey ? (
+                          <p className="mb-0.5 font-mono text-micro text-muted-foreground">
+                            {t.taskKey}
+                          </p>
+                        ) : null}
                         <p className="mb-2 text-body font-medium leading-snug">
                           {t.title}
                         </p>
@@ -605,7 +612,10 @@ export function TasksBoard({
                       {t.title}
                     </Link>
                   </div>
-                  <div className="mt-0.5 text-xs text-muted-foreground">
+                  <div className="mt-0.5 flex items-center gap-1.5 text-xs text-muted-foreground">
+                    {t.taskKey ? (
+                      <span className="font-mono text-muted-foreground/80">{t.taskKey}</span>
+                    ) : null}
                     {projectName}
                   </div>
                   {t.dependsOn.length > 0 ? (

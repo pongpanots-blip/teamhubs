@@ -23,6 +23,7 @@ import {
   type MissingContextItem,
 } from "@/components/tasks/missing-context-panel";
 import { parseBusinessRules } from "@/lib/business-rules";
+import { formatTaskKey } from "@/lib/tasks/task-key";
 import { TaskStatusBadge } from "@/components/tasks/status-badge";
 import {
   TASK_PRIORITY_SHORT_LABEL,
@@ -105,7 +106,12 @@ export default async function TaskDetailPage({ params }: Props) {
               ← Tasks
             </Link>
           )}
-          <h1 className="mt-1.5 text-title font-semibold tracking-tight">{task.title}</h1>
+          {formatTaskKey(project.keyPrefix, task.taskNumber) ? (
+            <p className="mt-1.5 font-mono text-xs text-muted-foreground">
+              {formatTaskKey(project.keyPrefix, task.taskNumber)}
+            </p>
+          ) : null}
+          <h1 className="mt-0.5 text-title font-semibold tracking-tight">{task.title}</h1>
           {subTasks.length > 0 ? (
             <span
               className="mt-2.5 inline-flex h-[22px] items-center gap-1.5 rounded-lg px-2.5 text-meta font-medium"

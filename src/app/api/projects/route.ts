@@ -3,6 +3,7 @@ import { z } from "zod";
 import { prisma } from "@/lib/db";
 import { requireMembership, assertRole, listAccessibleProjects } from "@/lib/auth-session";
 import { errorResponse } from "@/lib/api-error";
+import { deriveKeyPrefix } from "@/lib/tasks/task-key";
 
 const schema = z.object({
   name: z.string().min(2),
@@ -45,6 +46,7 @@ export async function POST(req: Request) {
         teamId: membership.teamId,
         name: body.name,
         slug: body.slug,
+        keyPrefix: deriveKeyPrefix(body.name),
         memberships: { create: { userId: user.id, role: "pm" } },
       },
     });

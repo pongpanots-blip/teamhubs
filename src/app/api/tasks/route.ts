@@ -6,6 +6,7 @@ import { recordStatusChange } from "@/lib/tasks/status-history";
 import { requireMembership } from "@/lib/auth-session";
 import { requireProjectFromQuery } from "@/lib/project-scope";
 import { assertAssignable } from "@/lib/tasks/access";
+import { allocateTaskNumber } from "@/lib/tasks/next-task-number";
 import { errorResponse } from "@/lib/api-error";
 import { TASK_PRIORITIES, TASK_STATUSES } from "@/lib/task-constants";
 import { BusinessRuleSchema, rulesPresent } from "@/lib/business-rules";
@@ -92,31 +93,35 @@ export async function POST(req: Request) {
     const initialStatus =
       body.status ?? (body.assigneeId ? "assigned" : "not_ready");
 
-    const task = await prisma.task.create({
-      data: {
-        teamId: membership.teamId,
-        projectId: project.id,
-        title,
-        description: body.description ?? "",
-        requirement,
-        businessRules: businessRules as Prisma.InputJsonValue,
-        acceptanceCriteria,
-        priority: body.priority ?? "p2",
-        deadline: body.deadline ? new Date(body.deadline) : null,
-        requirementPresent: Boolean(requirement.trim() || acceptanceCriteria.trim()),
-        rulesPresent: rulesPresent(businessRules),
-        acPresent: Boolean(acceptanceCriteria.trim()),
-        assigneeId: body.assigneeId ?? null,
-        figmaUrl: body.figmaUrl ?? null,
-        figmaReady: body.figmaReady ?? false,
-        githubIssueUrl: body.githubIssueUrl ?? null,
-        apiReady: body.apiReady ?? false,
-        internalDocPaths: body.internalDocPaths ?? [],
-        designLinked: Boolean(body.figmaUrl),
-        status: initialStatus === "working" ? "assigned" : initialStatus,
-        parentId: body.parentId ?? null,
-        createdById: user.id,
-      },
+    const task = await prisma.$transaction(async (tx) => {
+      const { taskNumber } = await allocateTaskNumber(tx, project.id);
+      return tx.task.create({
+        data: {
+          teamId: membership.teamId,
+          projectId: project.id,
+          taskNumber,
+          title,
+          description: body.description ?? "",
+          requirement,
+          businessRules: businessRules as Prisma.InputJsonValue,
+          acceptanceCriteria,
+          priority: body.priority ?? "p2",
+          deadline: body.deadline ? new Date(body.deadline) : null,
+          requirementPresent: Boolean(requirement.trim() || acceptanceCriteria.trim()),
+          rulesPresent: rulesPresent(businessRules),
+          acPresent: Boolean(acceptanceCriteria.trim()),
+          assigneeId: body.assigneeId ?? null,
+          figmaUrl: body.figmaUrl ?? null,
+          figmaReady: body.figmaReady ?? false,
+          githubIssueUrl: body.githubIssueUrl ?? null,
+          apiReady: body.apiReady ?? false,
+          internalDocPaths: body.internalDocPaths ?? [],
+          designLinked: Boolean(body.figmaUrl),
+          status: initialStatus === "working" ? "assigned" : initialStatus,
+          parentId: body.parentId ?? null,
+          createdById: user.id,
+        },
+      });
     });
 
     await recordStatusChange({

@@ -157,6 +157,11 @@ model Project {
   slug          String
   /// Bearer token used by the Figma plugin to push design status. Null until generated.
   pluginToken   String?                 @unique
+  /// Short uppercase code used as the ticket key prefix (e.g. "CHK" -> CHK-142).
+  keyPrefix     String                  @default("TASK")
+  /// Next number to hand out for this project's tickets — incremented
+  /// transactionally with task creation so numbers never repeat or skip.
+  nextTaskNumber Int                    @default(1)
   createdAt     DateTime                @default(now())
   updatedAt     DateTime                @updatedAt
   team          Team                    @relation(fields: [teamId], references: [id], onDelete: Cascade)
@@ -275,6 +280,10 @@ model Task {
   businessRules      Json           @default("[]")
   status             TaskStatus     @default(not_ready)
   priority           TaskPriority   @default(p2)
+  /// Sequential per-project ticket number — combined with the project's
+  /// keyPrefix this is the human-facing key (e.g. "CHK-142"). Null on tasks
+  /// created before this existed.
+  taskNumber         Int?
   deadline           DateTime?
   /// Set only on a component sub-task created from a grilling session; null on the parent task
   component          TaskComponent?
@@ -346,6 +355,7 @@ model Task {
   @@index([teamId, priority])
   @@index([projectId, status])
   @@index([sprintId])
+  @@unique([projectId, taskNumber])
 }
 
 model DecisionLog {

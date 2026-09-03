@@ -3,6 +3,7 @@ import { requireProjectPage } from "@/lib/page-context";
 import { TasksBoard } from "@/components/tasks/tasks-board";
 import { sprintOptions } from "@/lib/sprint/service";
 import { computeTaskMetrics } from "@/lib/tasks/metrics";
+import { formatTaskKey } from "@/lib/tasks/task-key";
 
 type Params = { params: Promise<{ projectSlug: string }> };
 
@@ -37,6 +38,7 @@ export default async function TasksPage({ params }: Params) {
   // filter and per-card indicator both read this, not the lifetime metrics.
   const tasksWithColumnAge = tasks.map((t) => ({
     ...t,
+    taskKey: formatTaskKey(project.keyPrefix, t.taskNumber),
     daysInStatus: (() => {
       const ms = computeTaskMetrics({
         createdAt: t.createdAt,

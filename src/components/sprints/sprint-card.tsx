@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { CardRow, DropZone } from "@/components/sprints/card-row";
 import { SprintStatusBoard } from "@/components/sprints/sprint-status-board";
 import { capacityForRange } from "@/lib/sprint/capacity";
+import type { TaskStatusValue } from "@/lib/task-constants";
 import {
   daysLeft,
   loadByPerson,
@@ -71,6 +72,7 @@ export function SprintPanel({
   onMoveCard,
   onSetPoints,
   onSetHours,
+  onChangeStatus,
   capacityHeadcount,
 }: {
   sprint: SprintSummary;
@@ -93,6 +95,7 @@ export function SprintPanel({
   onSetPoints: (taskId: string, points: number | null) => void;
   /** Only the estimate is settable — actual hours are derived, never typed. */
   onSetHours: (taskId: string, hours: { estimateHours: number | null }) => void;
+  onChangeStatus: (taskId: string, status: TaskStatusValue) => void;
 }) {
   // canManage gates the sprint's own lifecycle (PM only, as the API enforces).
   // Committing and sizing cards is a task edit, which any project member may
@@ -357,6 +360,7 @@ export function SprintPanel({
               busy={busy}
               open={open}
               onRemove={(taskId) => onMoveCard(taskId, null)}
+              onChangeStatus={onChangeStatus}
             />
           ) : view === "person" ? (
             <div className="space-y-3">

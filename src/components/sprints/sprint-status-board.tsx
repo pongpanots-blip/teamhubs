@@ -3,8 +3,9 @@
 import Link from "next/link";
 import { taskStatusStyle } from "@/lib/task-status-style";
 import { avatarColor } from "@/lib/avatar-color";
-import { TASK_STATUSES, TASK_STATUS_COLUMN_LABEL } from "@/lib/task-constants";
+import { TASK_STATUSES, TASK_STATUS_COLUMN_LABEL, type TaskStatusValue } from "@/lib/task-constants";
 import { projectTask } from "@/lib/routes";
+import { CARD_DRAG_TYPE, DropZone } from "@/components/sprints/card-row";
 import type { SprintCard } from "@/components/sprints/types";
 
 /**
@@ -19,6 +20,7 @@ export function SprintStatusBoard({
   busy,
   open,
   onRemove,
+  onChangeStatus,
 }: {
   cards: SprintCard[];
   projectSlug: string;
@@ -26,6 +28,8 @@ export function SprintStatusBoard({
   /** Whether the sprint still accepts changes — a closed sprint's cards are read-only. */
   open: boolean;
   onRemove: (taskId: string) => void;
+  /** Dragging a card into a column sets its status — the same move a Jira board does. */
+  onChangeStatus: (taskId: string, status: TaskStatusValue) => void;
 }) {
   return (
     <div className="flex gap-3 overflow-x-auto pb-1">
@@ -42,12 +46,22 @@ export function SprintStatusBoard({
               <span className="ml-auto text-xs text-muted-foreground">{columnCards.length}</span>
             </div>
             {/* Column scrolls on its own — a busy status shouldn't push the page
-                itself taller, the way a Jira board's columns behave. */}
-            <div className="flex min-h-0 flex-1 flex-col gap-2.5 overflow-y-auto pr-0.5">
+                itself taller, the way a Jira board's columns behave. Also a drop
+                target: dragging a card in here sets its status to this column. */}
+            <DropZone
+              onDropCard={(taskId) => onChangeStatus(taskId, status)}
+              disabled={!open || busy}
+              className="flex min-h-0 flex-1 flex-col gap-2.5 overflow-y-auto rounded-lg pr-0.5"
+            >
               {columnCards.map((card) => (
                 <div
                   key={card.id}
-                  className="rounded-xl border-l-[3px] bg-card px-3.5 py-3 ring-1 ring-foreground/[0.07]"
+                  draggable={open && !busy}
+                  onDragStart={(e) => {
+                    e.dataTransfer.setData(CARD_DRAG_TYPE, card.id);
+                    e.dataTransfer.effectAllowed = "move";
+                  }}
+                  className={`rounded-xl border-l-[3px] bg-card px-3.5 py-3 ring-1 ring-foreground/[0.07] ${open ? "cursor-grab active:cursor-grabbing" : ""}`}
                   style={{ borderLeftColor: color }}
                 >
                   {card.taskKey ? (
@@ -110,9 +124,11 @@ export function SprintStatusBoard({
                 </div>
               ))}
               {columnCards.length === 0 ? (
-                <p className="px-1 text-xs text-muted-foreground/70">—</p>
+                <p className="px-1 text-xs text-muted-foreground/70">
+                  {open ? "Drop a card here" : "—"}
+                </p>
               ) : null}
-            </div>
+            </DropZone>
           </div>
         );
       })}

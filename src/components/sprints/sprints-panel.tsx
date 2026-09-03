@@ -235,6 +235,7 @@ export function SprintsPanel({
                   patchTask(taskId, { storyPoints })
                 }
                 onSetHours={(taskId, hours) => patchTask(taskId, hours)}
+                onChangeStatus={(taskId, status) => patchTask(taskId, { status })}
               />
             ))
           )}

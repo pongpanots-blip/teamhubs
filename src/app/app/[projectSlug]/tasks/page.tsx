@@ -21,6 +21,7 @@ export default async function TasksPage({ params }: Params) {
             dependency: { select: { id: true, title: true, status: true } },
           },
         },
+        subTasks: { select: { id: true, title: true, status: true } },
         statusHistory: { orderBy: { changedAt: "asc" } },
       },
       orderBy: { updatedAt: "desc" },

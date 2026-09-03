@@ -23,6 +23,7 @@ const card = (over: Partial<SprintCard> = {}): SprintCard => ({
   actualHours: null,
   actualHoursSource: null,
   assigneeName: null,
+  subTasks: [],
   ...over,
 });
 

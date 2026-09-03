@@ -17,6 +17,8 @@ const CARD_FIELDS = {
   actualHoursSource: true,
   // Who is carrying the card — the sprint screen groups by person.
   assignee: { select: { name: true } },
+  // Shown nested under the card on the status board.
+  subTasks: { select: { id: true, title: true, status: true } },
 } as const;
 
 export default async function SprintsPage({ params }: Params) {
@@ -56,6 +58,7 @@ export default async function SprintsPage({ params }: Params) {
     actualHours: number | null;
     actualHoursSource: string | null;
     assignee: { name: string } | null;
+    subTasks: { id: string; title: string; status: string }[];
   }): SprintCard => ({
     id: t.id,
     title: t.title,
@@ -65,6 +68,11 @@ export default async function SprintsPage({ params }: Params) {
     actualHours: t.actualHours,
     actualHoursSource: t.actualHoursSource,
     assigneeName: t.assignee?.name ?? null,
+    subTasks: t.subTasks.map((s) => ({
+      id: s.id,
+      title: s.title,
+      status: s.status as TaskStatusValue,
+    })),
   });
 
   const initialSprints: SprintSummary[] = sprints.map((s) => ({

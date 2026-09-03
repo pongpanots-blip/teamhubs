@@ -10,6 +10,8 @@ export type SprintCard = {
   /** "commits" | "status" | null (legacy hand-entered). Drives the row's tooltip. */
   actualHoursSource: string | null;
   assigneeName: string | null;
+  /** Its sub-tasks, shown nested under the card — not full SprintCards, just enough to display. */
+  subTasks: { id: string; title: string; status: TaskStatusValue }[];
 };
 
 export type SprintSummary = {

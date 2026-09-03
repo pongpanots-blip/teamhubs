@@ -82,6 +82,8 @@ type TaskRow = {
   estimateHours: number | null;
   actualHours: number | null;
   dependsOn: { dependency: { id: string; title: string; status: string } }[];
+  /** Its sub-tasks — shown nested under this task's row/card, not counted from dependsOn. */
+  subTasks: { id: string; title: string; status: TaskStatusValue }[];
   /** Business days the card has sat in its current status. Null with no history yet. */
   daysInStatus: number | null;
   /** Set on a component sub-task; null on a parent/container task. */
@@ -496,12 +498,24 @@ export function TasksBoard({
                         href={projectTask(currentProjectSlug, t.id)}
                         className="block"
                       >
+                        <div className="mb-1.5 flex items-center justify-between gap-2">
+                          <span className="font-mono text-micro text-muted-foreground">
+                            {t.taskKey ?? " "}
+                          </span>
+                          <span
+                            className="size-1.5 shrink-0 rounded-full"
+                            style={{
+                              backgroundColor: PRIORITY_DOT_COLOR[t.priority],
+                            }}
+                            title={`Priority: ${TASK_PRIORITY_SHORT_LABEL[t.priority]}`}
+                          />
+                        </div>
                         {t.component ? (
                           <div className="mb-1.5">
                             <ComponentTag component={t.component} />
                           </div>
                         ) : null}
-                        {t.dependsOn.length > 0 ? (
+                        {t.subTasks.length > 0 ? (
                           <span
                             className="mb-1.5 inline-flex h-[17px] items-center rounded-lg px-1.5 text-micro font-medium"
                             style={{
@@ -509,24 +523,13 @@ export function TasksBoard({
                               color: "var(--violet)",
                             }}
                           >
-                            🔍 part of {t.dependsOn.length} sub-tasks
+                            ✶ {t.subTasks.length} sub-tasks
                           </span>
-                        ) : null}
-                        {t.taskKey ? (
-                          <p className="mb-0.5 font-mono text-micro text-muted-foreground">
-                            {t.taskKey}
-                          </p>
                         ) : null}
                         <p className="mb-2 text-body font-medium leading-snug">
                           {t.title}
                         </p>
                         <div className="flex items-center gap-2">
-                          <span
-                            className="size-1.5 shrink-0 rounded-full"
-                            style={{
-                              backgroundColor: PRIORITY_DOT_COLOR[t.priority],
-                            }}
-                          />
                           <span className="text-meta text-muted-foreground">
                             {t.deadline
                               ? new Date(t.deadline).toLocaleDateString(
@@ -597,39 +600,38 @@ export function TasksBoard({
           {filtered.map((t) => {
             const deploy = deployState(t.status);
             const deployStyle = DEPLOY_STATE_STYLE[deploy];
+            const hasSubTasks = t.subTasks.length > 0;
             return (
-              <div
-                key={t.id}
-                className={`${ROW_GRID} border-t border-border px-5 py-3.5 first:border-t-0`}
-              >
-                <div className="min-w-0">
-                  <div className="flex items-center gap-2">
-                    {t.component ? <ComponentTag component={t.component} /> : null}
-                    <Link
-                      href={projectTask(currentProjectSlug, t.id)}
-                      className="truncate text-body font-medium hover:underline"
-                    >
-                      {t.title}
-                    </Link>
+              <div key={t.id} className="border-t border-border first:border-t-0">
+                <div className={`${ROW_GRID} px-5 py-3.5`}>
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2">
+                      {t.component ? <ComponentTag component={t.component} /> : null}
+                      <Link
+                        href={projectTask(currentProjectSlug, t.id)}
+                        className={`truncate text-body hover:underline ${hasSubTasks ? "font-semibold" : "font-medium"}`}
+                      >
+                        {t.title}
+                      </Link>
+                      {hasSubTasks ? (
+                        <span
+                          className="inline-flex h-[18px] shrink-0 items-center gap-1 rounded-lg px-[7px] text-micro font-medium"
+                          style={{
+                            backgroundColor: "var(--violet-bg)",
+                            color: "var(--violet)",
+                          }}
+                        >
+                          ✶ {t.subTasks.length} sub-tasks
+                        </span>
+                      ) : null}
+                    </div>
+                    <div className="mt-0.5 flex items-center gap-1.5 text-xs text-muted-foreground">
+                      {t.taskKey ? (
+                        <span className="font-mono text-muted-foreground/80">{t.taskKey}</span>
+                      ) : null}
+                      {projectName}
+                    </div>
                   </div>
-                  <div className="mt-0.5 flex items-center gap-1.5 text-xs text-muted-foreground">
-                    {t.taskKey ? (
-                      <span className="font-mono text-muted-foreground/80">{t.taskKey}</span>
-                    ) : null}
-                    {projectName}
-                  </div>
-                  {t.dependsOn.length > 0 ? (
-                    <span
-                      className="mt-1 inline-flex h-[18px] items-center gap-1 rounded-lg px-[7px] text-micro font-medium"
-                      style={{
-                        backgroundColor: "var(--violet-bg)",
-                        color: "var(--violet)",
-                      }}
-                    >
-                      🔍 part of {t.dependsOn.length} sub-tasks
-                    </span>
-                  ) : null}
-                </div>
                 <div className="flex min-w-0 items-center gap-2 text-body">
                   <span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-muted text-micro font-semibold text-muted-foreground">
                     {t.assignee?.name?.[0]?.toUpperCase() ?? "?"}
@@ -694,6 +696,29 @@ export function TasksBoard({
                 <div>
                   <TaskStatusBadge status={t.status} />
                 </div>
+                </div>
+                {hasSubTasks ? (
+                  <div className="ml-[18px] flex flex-col gap-1 border-l-2 pb-3 pl-3.5"
+                    style={{ borderLeftColor: "var(--violet-bg)" }}
+                  >
+                    {t.subTasks.map((sub) => (
+                      <Link
+                        key={sub.id}
+                        href={projectTask(currentProjectSlug, sub.id)}
+                        className="flex items-center gap-2 rounded-lg bg-muted px-2.5 py-1.5 text-xs hover:underline"
+                      >
+                        <span
+                          className="size-1.5 shrink-0 rounded-full"
+                          style={{ backgroundColor: taskStatusStyle(sub.status).color }}
+                        />
+                        <span className="min-w-0 flex-1 truncate">{sub.title}</span>
+                        <span className="shrink-0 text-muted-foreground">
+                          {TASK_STATUS_COLUMN_LABEL[sub.status]}
+                        </span>
+                      </Link>
+                    ))}
+                  </div>
+                ) : null}
               </div>
             );
           })}

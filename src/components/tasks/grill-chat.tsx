@@ -33,6 +33,8 @@ type Draft = {
   pendingRecommendation: string | null;
   result: GrillResult | null;
   updatedAt: number;
+  /** True once we've heard from the API that no GEMINI_API_KEY is configured — the "AI" is a fixed offline script. */
+  offline?: boolean;
 };
 
 type ComponentDraft = GrillResult["components"][number] & {
@@ -233,6 +235,7 @@ export function GrillChat({
       return;
     }
     const label = messages[0]?.content.slice(0, 60) || draft.label;
+    const offline = !!data.offline;
     if (data.done) {
       const result = data.result as GrillResult;
       persist({
@@ -243,6 +246,7 @@ export function GrillChat({
         pendingChoices: null,
         pendingRecommendation: null,
         result,
+        offline,
         updatedAt: nowMs(),
       });
       setComponents(result.components.map((c) => ({ ...c, included: true, assigneeId: null })));
@@ -255,6 +259,7 @@ export function GrillChat({
         pendingChoices: (data.choices as string[] | undefined) ?? null,
         pendingRecommendation: (data.recommendation as string | undefined) ?? null,
         result: null,
+        offline,
         updatedAt: nowMs(),
       });
     }
@@ -325,6 +330,14 @@ export function GrillChat({
             </span>
           ) : null}
         </div>
+        {draft?.offline ? (
+          <div
+            className="mx-auto mt-3 w-full max-w-[680px] rounded-lg px-3 py-2 text-xs font-medium"
+            style={{ backgroundColor: "var(--st-working-bg)", color: "var(--st-working-strong)" }}
+          >
+            ⚠️ ยังไม่ได้ตั้งค่า AI (GEMINI_API_KEY) — ตอนนี้กำลังใช้คำถามชุดตายตัวแทน AI จริง คำถามและผลสรุปจะไม่ปรับตามบทสนทนา
+          </div>
+        ) : null}
       </div>
 
       {!draft ? (

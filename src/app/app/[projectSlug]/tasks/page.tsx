@@ -13,7 +13,10 @@ export default async function TasksPage({ params }: Params) {
 
   const [tasks, sprints, memberships] = await Promise.all([
     prisma.task.findMany({
-      where: { projectId: project.id },
+      // Sub-tasks are shown nested under their parent (see `subTasks` below),
+      // not as their own top-level card/row — fetching them here too would
+      // duplicate every sub-task on the board.
+      where: { projectId: project.id, parentId: null },
       include: {
         assignee: { select: { id: true, name: true, email: true } },
         dependsOn: {

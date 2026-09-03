@@ -17,6 +17,8 @@ import {
   type TaskPriorityValue,
   type TaskStatusValue,
   TASK_STATUS_COLUMN_LABEL,
+  TASK_COMPONENT_LABEL,
+  type TaskComponentValue,
 } from "@/lib/task-constants";
 import { taskStatusStyle } from "@/lib/task-status-style";
 import {
@@ -46,6 +48,27 @@ const PRIORITY_DOT_COLOR: Record<TaskPriorityValue, string> = {
   p3: "var(--muted-foreground)",
 };
 
+/** One accent color per component — the "epic tag" chip on list rows and board cards. */
+const COMPONENT_TAG_COLOR: Record<TaskComponentValue, { color: string; bg: string }> = {
+  ui: { color: "var(--violet)", bg: "var(--violet-bg)" },
+  website: { color: "var(--st-ready)", bg: "var(--st-ready-bg)" },
+  backend: { color: "var(--st-review)", bg: "var(--st-review-bg)" },
+  mobile: { color: "var(--st-working-strong)", bg: "var(--st-working-bg)" },
+  ai: { color: "var(--st-done)", bg: "var(--st-done-bg)" },
+};
+
+function ComponentTag({ component }: { component: TaskComponentValue }) {
+  const { color, bg } = COMPONENT_TAG_COLOR[component];
+  return (
+    <span
+      className="inline-flex h-[18px] shrink-0 items-center rounded-lg px-[7px] text-micro font-semibold"
+      style={{ backgroundColor: bg, color }}
+    >
+      {TASK_COMPONENT_LABEL[component]}
+    </span>
+  );
+}
+
 type TaskRow = {
   id: string;
   title: string;
@@ -61,6 +84,8 @@ type TaskRow = {
   dependsOn: { dependency: { id: string; title: string; status: string } }[];
   /** Business days the card has sat in its current status. Null with no history yet. */
   daysInStatus: number | null;
+  /** Set on a component sub-task; null on a parent/container task. */
+  component: TaskComponentValue | null;
 };
 
 /** Business days in the current column before the card counts as stuck. */
@@ -469,6 +494,11 @@ export function TasksBoard({
                         href={projectTask(currentProjectSlug, t.id)}
                         className="block"
                       >
+                        {t.component ? (
+                          <div className="mb-1.5">
+                            <ComponentTag component={t.component} />
+                          </div>
+                        ) : null}
                         {t.dependsOn.length > 0 ? (
                           <span
                             className="mb-1.5 inline-flex h-[17px] items-center rounded-lg px-1.5 text-micro font-medium"
@@ -518,7 +548,7 @@ export function TasksBoard({
                           />
                         </div>
                         <span
-                          className="mt-[7px] inline-flex h-[18px] items-center gap-1 rounded-full px-[7px] text-micro font-medium"
+                          className="mt-[7px] inline-flex h-[18px] items-center gap-1 rounded-lg px-[7px] text-micro font-medium"
                           style={{
                             backgroundColor:
                               DEPLOY_STATE_STYLE[deployState(t.status)].bg,
@@ -566,12 +596,15 @@ export function TasksBoard({
                 className={`${ROW_GRID} border-t border-border px-5 py-3.5 first:border-t-0`}
               >
                 <div className="min-w-0">
-                  <Link
-                    href={projectTask(currentProjectSlug, t.id)}
-                    className="text-body font-medium hover:underline"
-                  >
-                    {t.title}
-                  </Link>
+                  <div className="flex items-center gap-2">
+                    {t.component ? <ComponentTag component={t.component} /> : null}
+                    <Link
+                      href={projectTask(currentProjectSlug, t.id)}
+                      className="truncate text-body font-medium hover:underline"
+                    >
+                      {t.title}
+                    </Link>
+                  </div>
                   <div className="mt-0.5 text-xs text-muted-foreground">
                     {projectName}
                   </div>
@@ -587,10 +620,15 @@ export function TasksBoard({
                     </span>
                   ) : null}
                 </div>
-                <div className="truncate text-body">
-                  {t.assignee?.name ?? (
-                    <span className="text-muted-foreground">Unassigned</span>
-                  )}
+                <div className="flex min-w-0 items-center gap-2 text-body">
+                  <span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-muted text-micro font-semibold text-muted-foreground">
+                    {t.assignee?.name?.[0]?.toUpperCase() ?? "?"}
+                  </span>
+                  <span className="truncate">
+                    {t.assignee?.name ?? (
+                      <span className="text-muted-foreground">Unassigned</span>
+                    )}
+                  </span>
                 </div>
                 <div className="flex items-center text-body">
                   <span

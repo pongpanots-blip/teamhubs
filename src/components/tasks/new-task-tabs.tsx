@@ -51,7 +51,12 @@ export function NewTaskTabs({
       </div>
 
       {mode === "grill" ? (
-        <GrillChat members={members} projects={projects} currentProjectSlug={currentProjectSlug} />
+        <GrillChat
+          members={members}
+          projects={projects}
+          currentProjectSlug={currentProjectSlug}
+          onWantsQuickForm={() => setMode("quick")}
+        />
       ) : (
         <div className="mx-auto w-full max-w-[480px] rounded-xl border border-border bg-card p-5">
           <QuickTaskForm projectSlug={currentProjectSlug} sprints={sprints} members={quickMembers} />

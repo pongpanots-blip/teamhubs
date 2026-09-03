@@ -110,10 +110,13 @@ export function GrillChat({
   members,
   projects,
   currentProjectSlug,
+  onWantsQuickForm,
 }: {
   members: Member[];
   projects: ProjectOption[];
   currentProjectSlug: string;
+  /** Landing state only — lets the "scope's already clear" escape hatch jump to the quick form. */
+  onWantsQuickForm?: () => void;
 }) {
   const router = useRouter();
   const drafts = useSyncExternalStore(
@@ -367,13 +370,31 @@ export function GrillChat({
               ) : null}
             </div>
           ) : null}
-          <div className="space-y-2 rounded-xl border border-border bg-card p-3">
+          <div className="space-y-3 rounded-[14px] border border-border bg-card p-5 text-center">
+            <p className="rounded-[10px] bg-muted px-3.5 py-2.5 text-left text-xs text-muted-foreground">
+              ตัวอย่าง:{" "}
+              <span className="font-medium text-foreground">
+                &quot;อยากให้ลูกค้าใช้คูปองส่วนลดพร้อมกับสถานะสมาชิกได้ โดยคิดส่วนลดแบบไม่ซ้อนกัน&quot;
+              </span>
+            </p>
             <Button
               className="w-full"
               onClick={() => openDraft(newDraft(currentProject))}
             >
               เริ่มคุยใหม่
             </Button>
+            {onWantsQuickForm ? (
+              <p className="text-xs text-muted-foreground">
+                รู้ scope ชัดอยู่แล้ว?{" "}
+                <button
+                  type="button"
+                  onClick={onWantsQuickForm}
+                  className="text-primary underline underline-offset-2"
+                >
+                  ข้ามไปกรอกฟอร์มเร็วแทน
+                </button>
+              </p>
+            ) : null}
           </div>
           {error ? <p className="text-sm text-destructive">{error}</p> : null}
         </div>

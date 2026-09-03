@@ -22,7 +22,9 @@
     "check:burndown": "tsx scripts/check-burndown.ts",
     "check:sprint-progress": "tsx scripts/check-sprint-progress.ts",
     "check:analytics": "tsx scripts/check-analytics.ts",
-    "snapshot:flow": "tsx scripts/snapshot-flow.ts"
+    "snapshot:flow": "tsx scripts/snapshot-flow.ts",
+    "seed:demo": "tsx scripts/seed-demo.ts",
+    "walkthrough": "playwright test e2e/walkthrough.spec.ts"
   },
   "dependencies": {
     "@base-ui/react": "^1.7.0",
@@ -45,6 +47,7 @@
     "zod": "^4.5.4"
   },
   "devDependencies": {
+    "@playwright/test": "1.62.0",
     "@tailwindcss/postcss": "^4",
     "@types/bcryptjs": "^3.0.0",
     "@types/node": "^20",

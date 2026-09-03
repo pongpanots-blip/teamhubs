@@ -1,0 +1,227 @@
+[
+  {
+    "id": "login",
+    "title": "หน้า Sign in",
+    "who": "ทุกคน",
+    "url": "/login",
+    "howTo": [
+      "กรอก email / password ของบัญชี demo (ตารางด้านบน)",
+      "กด Sign in แล้วระบบพาไป /app"
+    ],
+    "file": "01-login.png"
+  },
+  {
+    "id": "register",
+    "title": "หน้า Register",
+    "who": "ผู้ใช้ใหม่",
+    "url": "/register",
+    "howTo": [
+      "กรอกชื่อ, email, password (8 ตัวขึ้นไป)",
+      "สมัครแล้วจะไปหน้า onboarding เพื่อสร้างทีม หรือกลับไปหน้า invite ถ้ามาจากลิงก์เชิญ"
+    ],
+    "file": "02-register.png"
+  },
+  {
+    "id": "invite-logged-out",
+    "title": "หน้า Join team (ยังไม่ login)",
+    "who": "คนที่ได้รับลิงก์เชิญ",
+    "url": "/invite/cmtl5sa8f001pc4k22i33ad1d",
+    "howTo": [
+      "หน้าจะบอกว่าคำเชิญนี้เป็นของ email ไหน",
+      "กด Register หรือ Sign in — email ถูกกรอกให้ล่วงหน้า และหลัง auth จะเด้งกลับมาหน้านี้",
+      "ถ้า login ด้วย email อื่นอยู่ ระบบเสนอให้ sign out ก่อน (แก้ปัญหา EMAIL_MISMATCH ที่ไม่มีช่องให้ใส่ email)"
+    ],
+    "file": "03-invite-logged-out.png"
+  },
+  {
+    "id": "overview",
+    "title": "Overview (ระดับทีม)",
+    "who": "PM / ทุก role",
+    "url": "/app",
+    "howTo": [
+      "Sidebar ซ้าย: Reading → Overview ทีม, เมนูโปรเจกต์ (Overview / Tasks / Sprints / Docs / Settings)",
+      "การ์ดโปรเจกต์ทั้งหมด, My Work, งานที่ต้อง Attention, ตัวกรอง/จัดกลุ่มรายการข้ามโปรเจกต์"
+    ],
+    "file": "04-overview.png"
+  },
+  {
+    "id": "project-overview",
+    "title": "Project Overview + Flow metrics",
+    "who": "PM",
+    "url": "/app/checkout",
+    "howTo": [
+      "กราฟ Tasks by status, Sprint velocity (capacity จาก headcount UI+dev × 7 ชม./วัน)",
+      "Flow metrics (SLE, aging WIP, cycle time, throughput, CFD, burndown) ย้ายมาอยู่ในหน้านี้แทนหน้า Analytics เดิม"
+    ],
+    "file": "05-project-overview.png"
+  },
+  {
+    "id": "tasks-list",
+    "title": "Tasks — List",
+    "who": "PM / dev",
+    "url": "/app/checkout/tasks",
+    "howTo": [
+      "ticket key ต่อโปรเจกต์ (CHK-1, CHK-2 …), tag component (UI/Website/Backend/Mobile/AI Dev), avatar ผู้รับผิดชอบ",
+      "ตัวกรอง Status / Assignee / Priority / Sprint (มี Backlog) + Clear filters"
+    ],
+    "file": "06-tasks-list.png"
+  },
+  {
+    "id": "tasks-board",
+    "title": "Tasks — Board",
+    "who": "PM / dev",
+    "url": "/app/checkout/tasks",
+    "howTo": [
+      "สลับ List ↔ Board ที่มุมขวาบน",
+      "การ์ดแสดง key, tag component, priority, ผู้รับผิดชอบ"
+    ],
+    "file": "07-tasks-board.png"
+  },
+  {
+    "id": "quick-task-dialog",
+    "title": "+ New task → Quick task form (ไม่ผ่าน Grill)",
+    "who": "PM",
+    "url": "/app/checkout/tasks",
+    "howTo": [
+      "กด + New task แล้วเลือกกรอกฟอร์มเร็ว",
+      "กรอก title, priority, sprint, assignee, deadline, description แล้วบันทึก — task ได้ key และ status ทันที"
+    ],
+    "file": "08-quick-task-dialog.png"
+  },
+  {
+    "id": "new-task-grill",
+    "title": "New task — Grill กับ AI",
+    "who": "PM",
+    "url": "/app/checkout/tasks/new",
+    "howTo": [
+      "แท็บ Grill: พิมพ์ความต้องการ AI จะซักถามจนได้ requirement / business rules / AC แล้วเสนอคำตอบให้กดเลือกได้",
+      "จบแล้วมี progress 3 ขั้น (chat → assign → create) เลือกผู้รับผิดชอบจาก person-chips"
+    ],
+    "file": "09-new-task-grill.png"
+  },
+  {
+    "id": "new-task-quick-tab",
+    "title": "New task — แท็บ กรอกฟอร์มเร็ว",
+    "who": "PM",
+    "url": "/app/checkout/tasks/new",
+    "howTo": [
+      "ฟอร์มเดียวกับ dialog + New task ใช้ logic ร่วมกัน"
+    ],
+    "file": "10-new-task-quick-tab.png"
+  },
+  {
+    "id": "task-detail",
+    "title": "Task detail",
+    "who": "PM / ผู้รับผิดชอบ",
+    "url": "/app/checkout/tasks/cmtl5sa5a000jc4k23k543xz7",
+    "howTo": [
+      "หัวข้อแสดง key (CHK-n), status, priority, sprint, ผู้รับผิดชอบ, deadline",
+      "requirement / business rules / AC / readiness, sub-tasks, decision log, handoff doc, Run context (RAG)",
+      "เปลี่ยน status ได้จากหน้านี้ — ทุกการเปลี่ยนถูก log ลง flow metrics"
+    ],
+    "file": "11-task-detail.png"
+  },
+  {
+    "id": "sprints",
+    "title": "Sprints — status kanban + capacity bar",
+    "who": "PM",
+    "url": "/app/checkout/sprints",
+    "howTo": [
+      "แผง sprint แสดง kanban ตาม status (จุดสีต่อคอลัมน์) เป็นค่าเริ่มต้น; มีมุมมอง by person / list เป็นแท็บอื่น",
+      "แถบ capacity เทียบ committed points กับ capacity จริงของช่วงวันทำงาน",
+      "ลากการ์ดจาก backlog เข้า sprint, แก้ชื่อ/goal/วันที่ inline, กำหนด man-hours ต่อการ์ด"
+    ],
+    "file": "12-sprints.png"
+  },
+  {
+    "id": "docs",
+    "title": "Docs / RAG",
+    "who": "PM",
+    "url": "/app/checkout/docs",
+    "howTo": [
+      "อัปโหลด/ingest เอกสารของโปรเจกต์ ใช้เป็น context ตอน Run context ของ task"
+    ],
+    "file": "13-docs.png"
+  },
+  {
+    "id": "project-settings",
+    "title": "Project settings (sub-nav)",
+    "who": "PM",
+    "url": "/app/checkout/settings",
+    "howTo": [
+      "เมนูซ้าย: Members / Integrations / Repositories / Figma files / Figma Plugin — แสดงทีละส่วน",
+      "Members: เชิญคนเข้าโปรเจกต์พร้อม role; Repositories/Figma files: ทะเบียน repo และไฟล์ Figma ของโปรเจกต์"
+    ],
+    "file": "14-project-settings.png"
+  },
+  {
+    "id": "team-settings",
+    "title": "Team settings",
+    "who": "PM",
+    "url": "/app/team/settings",
+    "howTo": [
+      "สร้างโปรเจกต์ใหม่, เชิญสมาชิกระดับทีม, ค่า default ของ AI/embedding"
+    ],
+    "file": "15-team-settings.png"
+  },
+  {
+    "id": "role-ui",
+    "title": "มุมมอง UI (demo-ui@introverthubs.local)",
+    "who": "UI",
+    "url": "/app/checkout/tasks",
+    "howTo": [
+      "login ด้วย demo-ui@introverthubs.local / Demo1234!",
+      "เห็นเฉพาะโปรเจกต์ที่เป็นสมาชิก; เมนู Team settings และปุ่มระดับ PM ถูกซ่อน",
+      "งานของตัวเองขึ้นใน My Work บนหน้า Overview; เปลี่ยน status ของ task ตัวเองได้จาก task detail"
+    ],
+    "file": "16-role-ui.png"
+  },
+  {
+    "id": "role-website",
+    "title": "มุมมอง Website (demo-website@introverthubs.local)",
+    "who": "Website",
+    "url": "/app/checkout/tasks",
+    "howTo": [
+      "login ด้วย demo-website@introverthubs.local / Demo1234!",
+      "เห็นเฉพาะโปรเจกต์ที่เป็นสมาชิก; เมนู Team settings และปุ่มระดับ PM ถูกซ่อน",
+      "งานของตัวเองขึ้นใน My Work บนหน้า Overview; เปลี่ยน status ของ task ตัวเองได้จาก task detail"
+    ],
+    "file": "17-role-website.png"
+  },
+  {
+    "id": "role-backend",
+    "title": "มุมมอง Backend (demo-backend@introverthubs.local)",
+    "who": "Backend",
+    "url": "/app/checkout/tasks",
+    "howTo": [
+      "login ด้วย demo-backend@introverthubs.local / Demo1234!",
+      "เห็นเฉพาะโปรเจกต์ที่เป็นสมาชิก; เมนู Team settings และปุ่มระดับ PM ถูกซ่อน",
+      "งานของตัวเองขึ้นใน My Work บนหน้า Overview; เปลี่ยน status ของ task ตัวเองได้จาก task detail"
+    ],
+    "file": "18-role-backend.png"
+  },
+  {
+    "id": "role-mobile",
+    "title": "มุมมอง Mobile (demo-mobile@introverthubs.local)",
+    "who": "Mobile",
+    "url": "/app/checkout/tasks",
+    "howTo": [
+      "login ด้วย demo-mobile@introverthubs.local / Demo1234!",
+      "เห็นเฉพาะโปรเจกต์ที่เป็นสมาชิก; เมนู Team settings และปุ่มระดับ PM ถูกซ่อน",
+      "งานของตัวเองขึ้นใน My Work บนหน้า Overview; เปลี่ยน status ของ task ตัวเองได้จาก task detail"
+    ],
+    "file": "19-role-mobile.png"
+  },
+  {
+    "id": "role-ai",
+    "title": "มุมมอง AI Dev (demo-ai@introverthubs.local)",
+    "who": "AI Dev",
+    "url": "/app/checkout/tasks",
+    "howTo": [
+      "login ด้วย demo-ai@introverthubs.local / Demo1234!",
+      "เห็นเฉพาะโปรเจกต์ที่เป็นสมาชิก; เมนู Team settings และปุ่มระดับ PM ถูกซ่อน",
+      "งานของตัวเองขึ้นใน My Work บนหน้า Overview; เปลี่ยน status ของ task ตัวเองได้จาก task detail"
+    ],
+    "file": "20-role-ai.png"
+  }
+]

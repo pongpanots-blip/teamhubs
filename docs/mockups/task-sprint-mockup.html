@@ -1,0 +1,774 @@
+<title>Sprint Flow Mockup</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Sora:wght@600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500&display=swap');
+
+  :root{
+    --bg:#faf9f7; --surface:#ffffff; --surface-2:#f2f0ec;
+    --ink:#1c1a17; --ink-2:#6b655c; --line:#e7e3db;
+    --accent:#6d4fe0; --accent-bg:#efe9fd; --accent-ink:#4a2fc4;
+    --ok:#1f8a52; --ok-bg:#e4f5ea;
+    --warn:#b3760f; --warn-bg:#faf0d9;
+    --crit:#c23b3b; --crit-bg:#fbe7e5;
+    --info:#2570c4; --info-bg:#e6f0fb;
+  }
+  :root:not([data-theme="light"]){
+    @media (prefers-color-scheme: dark){
+      --bg:#17151b; --surface:#201d26; --surface-2:#262330;
+      --ink:#efece7; --ink-2:#9b95a8; --line:#332f3e;
+      --accent:#a690ff; --accent-bg:#2c2545; --accent-ink:#c9bcff;
+      --ok:#5bc98a; --ok-bg:#193527;
+      --warn:#e0ac4a; --warn-bg:#3a2e14;
+      --crit:#ef7a72; --crit-bg:#3d2020;
+      --info:#7db3ee; --info-bg:#1c2e42;
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#17151b; --surface:#201d26; --surface-2:#262330;
+    --ink:#efece7; --ink-2:#9b95a8; --line:#332f3e;
+    --accent:#a690ff; --accent-bg:#2c2545; --accent-ink:#c9bcff;
+    --ok:#5bc98a; --ok-bg:#193527;
+    --warn:#e0ac4a; --warn-bg:#3a2e14;
+    --crit:#ef7a72; --crit-bg:#3d2020;
+    --info:#7db3ee; --info-bg:#1c2e42;
+  }
+
+  *{box-sizing:border-box;}
+  body{background:var(--bg); color:var(--ink); font-family:"Inter",system-ui,sans-serif; margin:0; padding:28px 20px 60px;}
+  h1,h2,h3{font-family:"Sora",system-ui,sans-serif; text-wrap:balance; margin:0;}
+  .mono{font-family:"JetBrains Mono",monospace; font-variant-numeric:tabular-nums;}
+
+  .wrap{max-width:1120px; margin:0 auto;}
+  .head{margin-bottom:18px;}
+  .head h1{font-size:22px; font-weight:700;}
+  .head p{margin:6px 0 0; color:var(--ink-2); font-size:13.5px; max-width:640px;}
+
+  .tabs{display:flex; gap:6px; margin:20px 0 16px; border-bottom:1px solid var(--line); padding-bottom:0;}
+  .tab{font-family:"Sora"; font-size:13px; font-weight:600; padding:9px 16px; border-radius:10px 10px 0 0; cursor:pointer; color:var(--ink-2); border:1px solid transparent; user-select:none;}
+  .tab.active{color:var(--accent-ink); background:var(--accent-bg); border-color:var(--line); border-bottom-color:var(--accent-bg); margin-bottom:-1px;}
+
+  .panel{display:none; background:var(--surface); border:1px solid var(--line); border-radius:16px; padding:22px;}
+  .panel.active{display:block;}
+  .panel-title{display:flex; align-items:baseline; justify-content:space-between; gap:12px; margin-bottom:4px;}
+  .panel-title h2{font-size:16px;}
+  .panel-note{color:var(--ink-2); font-size:12.5px; margin:0 0 18px;}
+
+  /* --- Task creation --- */
+  .quickbar{display:flex; align-items:center; gap:10px; background:var(--surface-2); border:1px solid var(--line); border-radius:12px; padding:10px 14px; margin-bottom:18px;}
+  .quickbar input{flex:1; border:none; background:transparent; font-size:13.5px; color:var(--ink); outline:none;}
+  .quickbar input::placeholder{color:var(--ink-2);}
+  .kbd{font-family:"JetBrains Mono"; font-size:11px; color:var(--ink-2); background:var(--surface); border:1px solid var(--line); border-radius:5px; padding:2px 6px;}
+
+  .chat-shell{display:grid; grid-template-columns:1fr 280px; gap:18px;}
+  .chat-col{border:1px solid var(--line); border-radius:14px; overflow:hidden;}
+  .chat-log{padding:16px; display:flex; flex-direction:column; gap:12px; max-height:360px; overflow-y:auto;}
+  .bubble{max-width:82%; padding:10px 13px; border-radius:12px; font-size:13px; line-height:1.5;}
+  .bubble.ai{background:var(--accent-bg); color:var(--ink); border-top-left-radius:4px;}
+  .bubble.me{background:var(--surface-2); margin-left:auto; border-top-right-radius:4px;}
+  .chip-row{display:flex; flex-wrap:wrap; gap:6px; margin-top:8px;}
+  .chip{font-size:11.5px; padding:4px 9px; border-radius:999px; background:var(--surface); border:1px solid var(--line); color:var(--ink-2);}
+  .chat-input{display:flex; gap:8px; padding:12px; border-top:1px solid var(--line); background:var(--surface-2);}
+  .chat-input input{flex:1; border:1px solid var(--line); border-radius:9px; padding:8px 11px; font-size:13px; background:var(--surface); color:var(--ink);}
+  .btn{font-family:"Inter"; font-weight:600; font-size:12.5px; border-radius:9px; padding:8px 14px; border:1px solid var(--line); background:var(--surface); color:var(--ink); cursor:pointer;}
+  .btn.primary{background:var(--accent); border-color:var(--accent); color:#fff;}
+
+  .draft-card{border:1px solid var(--line); border-radius:12px; padding:14px; display:flex; flex-direction:column; gap:10px;}
+  .draft-card h3{font-size:12px; text-transform:uppercase; letter-spacing:.05em; color:var(--ink-2); font-weight:600;}
+  .field{display:flex; flex-direction:column; gap:3px;}
+  .field label{font-size:11px; color:var(--ink-2);}
+  .field .val{font-size:13px; font-weight:500;}
+  .readiness-bar{height:6px; border-radius:99px; background:var(--surface-2); overflow:hidden;}
+  .readiness-bar > span{display:block; height:100%; background:var(--ok);}
+
+  /* --- Assign teammates (post-grill) --- */
+  .assign-steps{display:flex; align-items:center; gap:6px; margin-bottom:18px; font-size:11.5px; color:var(--ink-2);}
+  .assign-steps .step{display:flex; align-items:center; gap:6px;}
+  .assign-steps .step.done{color:var(--ok);}
+  .assign-steps .step.now{color:var(--accent-ink); font-weight:700;}
+  .assign-steps .sep{width:20px; height:1px; background:var(--line);}
+
+  .comp-card{border:1px solid var(--line); border-radius:14px; padding:14px; margin-bottom:12px;}
+  .comp-card.excluded{opacity:.5;}
+  .comp-head{display:flex; align-items:start; gap:10px; margin-bottom:10px;}
+  .comp-head input[type="checkbox"]{margin-top:3px; accent-color:var(--accent);}
+  .comp-head h4{font-size:13.5px; font-family:"Inter"; font-weight:600; margin:0;}
+  .comp-head .comp-desc{font-size:12px; color:var(--ink-2); margin-top:3px; line-height:1.5;}
+  .role-tag{font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.03em; padding:2px 7px; border-radius:6px; background:var(--surface-2); color:var(--ink-2); flex-shrink:0;}
+
+  .picker-row{display:flex; flex-wrap:wrap; gap:8px; padding-left:26px;}
+  .person-chip{display:flex; align-items:center; gap:7px; padding:6px 10px 6px 6px; border:1.5px solid var(--line); border-radius:99px; font-size:12px; cursor:pointer; background:var(--surface);}
+  .person-chip .avatar{background:var(--surface-2); color:var(--ink-2);}
+  .person-chip .load{font-size:10.5px; color:var(--ink-2);}
+  .person-chip.selected{border-color:var(--accent); background:var(--accent-bg); color:var(--accent-ink);}
+  .person-chip.selected .avatar{background:var(--accent); color:#fff;}
+  .person-chip.selected .load{color:var(--accent-ink);}
+  .person-chip.suggested::after{content:"แนะนำ"; font-size:9.5px; font-weight:700; background:var(--ok-bg); color:var(--ok); padding:1px 6px; border-radius:99px; margin-left:2px;}
+  .no-match{padding-left:26px; font-size:12px; color:var(--ink-2); font-style:italic;}
+
+  .mode-toggle{display:inline-flex; padding:3px; background:var(--surface-2); border-radius:11px; margin-bottom:16px;}
+  .mode-btn{font-family:"Sora"; font-size:12.5px; font-weight:600; padding:7px 14px; border-radius:8px; color:var(--ink-2); cursor:pointer; border:none; background:none;}
+  .mode-btn.active{background:var(--surface); color:var(--ink); box-shadow:0 1px 2px rgba(0,0,0,.06);}
+  .mode-view{display:none;}
+  .mode-view.active{display:block;}
+
+  .quick-form{display:grid; grid-template-columns:1fr 1fr; gap:14px; max-width:640px;}
+  .quick-form .full{grid-column:1 / -1;}
+  .qf-label{font-size:11.5px; font-weight:600; color:var(--ink-2); margin-bottom:5px; display:block;}
+  .qf-input,.qf-select,.qf-textarea{width:100%; border:1px solid var(--line); border-radius:9px; padding:9px 11px; font-size:13px; background:var(--surface); color:var(--ink); font-family:inherit;}
+  .qf-textarea{resize:none;}
+  .qf-hint{font-size:11.5px; color:var(--ink-2); margin:-10px 0 4px;}
+
+  /* --- Sprint board --- */
+  .sprint-head{display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:14px;}
+  .sprint-meta{display:flex; gap:18px; align-items:center;}
+  .sprint-meta .goal{font-size:13px; color:var(--ink-2);}
+  .capacity{display:flex; align-items:center; gap:8px; font-size:12px; color:var(--ink-2);}
+  .capacity-bar{width:120px; height:6px; border-radius:99px; background:var(--surface-2); overflow:hidden;}
+  .capacity-bar > span{display:block; height:100%; background:var(--info);}
+
+  .board{display:flex; gap:12px; overflow-x:auto; padding-bottom:4px;}
+  .col{background:var(--surface-2); border-radius:12px; padding:10px; min-height:200px; width:190px; flex-shrink:0;}
+  .col-head{display:flex; align-items:center; justify-content:space-between; padding:2px 4px 10px; font-size:11.5px; font-weight:600; text-transform:uppercase; letter-spacing:.04em; color:var(--ink-2);}
+  .count{font-family:"JetBrains Mono"; background:var(--surface); border-radius:6px; padding:1px 6px; font-size:11px;}
+  .col-dot{width:7px; height:7px; border-radius:50%; flex-shrink:0;}
+  .add-col{width:170px; flex-shrink:0; border:1.5px dashed var(--line); border-radius:12px; min-height:200px; display:flex; align-items:flex-start; justify-content:center; padding-top:10px;}
+  .add-col button{background:none; border:none; color:var(--ink-2); font-size:12px; font-weight:600; font-family:"Inter"; cursor:pointer; display:flex; align-items:center; gap:6px;}
+  .add-col button:hover{color:var(--accent-ink);}
+  .task-card{background:var(--surface); border:1px solid var(--line); border-radius:10px; padding:10px; margin-bottom:8px; font-size:12.5px;}
+  .task-card .t-title{font-weight:600; margin-bottom:6px; line-height:1.3;}
+  .task-card .t-row{display:flex; align-items:center; justify-content:space-between; gap:6px;}
+  .avatar{width:18px; height:18px; border-radius:50%; background:var(--accent-bg); color:var(--accent-ink); font-size:9px; font-weight:700; display:inline-flex; align-items:center; justify-content:center;}
+  .pts{font-family:"JetBrains Mono"; font-size:11px; color:var(--ink-2);}
+  .pill{font-size:10px; font-weight:600; padding:2px 7px; border-radius:99px;}
+  .pill.ok{background:var(--ok-bg); color:var(--ok);}
+  .pill.warn{background:var(--warn-bg); color:var(--warn);}
+  .pill.crit{background:var(--crit-bg); color:var(--crit);}
+  .pill.info{background:var(--info-bg); color:var(--info);}
+
+  .backlog-drawer{margin-top:16px; border:1px dashed var(--line); border-radius:12px; padding:12px 14px;}
+  .backlog-drawer h3{font-size:12px; color:var(--ink-2); text-transform:uppercase; letter-spacing:.04em; margin-bottom:8px;}
+  .backlog-row{display:flex; align-items:center; justify-content:space-between; padding:7px 0; border-top:1px solid var(--line); font-size:12.5px;}
+  .backlog-row:first-of-type{border-top:none;}
+
+  /* --- Task detail --- */
+  .detail-grid{display:grid; grid-template-columns:1fr 260px; gap:18px;}
+  .d-card{border:1px solid var(--line); border-radius:12px; padding:14px; margin-bottom:12px;}
+  .d-card h3{font-size:12px; text-transform:uppercase; letter-spacing:.04em; color:var(--ink-2); font-weight:600; margin-bottom:8px;}
+  .d-title{display:flex; align-items:start; justify-content:space-between; gap:12px; margin-bottom:14px;}
+  .d-title h2{font-size:18px;}
+  .breadcrumb{font-size:12px; color:var(--ink-2); margin-bottom:6px;}
+  .side-fact{display:flex; align-items:center; justify-content:space-between; padding:7px 0; border-top:1px solid var(--line); font-size:12.5px;}
+  .side-fact:first-of-type{border-top:none;}
+  .assign-row{display:flex; align-items:center; gap:8px; padding:8px 10px; border:1px solid var(--line); border-radius:9px; margin-top:8px; font-size:12.5px;}
+  .assign-row select,.assign-row .sel{flex:1; background:transparent; border:none; color:var(--ink); font-size:12.5px;}
+  .checklist{display:flex; flex-direction:column; gap:6px;}
+  .check-item{display:flex; align-items:center; gap:8px; font-size:12.5px;}
+  .check-item input{accent-color:var(--accent);}
+  .check-item.done{text-decoration:line-through; color:var(--ink-2);}
+  .activity{display:flex; gap:9px; font-size:12px; padding:7px 0; border-top:1px solid var(--line);}
+  .activity:first-of-type{border-top:none;}
+  .activity .dot{width:6px; height:6px; border-radius:50%; background:var(--accent); margin-top:5px; flex-shrink:0;}
+  .activity .who{color:var(--ink-2);}
+
+  /* --- feature recs --- */
+  .rec-title{margin:34px 0 14px;}
+  .rec-title h2{font-size:17px;}
+  .rec-grid{display:grid; grid-template-columns:repeat(3,1fr); gap:12px;}
+  .rec-card{background:var(--surface); border:1px solid var(--line); border-radius:14px; padding:15px;}
+  .rec-card .tag{display:inline-block; font-size:10px; font-weight:700; letter-spacing:.04em; text-transform:uppercase; padding:3px 8px; border-radius:99px; margin-bottom:9px;}
+  .rec-card .tag.now{background:var(--ok-bg); color:var(--ok);}
+  .rec-card .tag.next{background:var(--info-bg); color:var(--info);}
+  .rec-card .tag.later{background:var(--warn-bg); color:var(--warn);}
+  .rec-card h4{font-family:"Sora"; font-size:13.5px; margin:0 0 6px;}
+  .rec-card p{font-size:12.5px; color:var(--ink-2); line-height:1.5; margin:0;}
+
+  /* --- project settings --- */
+  .settings-grid{display:grid; grid-template-columns:200px 1fr; gap:20px;}
+  .set-nav{display:flex; flex-direction:column; gap:2px;}
+  .set-nav-item{font-size:12.5px; font-weight:600; padding:9px 11px; border-radius:8px; color:var(--ink-2); cursor:pointer;}
+  .set-nav-item.active{background:var(--accent-bg); color:var(--accent-ink);}
+  .set-section{display:none;}
+  .set-section.active{display:block;}
+  .set-head{display:flex; align-items:center; justify-content:space-between; margin-bottom:14px;}
+  .set-head h3{font-size:14.5px;}
+  .set-head p{font-size:12px; color:var(--ink-2); margin:3px 0 0;}
+
+  .status-list{display:flex; flex-direction:column; gap:6px;}
+  .status-row{display:flex; align-items:center; gap:10px; padding:9px 11px; border:1px solid var(--line); border-radius:10px; background:var(--surface);}
+  .status-row .grip{color:var(--ink-2); font-size:12px; cursor:grab;}
+  .status-row .swatch{width:11px; height:11px; border-radius:4px; flex-shrink:0;}
+  .status-row .s-name{font-size:13px; font-weight:600; flex:1; min-width:0;}
+  .status-row .s-slug{font-family:"JetBrains Mono"; font-size:10.5px; color:var(--ink-2); background:var(--surface-2); padding:2px 6px; border-radius:5px;}
+  .status-row .s-cat{font-size:10.5px; font-weight:600; padding:3px 9px; border-radius:99px;}
+  .status-row .s-icon{color:var(--ink-2); font-size:13px; cursor:pointer; padding:2px;}
+  .status-row.default{background:var(--surface-2);}
+  .status-row.new{border-style:dashed;}
+  .cat-backlog{background:var(--surface-2); color:var(--ink-2);}
+  .cat-active{background:var(--info-bg); color:var(--info);}
+  .cat-waiting{background:var(--warn-bg); color:var(--warn);}
+  .cat-done{background:var(--ok-bg); color:var(--ok);}
+
+  .reg-table{border:1px solid var(--line); border-radius:12px; overflow:hidden;}
+  .reg-row{display:grid; grid-template-columns:1fr 1fr 90px 70px; gap:10px; align-items:center; padding:10px 13px; font-size:12.5px; border-top:1px solid var(--line);}
+  .reg-row:first-child{border-top:none; background:var(--surface-2); font-size:11px; text-transform:uppercase; letter-spacing:.04em; color:var(--ink-2); font-weight:600;}
+  .reg-row .mono{font-size:12px;}
+  .reg-row .rm{color:var(--ink-2); cursor:pointer; text-align:right;}
+  .add-reg{display:flex; gap:8px; margin-top:12px;}
+  .add-reg input{flex:1; border:1px solid var(--line); border-radius:9px; padding:8px 11px; font-size:12.5px; background:var(--surface); color:var(--ink);}
+
+  .handoff-preview{border:1px solid var(--line); border-radius:12px; padding:14px; background:var(--surface-2); font-family:"JetBrains Mono"; font-size:11.5px; line-height:1.7; white-space:pre-wrap; color:var(--ink);}
+  .handoff-preview .hl{color:var(--accent-ink); font-weight:600;}
+
+  @media (max-width:820px){
+    .chat-shell,.detail-grid{grid-template-columns:1fr;}
+    .board{grid-template-columns:repeat(2,1fr);}
+    .rec-grid{grid-template-columns:1fr;}
+    .settings-grid{grid-template-columns:1fr;}
+  }
+</style>
+
+<div class="wrap">
+  <div class="head">
+    <h1>Sprint Flow — Task creation → Sprint → Assignment</h1>
+    <p>โมคอัพ 3 หน้าจอหลักของ flow งาน โดยอิงจากโครงสร้างที่มีอยู่จริงในระบบ (Grill chat สำหรับสร้าง task, Sprint board แบบ backlog/commit, และหน้า Task detail ที่ผูก sprint กับ assignee) พร้อมฟีเจอร์แนะนำด้านล่าง</p>
+  </div>
+
+  <div class="tabs">
+    <div class="tab active" data-tab="create">1. สร้าง Task</div>
+    <div class="tab" data-tab="sprint">2. Sprint board</div>
+    <div class="tab" data-tab="detail">3. Task detail / Assign</div>
+    <div class="tab" data-tab="assign">1b. มอบหมายทีมงาน</div>
+    <div class="tab" data-tab="settings">4. ตั้งค่าโปรเจกต์</div>
+  </div>
+
+  <div class="panel active" id="create">
+    <div class="panel-title"><h2>สร้าง Task</h2></div>
+    <p class="panel-note">สองทางเข้า: ให้ AI ไล่ถามจนงานชัด (เหมาะกับงานที่ requirement ยังไม่นิ่ง) หรือกรอกฟอร์มสั้น ๆ แล้วสร้างทันทีสำหรับงานที่รู้ scope อยู่แล้ว — ไม่บังคับผ่าน chat เสมอไป</p>
+
+    <div class="mode-toggle">
+      <button class="mode-btn active" data-mode="m-grill">💬 Grill กับ AI</button>
+      <button class="mode-btn" data-mode="m-quick">⚡ กรอกฟอร์มเร็ว</button>
+    </div>
+
+    <div class="mode-view active" id="m-grill">
+    <div class="quickbar">
+      <span style="color:var(--ink-2); font-size:14px;">＋</span>
+      <input placeholder="พิมพ์ชื่องาน แล้ว Enter เพื่อสร้างแบบเร็ว…" readonly />
+      <span class="kbd">⌘K</span>
+    </div>
+
+    <div class="chat-shell">
+      <div class="chat-col">
+        <div class="chat-log">
+          <div class="bubble ai">สวัสดีครับ อยากสร้างงานอะไรวันนี้? เล่าคร่าว ๆ ได้เลย</div>
+          <div class="bubble me">ทำหน้า export รายงานยอดขายเป็น Excel รายเดือน</div>
+          <div class="bubble ai">
+            เข้าใจแล้ว ขอถามต่อ 2 ข้อ:
+            <div class="chip-row">
+              <span class="chip">ใครเป็นคนกดปุ่ม export?</span>
+              <span class="chip">ต้องมี filter ตามสาขาไหม?</span>
+            </div>
+          </div>
+          <div class="bubble me">Sales manager กด, และต้อง filter ตามสาขาได้</div>
+          <div class="bubble ai">ครบแล้วครับ ✅ ผมร่าง requirement + acceptance criteria ไว้ทางขวา ตรวจแล้วกด "สร้าง Task" ได้เลย</div>
+        </div>
+        <div class="chat-input">
+          <input placeholder="พิมพ์ตอบ…" readonly />
+          <button class="btn primary">ส่ง</button>
+        </div>
+      </div>
+
+      <div class="draft-card">
+        <h3>Draft ที่ AI ร่างให้</h3>
+        <div class="field"><label>Title</label><span class="val">Export รายงานยอดขายรายเดือนเป็น Excel</span></div>
+        <div class="field"><label>Project</label><span class="val">Sales Portal</span></div>
+        <div class="field"><label>Priority</label><span class="pill warn" style="width:fit-content;">Medium</span></div>
+        <div class="field"><label>มอบหมายให้</label><span class="val">— ยังไม่เลือก —</span></div>
+        <div class="field">
+          <label>ความครบของข้อมูล (Readiness)</label>
+          <div class="readiness-bar"><span style="width:85%"></span></div>
+        </div>
+        <button class="btn primary" style="width:100%;">สร้าง Task</button>
+        <button class="btn" style="width:100%;">บันทึกเป็น Draft</button>
+      </div>
+    </div>
+    </div>
+
+    <div class="mode-view" id="m-quick">
+      <p class="qf-hint">สำหรับงานที่รู้ scope อยู่แล้ว — กรอกครบกดสร้างได้เลย ไม่ต้องคุยกับ AI (ต่อยอดจาก Quick task dialog เดิม เพิ่ม assignee/deadline ที่ของเดิมไม่มี)</p>
+      <div class="quick-form">
+        <div class="full">
+          <label class="qf-label">ชื่องาน</label>
+          <input class="qf-input" placeholder="เช่น แก้ pagination bug หน้ารายการใบแจ้งหนี้" readonly />
+        </div>
+        <div>
+          <label class="qf-label">Priority</label>
+          <select class="qf-select"><option>P2 — Medium</option></select>
+        </div>
+        <div>
+          <label class="qf-label">Sprint</label>
+          <select class="qf-select"><option>Backlog</option></select>
+        </div>
+        <div>
+          <label class="qf-label">มอบหมายให้</label>
+          <select class="qf-select"><option>— ยังไม่เลือก —</option></select>
+        </div>
+        <div>
+          <label class="qf-label">Deadline</label>
+          <input class="qf-input" placeholder="วว/ดด/ปปปป" readonly />
+        </div>
+        <div class="full">
+          <label class="qf-label">รายละเอียด (ไม่บังคับ)</label>
+          <textarea class="qf-textarea" rows="3" placeholder="สิ่งที่ต้องทำ"></textarea>
+        </div>
+        <div class="full" style="display:flex; gap:10px;">
+          <button class="btn primary">สร้าง Task</button>
+          <button class="btn">ยกเลิก</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel" id="assign">
+    <div class="panel-title"><h2>มอบหมายทีมงาน</h2></div>
+    <p class="panel-note">แชทจบแล้ว AI แตกงานเป็น sub-task ต่อ component — เลือกคนต่อใบก่อนกด "สร้าง Task" คนแนะนำมาจาก role ที่ตรง + งาน active น้อยที่สุด</p>
+
+    <div class="assign-steps">
+      <span class="step done">✓ คุยแชท</span>
+      <span class="sep"></span>
+      <span class="step now">● มอบหมายคน</span>
+      <span class="sep"></span>
+      <span class="step">สร้าง Task</span>
+    </div>
+
+    <div class="comp-card">
+      <div class="comp-head">
+        <input type="checkbox" checked disabled />
+        <div style="flex:1;">
+          <div style="display:flex; align-items:center; gap:8px;">
+            <span class="role-tag">UI</span>
+            <h4>ปรับ layout หน้า export รายงาน</h4>
+          </div>
+          <p class="comp-desc">เพิ่มปุ่ม export + dropdown เลือกช่วงเดือนและสาขาบนหน้ารายงานยอดขาย</p>
+        </div>
+      </div>
+      <div class="picker-row">
+        <div class="person-chip selected suggested"><span class="avatar" style="width:18px;height:18px;font-size:9px;">PN</span>Ploy<span class="load">· 2 งาน active</span></div>
+        <div class="person-chip"><span class="avatar" style="width:18px;height:18px;font-size:9px;">MJ</span>May<span class="load">· 4 งาน active</span></div>
+      </div>
+    </div>
+
+    <div class="comp-card">
+      <div class="comp-head">
+        <input type="checkbox" checked disabled />
+        <div style="flex:1;">
+          <div style="display:flex; align-items:center; gap:8px;">
+            <span class="role-tag">Backend</span>
+            <h4>API ดึงยอดขายรายเดือนตามสาขา</h4>
+          </div>
+          <p class="comp-desc">Endpoint รวมยอดตาม branch + month พร้อม cache รายวัน</p>
+        </div>
+      </div>
+      <div class="picker-row">
+        <div class="person-chip"><span class="avatar" style="width:18px;height:18px;font-size:9px;">KT</span>Kate<span class="load">· 5 งาน active</span></div>
+        <div class="person-chip selected suggested"><span class="avatar" style="width:18px;height:18px;font-size:9px;">NT</span>Nat<span class="load">· 1 งาน active</span></div>
+        <div class="person-chip"><span class="avatar" style="width:18px;height:18px;font-size:9px;">JD</span>Jade<span class="load">· 3 งาน active</span></div>
+      </div>
+    </div>
+
+    <div class="comp-card excluded">
+      <div class="comp-head">
+        <input type="checkbox" />
+        <div style="flex:1;">
+          <div style="display:flex; align-items:center; gap:8px;">
+            <span class="role-tag">Mobile</span>
+            <h4>เพิ่มหน้า export ในแอป (ไม่รวมรอบนี้)</h4>
+          </div>
+          <p class="comp-desc">ติ๊กออกแล้ว — จะไม่ถูกสร้างเป็น sub-task ในรอบนี้</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="comp-card">
+      <div class="comp-head">
+        <input type="checkbox" checked disabled />
+        <div style="flex:1;">
+          <div style="display:flex; align-items:center; gap:8px;">
+            <span class="role-tag">AI Dev</span>
+            <h4>สรุปยอดเป็นภาษาไทยในอีเมลแจ้งเตือน</h4>
+          </div>
+          <p class="comp-desc">ไม่มีใครใน role นี้อยู่ในโปรเจกต์ — ต้องเชิญเข้าโปรเจกต์ก่อน หรือมอบหมายทีหลัง</p>
+        </div>
+      </div>
+      <div class="no-match">ยังไม่มีคน role "AI Dev" ในโปรเจกต์นี้ — <a href="#" style="color:var(--accent-ink);">+ เชิญสมาชิก</a> หรือปล่อยว่างไว้ก่อนก็สร้างได้</div>
+    </div>
+
+    <div style="display:flex; gap:10px; margin-top:18px;">
+      <button class="btn" style="flex:1;">← กลับไปแก้แชท</button>
+      <button class="btn primary" style="flex:1;">สร้าง 3 Task ที่เลือกไว้</button>
+    </div>
+  </div>
+
+  <div class="panel" id="sprint">
+    <div class="sprint-head">
+      <div>
+        <div class="panel-title" style="margin-bottom:2px;"><h2>Sprint 24 — Q3 Wk2</h2></div>
+        <div class="sprint-meta">
+          <span class="goal">🎯 ลดเวลา checkout ให้ต่ำกว่า 3 คลิก</span>
+        </div>
+      </div>
+      <div class="capacity">
+        <span>Capacity 34/40 pts</span>
+        <div class="capacity-bar"><span style="width:85%"></span></div>
+      </div>
+    </div>
+
+    <div class="board">
+      <div class="col">
+        <div class="col-head"><span style="display:flex;align-items:center;gap:6px;"><span class="col-dot" style="background:var(--ink-2)"></span>To do</span> <span class="count">3</span></div>
+        <div class="task-card">
+          <div class="t-title">ปรับ layout หน้า checkout</div>
+          <div class="t-row"><span class="avatar">PN</span><span class="pts">5 pts</span></div>
+        </div>
+        <div class="task-card">
+          <div class="t-title">เพิ่ม validation เลขบัตร</div>
+          <div class="t-row"><span class="pill info">Unassigned</span><span class="pts">3 pts</span></div>
+        </div>
+      </div>
+      <div class="col">
+        <div class="col-head"><span style="display:flex;align-items:center;gap:6px;"><span class="col-dot" style="background:var(--info)"></span>In progress</span> <span class="count">2</span></div>
+        <div class="task-card">
+          <div class="t-title">API สรุปยอดตะกร้า</div>
+          <div class="t-row"><span class="avatar">KT</span><span class="pts">8 pts</span></div>
+        </div>
+        <div class="task-card">
+          <div class="t-title">เชื่อม payment gateway v2</div>
+          <div class="t-row"><span class="pill crit">Blocked</span><span class="pts">5 pts</span></div>
+        </div>
+      </div>
+      <div class="col">
+        <div class="col-head"><span style="display:flex;align-items:center;gap:6px;"><span class="col-dot" style="background:var(--warn)"></span>Review</span> <span class="count">1</span></div>
+        <div class="task-card">
+          <div class="t-title">ปุ่ม apply coupon</div>
+          <div class="t-row"><span class="avatar">MJ</span><span class="pts">2 pts</span></div>
+        </div>
+      </div>
+      <div class="col" style="box-shadow:0 0 0 1px var(--accent) inset;">
+        <div class="col-head"><span style="display:flex;align-items:center;gap:6px;"><span class="col-dot" style="background:var(--accent)"></span>QA testing</span> <span class="count">1</span></div>
+        <p style="font-size:10.5px; color:var(--accent-ink); background:var(--accent-bg); padding:5px 7px; border-radius:7px; margin:0 0 8px;">คอลัมน์ที่ทีมเพิ่มเอง — ไม่ใช่ค่า default</p>
+        <div class="task-card">
+          <div class="t-title">Regression test ตะกร้าสินค้า</div>
+          <div class="t-row"><span class="avatar">NT</span><span class="pts">2 pts</span></div>
+        </div>
+      </div>
+      <div class="col">
+        <div class="col-head"><span style="display:flex;align-items:center;gap:6px;"><span class="col-dot" style="background:var(--ok)"></span>Done</span> <span class="count">4</span></div>
+        <div class="task-card">
+          <div class="t-title">หน้าสรุปคำสั่งซื้อ</div>
+          <div class="t-row"><span class="pill ok">Shipped</span><span class="pts">3 pts</span></div>
+        </div>
+      </div>
+      <div class="add-col">
+        <button type="button">＋ เพิ่มสถานะ</button>
+      </div>
+    </div>
+    <p style="font-size:11.5px; color:var(--ink-2); margin:10px 2px 0;">สถานะที่เพิ่มเองจะถูก map เข้ากลุ่ม backlog / active / waiting / done อันใดอันหนึ่งเสมอ (เลือกตอนสร้างคอลัมน์) เพื่อให้ metric เช่น cycle time และ stagnant card ยังคำนวณถูกโดยไม่ต้องรู้จักชื่อสถานะเฉพาะของแต่ละทีม</p>
+
+    <div class="backlog-drawer">
+      <h3>Backlog — ยังไม่ commit เข้า sprint (ลากเข้ามาเพื่อ commit)</h3>
+      <div class="backlog-row"><span>รายงาน refund รายวัน</span><span class="pts">5 pts · P2</span></div>
+      <div class="backlog-row"><span>แปล UI เป็นภาษาอังกฤษ</span><span class="pts">3 pts · P3</span></div>
+      <div class="backlog-row"><span>เพิ่ม 2FA สำหรับ admin</span><span class="pts">8 pts · P1</span></div>
+    </div>
+  </div>
+
+  <div class="panel" id="detail">
+    <div class="breadcrumb">← Sprint 24</div>
+    <div class="d-title">
+      <div>
+        <h2>เชื่อม payment gateway v2</h2>
+        <span class="pill crit" style="margin-top:6px; display:inline-block;">Blocked</span>
+      </div>
+      <button class="btn primary">เริ่มทำงาน</button>
+    </div>
+
+    <div class="detail-grid">
+      <div>
+        <div class="d-card">
+          <h3>Requirement</h3>
+          <p style="font-size:13px; line-height:1.6;">รองรับ callback แบบ webhook จาก gateway ใหม่ พร้อม retry เมื่อ callback ล้มเหลว 3 ครั้งติด และแจ้งเตือนทีม finance เมื่อยอดไม่ตรง</p>
+        </div>
+        <div class="d-card">
+          <h3>Sub-tasks (3) — คนละ owner, คนละสถานะ</h3>
+          <div style="display:flex; flex-direction:column; gap:8px;">
+            <div class="task-card" style="margin:0;">
+              <div class="t-row">
+                <span class="t-title" style="margin:0;">ออกแบบ schema transaction log</span>
+                <span class="pill ok">Done</span>
+              </div>
+              <div class="t-row" style="margin-top:6px;"><span class="avatar">KT</span><span style="font-size:11.5px; color:var(--ink-2);">Kate</span></div>
+            </div>
+            <div class="task-card" style="margin:0;">
+              <div class="t-row">
+                <span class="t-title" style="margin:0;">ทำ retry queue</span>
+                <span class="pill warn">Review</span>
+              </div>
+              <div class="t-row" style="margin-top:6px;"><span class="avatar">NT</span><span style="font-size:11.5px; color:var(--ink-2);">Nat</span></div>
+            </div>
+            <div class="task-card" style="margin:0;">
+              <div class="t-row">
+                <span class="t-title" style="margin:0;">แจ้งเตือนทีม finance เมื่อยอดไม่ตรง</span>
+                <span class="pill info">Unassigned</span>
+              </div>
+              <div class="t-row" style="margin-top:6px;"><span class="pill" style="background:var(--surface-2); color:var(--ink-2);">To do</span></div>
+            </div>
+          </div>
+        </div>
+        <div class="d-card">
+          <h3>Activity</h3>
+          <div class="activity"><span class="dot"></span><div><span class="who">Kate</span> เปลี่ยนสถานะเป็น Blocked · 2 ชม.ที่แล้ว</div></div>
+          <div class="activity"><span class="dot"></span><div><span class="who">System</span> ตรวจพบว่า dependency ยังไม่เสร็จ · เมื่อวาน</div></div>
+          <div class="activity"><span class="dot"></span><div><span class="who">Nat</span> คอมเมนต์: รอ credential จาก vendor · 2 วันก่อน</div></div>
+        </div>
+      </div>
+
+      <div>
+        <div class="d-card">
+          <h3>รายละเอียด</h3>
+          <div class="side-fact"><span>เจ้าของงาน</span><span class="mono">Kate T.</span></div>
+          <div class="side-fact"><span>ความสำคัญ</span><span>P1 — Urgent</span></div>
+          <div class="side-fact"><span>Deadline</span><span class="mono">12 ก.ย.</span></div>
+        </div>
+        <div class="d-card">
+          <h3>Sprint & มอบหมาย</h3>
+          <div class="assign-row"><span style="color:var(--ink-2);">Sprint</span><span class="sel">Sprint 24 — Q3 Wk2 ▾</span></div>
+          <div class="assign-row"><span style="color:var(--ink-2);">Assignee</span><span class="sel">Kate T. ▾</span></div>
+          <div class="assign-row"><span style="color:var(--ink-2);">Story points</span><span class="sel mono">5</span></div>
+        </div>
+        <div class="d-card">
+          <h3>Dependencies</h3>
+          <div class="side-fact"><span>⏳ credential จาก vendor</span><span class="mono">Nat</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel" id="settings">
+    <div class="panel-title"><h2>ตั้งค่าโปรเจกต์</h2></div>
+    <p class="panel-note">แก้ workflow, ทะเบียน repo/Figma และดูตัวอย่าง handoff doc ที่ AI/dev คนถัดไปจะเปิดอ่าน</p>
+
+    <div class="settings-grid">
+      <div class="set-nav">
+        <div class="set-nav-item active" data-sub="s-status">Statuses / Workflow</div>
+        <div class="set-nav-item" data-sub="s-repo">Repositories</div>
+        <div class="set-nav-item" data-sub="s-figma">Figma files</div>
+        <div class="set-nav-item" data-sub="s-handoff">Handoff doc</div>
+      </div>
+
+      <div>
+        <div class="set-section active" id="s-status">
+          <div class="set-head">
+            <div><h3>Workflow — Sprint 24</h3><p>ลาก grip เพื่อเรียงคอลัมน์บนบอร์ด · สถานะ default 7 อันแก้ชื่อ/สีได้แต่ลบไม่ได้</p></div>
+            <button class="btn primary">＋ เพิ่มสถานะ</button>
+          </div>
+          <div class="status-list">
+            <div class="status-row default">
+              <span class="grip">⠿</span>
+              <span class="swatch" style="background:var(--ink-2)"></span>
+              <span class="s-name">Not ready</span>
+              <span class="s-slug">not_ready</span>
+              <span class="s-cat cat-backlog">Backlog</span>
+              <span class="s-icon">✎</span>
+            </div>
+            <div class="status-row default">
+              <span class="grip">⠿</span>
+              <span class="swatch" style="background:var(--ink-2)"></span>
+              <span class="s-name">Ready</span>
+              <span class="s-slug">ready</span>
+              <span class="s-cat cat-backlog">Backlog</span>
+              <span class="s-icon">✎</span>
+            </div>
+            <div class="status-row default">
+              <span class="grip">⠿</span>
+              <span class="swatch" style="background:var(--info)"></span>
+              <span class="s-name">Working</span>
+              <span class="s-slug">working</span>
+              <span class="s-cat cat-active">Active</span>
+              <span class="s-icon">✎</span>
+            </div>
+            <div class="status-row">
+              <span class="grip">⠿</span>
+              <span class="swatch" style="background:var(--accent)"></span>
+              <span class="s-name">QA testing</span>
+              <span class="s-slug">qa_testing</span>
+              <span class="s-cat cat-waiting">Waiting</span>
+              <span class="s-icon">✎</span>
+              <span class="s-icon" title="Archive">🗄</span>
+            </div>
+            <div class="status-row default">
+              <span class="grip">⠿</span>
+              <span class="swatch" style="background:var(--ok)"></span>
+              <span class="s-name">Done</span>
+              <span class="s-slug">done</span>
+              <span class="s-cat cat-done">Done</span>
+              <span class="s-icon">✎</span>
+            </div>
+            <div class="status-row new">
+              <span class="grip" style="visibility:hidden;">⠿</span>
+              <span style="color:var(--ink-2); font-size:12.5px;">ชื่อสถานะใหม่…</span>
+              <span style="margin-left:auto; display:flex; align-items:center; gap:8px;">
+                <span class="sel" style="font-size:12px; color:var(--ink-2);">กลุ่ม: เลือก ▾</span>
+                <button class="btn" style="padding:5px 10px;">เพิ่ม</button>
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <div class="set-section" id="s-repo">
+          <div class="set-head">
+            <div><h3>Repositories</h3><p>ผูก repo ที่เป็นของโปรเจกต์นี้ — ใช้เช็ค commit/PR และบอก AI ว่าต้อง push ที่ไหน</p></div>
+          </div>
+          <div class="reg-table">
+            <div class="reg-row"><span>Repo</span><span>Path</span><span>Branch</span><span></span></div>
+            <div class="reg-row">
+              <span class="mono">acme/shop-backend <span class="pill ok" style="margin-left:4px;">Primary</span></span>
+              <span class="mono" style="color:var(--ink-2);">apps/backend</span>
+              <span class="mono">main</span>
+              <span class="rm">ลบ</span>
+            </div>
+            <div class="reg-row">
+              <span class="mono">acme/shop-web</span>
+              <span class="mono" style="color:var(--ink-2);">—</span>
+              <span class="mono">main</span>
+              <span class="rm">ลบ</span>
+            </div>
+          </div>
+          <div class="add-reg">
+            <input placeholder="owner/repo เช่น acme/shop-mobile" readonly />
+            <input placeholder="path prefix (ถ้าเป็น monorepo)" readonly style="max-width:200px;" />
+            <button class="btn primary">เพิ่ม repo</button>
+          </div>
+        </div>
+
+        <div class="set-section" id="s-figma">
+          <div class="set-head">
+            <div><h3>Figma files</h3><p>ให้ task ที่ยังไม่ผูกลิงก์ดีไซน์ รู้ว่าต้องไปหาเฟรมจากไฟล์ไหน</p></div>
+          </div>
+          <div class="reg-table" style="grid-template-columns:1fr 90px 70px;">
+          </div>
+          <div class="reg-table">
+            <div class="reg-row" style="grid-template-columns:1fr 90px 70px;"><span>File</span><span></span><span></span></div>
+            <div class="reg-row" style="grid-template-columns:1fr 90px 70px;">
+              <span class="mono">Shop — Design System <span class="pill ok" style="margin-left:4px;">Primary</span></span>
+              <span></span>
+              <span class="rm">ลบ</span>
+            </div>
+          </div>
+          <div class="add-reg">
+            <input placeholder="วางลิงก์ Figma file" readonly />
+            <button class="btn primary">เพิ่มไฟล์</button>
+          </div>
+        </div>
+
+        <div class="set-section" id="s-handoff">
+          <div class="set-head">
+            <div><h3>Handoff doc preview</h3><p>ตัวอย่าง .md ที่แนบให้อัตโนมัติในทุก task — AI/dev คนถัดไปเปิดอันนี้แล้วทำต่อได้เลยโดยไม่ต้องถาม</p></div>
+          </div>
+          <div class="handoff-preview"><span class="hl"># Handoff — เชื่อม payment gateway v2</span>
+
+<span class="hl">## สถานะปัจจุบัน</span>
+Blocked · รอ credential จาก vendor (ดู Dependencies)
+เจ้าของ: Kate T. · Sub-task ที่เหลือ: ทำ retry queue (Nat, Review), แจ้งเตือน finance (ยังไม่มอบหมาย)
+
+<span class="hl">## Repo & Design</span>
+Repo: acme/shop-backend (branch: main, path: apps/backend)
+Figma: Shop — Design System → frame "Checkout / Payment v2"
+
+<span class="hl">## สิ่งที่ทำไปแล้ว</span>
+- ออกแบบ schema transaction log (merged)
+- Endpoint POST /payments/callback รองรับ webhook แบบ v1
+
+<span class="hl">## สิ่งที่เหลือ</span>
+- Retry queue เมื่อ callback ล้มเหลว 3 ครั้งติด
+- แจ้งเตือนทีม finance เมื่อยอดไม่ตรง
+</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="rec-title"><h2>ฟีเจอร์ที่แนะนำให้เพิ่ม</h2></div>
+  <div class="rec-grid">
+    <div class="rec-card">
+      <span class="tag now">ทำก่อน</span>
+      <h4>Quick-add bar (⌘K)</h4>
+      <p>สร้าง task ง่าย ๆ ได้ใน 1 บรรทัดโดยไม่ต้องเปิด Grill chat เต็มรูปแบบ — ลดแรงเสียดทานสำหรับงานเล็ก ๆ</p>
+    </div>
+    <div class="rec-card">
+      <span class="tag now">ทำก่อน</span>
+      <h4>Sprint capacity indicator</h4>
+      <p>แสดง pts ที่ commit เทียบกับ capacity ของทีมแบบเรียลไทม์ ตอนลากการ์ดเข้า sprint กันไม่ให้ overcommit</p>
+    </div>
+    <div class="rec-card">
+      <span class="tag now">ทำก่อน</span>
+      <h4>Blocked-task banner บน board</h4>
+      <p>งานที่ status = Blocked ควรเด้งเด่นบน sprint board ไม่ใช่ต้องเปิด task detail ถึงจะเห็น (ตอนนี้ engine มี blockedBy อยู่แล้วในหน้า detail)</p>
+    </div>
+    <div class="rec-card">
+      <span class="tag next">ถัดไป</span>
+      <h4>Bulk sprint assignment</h4>
+      <p>เลือกหลาย task จาก backlog แล้ว commit เข้า sprint พร้อมกันทีเดียว แทนที่จะทำทีละใบ</p>
+    </div>
+    <div class="rec-card">
+      <span class="tag next">ถัดไป</span>
+      <h4>Burndown บนหน้า Sprint</h4>
+      <p>ระบบมี /api/sprints/[id]/burndown อยู่แล้ว — เอามาวาดกราฟบนหน้า sprint list ให้ PM เห็น trend โดยไม่ต้องเข้า sprint เดียว</p>
+    </div>
+    <div class="rec-card">
+      <span class="tag next">ถัดไป</span>
+      <h4>@mention ในกล่องคอมเมนต์/decision log</h4>
+      <p>เพิ่ม assignee หรือ mention เพื่อนร่วมทีมในช่อง decision log ให้แจ้งเตือนอัตโนมัติ แทนต้องบอกด้วยปาก</p>
+    </div>
+    <div class="rec-card">
+      <span class="tag later">อนาคต</span>
+      <h4>Auto-suggest assignee</h4>
+      <p>แนะนำผู้รับผิดชอบจาก workload ปัจจุบัน + component ที่เคยทำ แทนที่ PM ต้องจำเองว่าใครว่าง</p>
+    </div>
+    <div class="rec-card">
+      <span class="tag later">อนาคต</span>
+      <h4>Sprint retro notes</h4>
+      <p>ต่อจาก burndown — เก็บบันทึก retro ผูกกับ sprint แต่ละอันเพื่อย้อนดู pattern ของทีมข้ามหลาย sprint</p>
+    </div>
+    <div class="rec-card">
+      <span class="tag later">อนาคต</span>
+      <h4>Dependency graph view</h4>
+      <p>เห็นความสัมพันธ์ dependsOn ทั้งหมดของ sprint เป็นกราฟ แทนที่ต้องไล่เปิดทีละ task detail</p>
+    </div>
+  </div>
+</div>
+
+<script>
+  document.querySelectorAll('.tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+      tab.classList.add('active');
+      document.getElementById(tab.dataset.tab).classList.add('active');
+    });
+  });
+  document.querySelectorAll('.mode-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.mode-view').forEach(v => v.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById(btn.dataset.mode).classList.add('active');
+    });
+  });
+  document.querySelectorAll('.set-nav-item').forEach(item => {
+    item.addEventListener('click', () => {
+      document.querySelectorAll('.set-nav-item').forEach(i => i.classList.remove('active'));
+      document.querySelectorAll('.set-section').forEach(s => s.classList.remove('active'));
+      item.classList.add('active');
+      document.getElementById(item.dataset.sub).classList.add('active');
+    });
+  });
+</script>

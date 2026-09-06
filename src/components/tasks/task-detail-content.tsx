@@ -10,10 +10,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { RunContextButton } from "@/components/tasks/run-context-button";
 import { StartWorkingButton } from "@/components/tasks/start-working-button";
 import { DecisionLogForm } from "@/components/tasks/decision-log-form";
+import { CommentTimeline } from "@/components/tasks/comment-timeline";
 import { AddSubTaskForm } from "@/components/tasks/add-subtask-form";
 import { StatusSelect } from "@/components/tasks/status-select";
 import { TaskStatusBadge } from "@/components/tasks/status-badge";
-import { SprintAssignment, type SprintOption } from "@/components/tasks/sprint-assignment";
+import { SprintAssignment } from "@/components/tasks/sprint-assignment";
 import { sprintOptions } from "@/lib/sprint/service";
 import {
   RegenerateHandoffButton,
@@ -39,7 +40,7 @@ export async function TaskDetailContent({
   projectSlug: string;
   id: string;
 }) {
-  const { project } = await requireProjectPage(projectSlug);
+  const { project, user } = await requireProjectPage(projectSlug);
 
   // Scoped by project, not team — a task id from another project must read as
   // "not here", the same as one that does not exist.
@@ -66,10 +67,14 @@ export async function TaskDetailContent({
   });
   if (!task) notFound();
 
-  const options: SprintOption[] = await sprintOptions(
-    project.id,
-    task.sprintId ? [task.sprintId] : [],
-  );
+  const [options, memberRows] = await Promise.all([
+    sprintOptions(project.id, task.sprintId ? [task.sprintId] : []),
+    prisma.projectMembership.findMany({
+      where: { projectId: project.id },
+      include: { user: { select: { id: true, name: true } } },
+    }),
+  ]);
+  const members = memberRows.map((m) => ({ id: m.user.id, name: m.user.name }));
 
   const status = task.status as TaskStatusValue;
   const priority = task.priority as TaskPriorityValue;
@@ -352,6 +357,15 @@ export async function TaskDetailContent({
                   <p className="text-sm text-muted-foreground">No decisions yet.</p>
                 ) : null}
               </div>
+            </CardContent>
+          </Card>
+
+          <Card id="activity">
+            <CardHeader>
+              <CardTitle>Activity</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <CommentTimeline taskId={task.id} members={members} currentUserId={user.id} />
             </CardContent>
           </Card>
 

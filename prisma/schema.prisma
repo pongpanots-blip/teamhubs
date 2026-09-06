@@ -52,6 +52,7 @@ enum NotificationType {
   task_assigned
   figma_ready
   missing_context
+  task_comment_mention
 }
 
 enum DocSource {
@@ -80,6 +81,7 @@ model User {
   assignedTasks      Task[]              @relation("TaskAssignee")
   createdTasks       Task[]              @relation("TaskCreator")
   decisions          DecisionLog[]
+  comments           Comment[]
   invitesSent        Invite[]            @relation("InviteSender")
   notifications      Notification[]
   statusChanges      TaskStatusHistory[] @relation("StatusChangeAuthor")
@@ -151,32 +153,32 @@ model Team {
 /// credentials are scoped here so unrelated projects don't leak context
 /// into each other's grilling sessions.
 model Project {
-  id            String                  @id @default(cuid())
-  teamId        String
-  name          String
-  slug          String
+  id             String                  @id @default(cuid())
+  teamId         String
+  name           String
+  slug           String
   /// Bearer token used by the Figma plugin to push design status. Null until generated.
-  pluginToken   String?                 @unique
+  pluginToken    String?                 @unique
   /// Short uppercase code used as the ticket key prefix (e.g. "CHK" -> CHK-142).
-  keyPrefix     String                  @default("TASK")
+  keyPrefix      String                  @default("TASK")
   /// Next number to hand out for this project's tickets — incremented
   /// transactionally with task creation so numbers never repeat or skip.
-  nextTaskNumber Int                    @default(1)
-  createdAt     DateTime                @default(now())
-  updatedAt     DateTime                @updatedAt
-  team          Team                    @relation(fields: [teamId], references: [id], onDelete: Cascade)
-  memberships   ProjectMembership[]
-  tasks         Task[]
-  docs          TeamDoc[]
-  docChunks     DocChunk[]
-  credentials   IntegrationCredential[]
-  notifications Notification[]
-  contextRuns   ContextRun[]
-  invites       Invite[]
-  sprints       Sprint[]
-  flowSnapshots FlowSnapshot[]
-  repositories  ProjectRepository[]
-  figmaFiles    ProjectFigmaFile[]
+  nextTaskNumber Int                     @default(1)
+  createdAt      DateTime                @default(now())
+  updatedAt      DateTime                @updatedAt
+  team           Team                    @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  memberships    ProjectMembership[]
+  tasks          Task[]
+  docs           TeamDoc[]
+  docChunks      DocChunk[]
+  credentials    IntegrationCredential[]
+  notifications  Notification[]
+  contextRuns    ContextRun[]
+  invites        Invite[]
+  sprints        Sprint[]
+  flowSnapshots  FlowSnapshot[]
+  repositories   ProjectRepository[]
+  figmaFiles     ProjectFigmaFile[]
 
   @@unique([teamId, slug])
 }
@@ -268,70 +270,70 @@ model Invite {
 }
 
 model Task {
-  id                 String         @id @default(cuid())
-  teamId             String
-  projectId          String
-  title              String
+  id                    String         @id @default(cuid())
+  teamId                String
+  projectId             String
+  title                 String
   /// Short summary / description
-  description        String         @default("")
+  description           String         @default("")
   /// Explicit requirement text (must not live only in PM's head)
-  requirement        String         @default("")
+  requirement           String         @default("")
   /// Dynamic business rules — open-ended JSON array, NOT fixed coupon columns
-  businessRules      Json           @default("[]")
-  status             TaskStatus     @default(not_ready)
-  priority           TaskPriority   @default(p2)
+  businessRules         Json           @default("[]")
+  status                TaskStatus     @default(not_ready)
+  priority              TaskPriority   @default(p2)
   /// Sequential per-project ticket number — combined with the project's
   /// keyPrefix this is the human-facing key (e.g. "CHK-142"). Null on tasks
   /// created before this existed.
-  taskNumber         Int?
-  deadline           DateTime?
+  taskNumber            Int?
+  deadline              DateTime?
   /// Set only on a component sub-task created from a grilling session; null on the parent task
-  component          TaskComponent?
+  component             TaskComponent?
   /// Parent task when this row is a sub-task; null for a top-level task
-  parentId           String?
+  parentId              String?
   /// Owner — assigned person; Assigned ≠ Working
-  assigneeId         String?
-  createdById        String
-  acceptanceCriteria String         @default("")
-  figmaUrl           String?
+  assigneeId            String?
+  createdById           String
+  acceptanceCriteria    String         @default("")
+  figmaUrl              String?
   /// Design is ready for implementation (not just linked)
-  figmaReady         Boolean        @default(false)
+  figmaReady            Boolean        @default(false)
   /// Figma file name, reported by the plugin
-  figmaFile          String?
+  figmaFile             String?
   /// Figma page name, reported by the plugin
-  figmaPage          String?
+  figmaPage             String?
   /// Figma frame/node name, reported by the plugin
-  figmaFrame         String?
-  githubIssueUrl     String?
-  githubPrUrl        String?
+  figmaFrame            String?
+  githubIssueUrl        String?
+  githubPrUrl           String?
   /// Related internal doc paths (e.g. knowledge/engineering.md)
-  internalDocPaths   String[]       @default([])
+  internalDocPaths      String[]       @default([])
   /// Explicit API / backend readiness for this task
-  apiReady           Boolean        @default(false)
-  designLinked       Boolean        @default(false)
-  acPresent          Boolean        @default(false)
-  rulesPresent       Boolean        @default(false)
-  requirementPresent Boolean        @default(false)
-  readinessScore     Int            @default(0)
-  readinessNotes     String         @default("")
+  apiReady              Boolean        @default(false)
+  designLinked          Boolean        @default(false)
+  acPresent             Boolean        @default(false)
+  rulesPresent          Boolean        @default(false)
+  requirementPresent    Boolean        @default(false)
+  readinessScore        Int            @default(0)
+  readinessNotes        String         @default("")
   /// Sprint the card is committed to. Null = not in any sprint (backlog).
-  sprintId           String?
+  sprintId              String?
   /// Fibonacci-scale estimate. Null when the team sizes by card count instead.
-  storyPoints        Int?
+  storyPoints           Int?
   /// Man hours the card was estimated at. Kept alongside storyPoints: points
   /// drive velocity, hours answer "can this person fit it in the sprint".
-  estimateHours      Float?
+  estimateHours         Float?
   /// Man hours actually spent. Derived, never typed: commit sessions when the
   /// card has a merged PR, otherwise capped time in `working`.
-  actualHours        Float?
+  actualHours           Float?
   /// How actualHours was arrived at — "commits" | "status". Null on legacy rows
   /// entered by hand before the field became derived.
-  actualHoursSource  String?
+  actualHoursSource     String?
   actualHoursComputedAt DateTime?
-  engineStatus       String?
-  lastContextRunId   String?
-  createdAt          DateTime       @default(now())
-  updatedAt          DateTime       @updatedAt
+  engineStatus          String?
+  lastContextRunId      String?
+  createdAt             DateTime       @default(now())
+  updatedAt             DateTime       @updatedAt
 
   team          Team                @relation(fields: [teamId], references: [id], onDelete: Cascade)
   project       Project             @relation(fields: [projectId], references: [id], onDelete: Cascade)
@@ -341,6 +343,7 @@ model Task {
   dependedBy    TaskDependency[]    @relation("DependencyTask")
   contextRuns   ContextRun[]
   decisions     DecisionLog[]
+  comments      Comment[]
   notifications Notification[]
   handoffDocs   TaskHandoff[]
   statusHistory TaskStatusHistory[]
@@ -349,13 +352,13 @@ model Task {
   parent        Task?               @relation("TaskSubTasks", fields: [parentId], references: [id], onDelete: SetNull)
   subTasks      Task[]              @relation("TaskSubTasks")
 
+  @@unique([projectId, taskNumber])
   @@index([parentId])
   @@index([teamId, status])
   @@index([assigneeId])
   @@index([teamId, priority])
   @@index([projectId, status])
   @@index([sprintId])
-  @@unique([projectId, taskNumber])
 }
 
 model DecisionLog {
@@ -367,6 +370,22 @@ model DecisionLog {
   createdAt DateTime @default(now())
   task      Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
   author    User     @relation(fields: [authorId], references: [id])
+
+  @@index([taskId, createdAt])
+}
+
+model Comment {
+  id           String    @id @default(cuid())
+  taskId       String
+  authorId     String
+  body         String
+  /// User ids resolved from @mentions in body, frozen at write time — a
+  /// later rename must not silently retarget who got mentioned.
+  mentionedIds String[]  @default([])
+  createdAt    DateTime  @default(now())
+  editedAt     DateTime?
+  task         Task      @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  author       User      @relation(fields: [authorId], references: [id], onDelete: Cascade)
 
   @@index([taskId, createdAt])
 }

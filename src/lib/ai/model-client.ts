@@ -13,7 +13,8 @@ export type ModelMessage = { role: "user" | "assistant"; content: string };
 
 const DEFAULT_MODELS = ["gemini-3.6-flash", "gemini-pro-latest"];
 
-function apiKeys(): string[] {
+/** Shared with embeddings.ts — the Gemini API key pool is the same for chat and embedding calls. */
+export function apiKeys(): string[] {
   const list = process.env.GEMINI_API_KEYS ?? process.env.GEMINI_API_KEY ?? "";
   return list
     .split(",")
@@ -67,7 +68,8 @@ export function extractBalancedJson(text: string): string {
   throw new Error("Unbalanced JSON in model output (likely truncated)");
 }
 
-function isCapacityError(e: unknown): boolean {
+/** Shared with embeddings.ts — same rate-limit/quota detection for the embed_content quota pool. */
+export function isCapacityError(e: unknown): boolean {
   const status = (e as { status?: number } | null)?.status;
   const message = e instanceof Error ? e.message : String(e);
   return (

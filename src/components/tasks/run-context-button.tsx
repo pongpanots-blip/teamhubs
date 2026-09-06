@@ -25,8 +25,20 @@ export function RunContextButton({ taskId }: { taskId: string }) {
   return (
     <div className="space-y-1 text-right">
       <Button onClick={run} disabled={loading}>
-        {loading ? "Running…" : "Run context"}
+        {loading ? (
+          <span className="flex items-center gap-2">
+            <span className="size-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+            Running…
+          </span>
+        ) : (
+          "Run context"
+        )}
       </Button>
+      {loading ? (
+        <p className="text-xs text-muted-foreground">
+          Asking Gemini + gathering docs — can take a couple of minutes.
+        </p>
+      ) : null}
       {error ? <p className="text-xs text-destructive">{error}</p> : null}
     </div>
   );

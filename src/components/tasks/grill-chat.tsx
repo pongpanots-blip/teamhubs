@@ -30,6 +30,7 @@ type Draft = {
   messages: GrillMessage[];
   pendingQuestion: string | null;
   pendingChoices: string[] | null;
+  pendingMultiSelect: boolean;
   pendingRecommendation: string | null;
   result: GrillResult | null;
   updatedAt: number;
@@ -102,6 +103,7 @@ function newDraft(project: ProjectOption): Draft {
     messages: [],
     pendingQuestion: null,
     pendingChoices: null,
+    pendingMultiSelect: false,
     pendingRecommendation: null,
     result: null,
     updatedAt: nowMs(),
@@ -133,6 +135,7 @@ export function GrillChat({
   const [components, setComponents] = useState<ComponentDraft[]>([]);
   const [creating, setCreating] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [selectedChoices, setSelectedChoices] = useState<string[]>([]);
   const currentProject = projects.find((p) => p.slug === currentProjectSlug) ?? {
     slug: currentProjectSlug,
     name: currentProjectSlug,
@@ -157,6 +160,21 @@ export function GrillChat({
   useEffect(() => {
     if (isChatting) composerRef.current?.focus();
   }, [isChatting, draft?.id]);
+
+  // Pre-check whichever choices the recommendation names, each time a new
+  // multi-select question comes in. Adjusting state during render (rather
+  // than in an effect) as each new question arrives — see
+  // https://react.dev/learn/you-might-not-need-an-effect#adjusting-some-state-when-a-prop-changes
+  const lastQuestionRef = useRef<string | null | undefined>(undefined);
+  if (draft?.pendingQuestion !== lastQuestionRef.current) {
+    lastQuestionRef.current = draft?.pendingQuestion ?? null;
+    const rec = draft?.pendingRecommendation ?? "";
+    const initial =
+      draft?.pendingMultiSelect && draft.pendingChoices
+        ? draft.pendingChoices.filter((c) => rec.includes(c))
+        : [];
+    setSelectedChoices(initial);
+  }
 
   const visibleDrafts = useMemo(
     () => (draftFilter === "all" ? drafts : drafts.filter((d) => d.projectSlug === draftFilter)),
@@ -215,6 +233,7 @@ export function GrillChat({
       messages,
       pendingQuestion: null,
       pendingChoices: null,
+      pendingMultiSelect: false,
       pendingRecommendation: null,
       updatedAt: nowMs(),
     });
@@ -244,6 +263,7 @@ export function GrillChat({
         messages,
         pendingQuestion: null,
         pendingChoices: null,
+        pendingMultiSelect: false,
         pendingRecommendation: null,
         result,
         offline,
@@ -257,6 +277,7 @@ export function GrillChat({
         messages,
         pendingQuestion: data.question as string,
         pendingChoices: (data.choices as string[] | undefined) ?? null,
+        pendingMultiSelect: !!data.multiSelect,
         pendingRecommendation: (data.recommendation as string | undefined) ?? null,
         result: null,
         offline,
@@ -625,23 +646,54 @@ export function GrillChat({
           </div>
 
           {draft.pendingChoices?.length ? (
-            <div className="flex flex-none flex-wrap gap-2 pt-0.5 pb-1">
-              {draft.pendingChoices.map((choice) => (
-                <button
-                  key={choice}
-                  type="button"
-                  disabled={loading}
-                  onClick={() => submitAnswer(false, choice)}
-                  className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-card px-3 py-1.5 text-xs disabled:opacity-50"
+            <div className="flex flex-none flex-wrap items-center gap-2 pt-0.5 pb-1">
+              {draft.pendingChoices.map((choice) => {
+                const selected = draft.pendingMultiSelect && selectedChoices.includes(choice);
+                const recommended = draft.pendingMultiSelect
+                  ? (draft.pendingRecommendation ?? "").includes(choice)
+                  : choice === recommendation.matchedChoice;
+                return (
+                  <button
+                    key={choice}
+                    type="button"
+                    disabled={loading}
+                    aria-pressed={draft.pendingMultiSelect ? selected : undefined}
+                    onClick={() => {
+                      if (!draft.pendingMultiSelect) {
+                        submitAnswer(false, choice);
+                        return;
+                      }
+                      setSelectedChoices((prev) =>
+                        prev.includes(choice) ? prev.filter((c) => c !== choice) : [...prev, choice],
+                      );
+                    }}
+                    className={`inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs disabled:opacity-50 ${
+                      selected
+                        ? "border-transparent bg-primary text-primary-foreground"
+                        : "border-border bg-card text-foreground"
+                    }`}
+                  >
+                    {choice}
+                    {recommended ? (
+                      <Badge
+                        variant="secondary"
+                        className={`h-4 px-1.5 text-micro ${selected ? "bg-primary-foreground/20 text-primary-foreground" : ""}`}
+                      >
+                        แนะนำ
+                      </Badge>
+                    ) : null}
+                  </button>
+                );
+              })}
+              {draft.pendingMultiSelect ? (
+                <Button
+                  size="sm"
+                  disabled={loading || selectedChoices.length === 0}
+                  onClick={() => submitAnswer(false, selectedChoices.join(", "))}
                 >
-                  {choice}
-                  {choice === recommendation.matchedChoice ? (
-                    <Badge variant="secondary" className="h-4 px-1.5 text-micro">
-                      แนะนำ
-                    </Badge>
-                  ) : null}
-                </button>
-              ))}
+                  ส่งคำตอบ
+                </Button>
+              ) : null}
             </div>
           ) : null}
 

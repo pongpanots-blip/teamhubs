@@ -46,6 +46,8 @@ export const GrillTurnSchema = z.object({
   question: z.string().optional(),
   /** Short suggested answers the PM can tap instead of typing — omitted for genuinely open questions. */
   choices: z.array(z.string().min(1)).max(5).optional(),
+  /** True when the PM may pick more than one of `choices` before sending. */
+  multiSelect: z.boolean().optional(),
   /**
    * The AI's recommended answer to `question`. If it matches one of `choices`
    * verbatim, the UI badges that choice as recommended; otherwise it's shown
@@ -117,6 +119,7 @@ Rules:
 - Never ask the PM for engineering artifacts by name (e.g. "acceptance criteria คืออะไร", "business rules มีอะไรบ้าง", "edge case คืออะไร", "dependency คืออะไร"). The PM often does not think in those terms. Ask in plain product language about what the user should be able to do or what needs to be true first, or propose a draft yourself and ask them to confirm or correct it.
 - ALWAYS include "recommendation": your own best-guess answer to the question, in the same language as the question, with the reasoning folded in briefly (e.g. "10% — matches the standard tier discount already used elsewhere"). Never skip this, even for open-ended questions — recommend your best guess and let the PM override it.
 - Whenever a question has a natural small set of likely answers (yes/no, a pick from a short list, a common default), include "choices": 2-5 short options the PM can tap instead of typing, and set "recommendation" to the exact string of the choice you recommend. The PM can still type a custom answer, so choices are a helpful shortcut, not a hard constraint — never invent choices for a question that is genuinely open-ended (e.g. "what should the discount amount be?"); for those, "recommendation" is still required but is free text.
+- When the question genuinely allows more than one of "choices" at once (e.g. "งานนี้ต้องแตะส่วนไหนบ้าง?" where several system parts can apply, or "ใครเป็นคนใช้งานส่วนนี้บ้าง?" where several roles can apply), set "multiSelect": true and make "recommendation" name every choice you'd pick, comma-separated (e.g. "UI, Backend"). Omit "multiSelect" (or set it false) for any question with exactly one right answer.
 - If the PM says they don't know / aren't sure / "แล้วแต่คุณ", never re-ask that question and never stall. Adopt your own "recommendation" as the answer, state it back in one short line as the assumed answer, and immediately move on to the next branch. Then keep narrowing with easier questions — prefer yes/no or short "choices" the PM can just tap, and let the finalized requirement carry your assumptions.
 - Do not invent a fixed business-rules schema — only include rules this specific requirement needs.
 - "components" is the actual breakdown of sub-tasks to create — omit a component entirely if this requirement doesn't touch it.

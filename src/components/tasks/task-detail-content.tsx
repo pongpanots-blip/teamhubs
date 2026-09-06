@@ -275,6 +275,10 @@ export async function TaskDetailContent({
                     }[];
                   } | null;
                   if (!out) return <p className="text-muted-foreground">No engine output.</p>;
+                  const analysis = task.contextRuns[0]!.analysis as {
+                    relatedDocInsights?: { sourcePath: string; insight: string }[];
+                  } | null;
+                  const referencedDocs = dedupeDocInsights(analysis?.relatedDocInsights ?? []);
                   return (
                     <div className="grid gap-4 sm:grid-cols-2">
                       <div>
@@ -328,6 +332,19 @@ export async function TaskDetailContent({
                           ) : null}
                         </ul>
                       </div>
+                      {referencedDocs.length > 0 ? (
+                        <div className="sm:col-span-2">
+                          <div className="text-muted-foreground">Referenced docs</div>
+                          <ul className="list-disc pl-5">
+                            {referencedDocs.map((d) => (
+                              <li key={d.sourcePath}>
+                                <span className="font-mono text-xs">{d.sourcePath}</span>
+                                {d.insight ? ` — ${d.insight}` : ""}
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      ) : null}
                     </div>
                   );
                 })()
@@ -578,6 +595,17 @@ function SideCard({ title, children }: { title: string; children: React.ReactNod
       {children}
     </div>
   );
+}
+
+/** Claude cites the same doc more than once across chunks — collapse to one row per file. */
+function dedupeDocInsights(
+  insights: { sourcePath: string; insight: string }[],
+): { sourcePath: string; insight: string }[] {
+  const bySource = new Map<string, { sourcePath: string; insight: string }>();
+  for (const item of insights) {
+    if (!bySource.has(item.sourcePath)) bySource.set(item.sourcePath, item);
+  }
+  return [...bySource.values()];
 }
 
 function FactRow({ k, v }: { k: string; v: string }) {

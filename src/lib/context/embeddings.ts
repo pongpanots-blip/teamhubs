@@ -1,4 +1,6 @@
 import { createHash } from "crypto";
+import { GoogleGenAI } from "@google/genai";
+import { apiKeys, isCapacityError } from "@/lib/ai/model-client";
 
 const DIMS = Number(process.env.EMBEDDING_DIMS ?? 1536);
 
@@ -19,6 +21,32 @@ export function localEmbed(text: string, dims = DIMS): number[] {
 
 export async function embedTexts(texts: string[]): Promise<number[][]> {
   const provider = process.env.EMBEDDING_PROVIDER ?? "local";
+
+  if (provider === "gemini" && apiKeys().length > 0) {
+    const model = process.env.GEMINI_EMBEDDING_MODEL ?? "gemini-embedding-001";
+    let lastError: unknown;
+    // Same quota pool as chat calls — rotate through every configured key
+    // before giving up, so one exhausted key doesn't stall a whole reindex.
+    for (const apiKey of apiKeys()) {
+      try {
+        const client = new GoogleGenAI({ apiKey });
+        const response = await client.models.embedContent({
+          model,
+          contents: texts,
+          config: { outputDimensionality: DIMS },
+        });
+        const embeddings = response.embeddings ?? [];
+        if (embeddings.length !== texts.length) {
+          throw new Error(`Gemini embeddings failed: expected ${texts.length}, got ${embeddings.length}`);
+        }
+        return embeddings.map((e) => padOrTrim(e.values ?? [], DIMS));
+      } catch (e) {
+        lastError = e;
+        if (!isCapacityError(e)) throw e;
+      }
+    }
+    throw lastError instanceof Error ? lastError : new Error("All Gemini embedding keys exhausted");
+  }
 
   if (provider === "voyage" && process.env.VOYAGE_API_KEY) {
     const res = await fetch("https://api.voyageai.com/v1/embeddings", {
